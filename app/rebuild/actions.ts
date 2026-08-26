@@ -132,7 +132,12 @@ async function loadRebuildCeremonyKeepers(db: Db, memberId: string): Promise<str
       )
     ).rows[0]?.body ?? null;
     return [plan].filter((x): x is string => !!x);
-  } catch {
+  } catch (e) {
+    // LOGGED, because an empty array here is INDISTINGUISHABLE FROM "they kept nothing". The ceremony only pushes
+    // its Playbook beat when keepers is non-empty, so a failed read does not degrade the beat — it DELETES it, and
+    // the member reaches the end of Rebuild without being shown the plan they wrote. A swallowed read rendering as
+    // a confident fact about the member is the shape that has cost the most here.
+    console.error(`Rebuild ceremony keepers FAILED to load for member=${memberId} — the Playbook beat will be dropped:`, (e as Error).message);
     return [];
   }
 }
@@ -222,8 +227,12 @@ export async function rebuildTurnAction(
           try {
             await setCommitment(db, memberId, 'activity', activity, 'b3');
             await setCommitment(db, memberId, 'diet', diet, 'b3');
-          } catch {
-            /* swallow — best-effort at the close; the member can set/confirm them directly */
+          } catch (e) {
+            // DELIBERATELY NOT SPLIT, unlike the close/badge pair below. These two are ONE fact — the member's two
+            // committed changes — and half a pair is worse than neither: their pilot week would render one row and
+            // read as though they only ever chose one. Logged, though: these commitments are what the b3_pilot grid
+            // draws its rows from, so losing them silently turns the tracker generic with no trace of why.
+            console.error(`B3 setCommitment FAILED for member=${memberId} — the pilot week will fall back to generic rows:`, (e as Error).message);
           }
           // Persist the plan artifact (coaching_plan) + a Playbook keeper (§5 — the two small changes, their words).
           try {
@@ -241,8 +250,8 @@ export async function rebuildTurnAction(
             // The week grid's ROWS (Greg's tracker). Separate try from the plan above, deliberately: a failure here
             // must not lose the plan itself. Same lesson as the Playbook harvest silent-drop, where one throw inside
             // a shared try aborted a commit that had already succeeded.
-          } catch {
-            /* swallow — best-effort; the member still committed their plan */
+          } catch (e) {
+            console.error(`B3 coaching plan / keeper FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
           try {
             await setPilotCommitments(db, memberId, {
@@ -264,19 +273,34 @@ export async function rebuildTurnAction(
           );
         }
         // Open the pilot logging week (Part B) — the plan-aware daily nudge rides the practice-week scaffold.
+        // NO LONGER "A BONUS, NOT LOAD-BEARING" (Jay, 2026-08-26). That was true while nothing pointed at the
+        // week. It is not true now: the Session close tells the member to open This week and tick the days, and
+        // the end card names and previews this exact tracker. A silent failure here produces a close instructing
+        // them to visit a week that will not be there. Still best-effort — a hiccup must not block their close —
+        // but never silent again.
         try {
           await startPracticeWeek(db, memberId, 'b3_pilot');
-        } catch {
-          /* swallow — the logging nudge is a bonus, not load-bearing */
+        } catch (e) {
+          console.error(`B3 startPracticeWeek(b3_pilot) FAILED for member=${memberId} — the close points at a week that will not be there:`, (e as Error).message);
         }
         // Mark B3 closed so the v2.4 forecast advances the member B3 → B4 (best-effort).
+        //
+        // SEPARATE TRYS, because these are two independent facts (Jay, 2026-08-26). Paired inside one bare catch, a
+        // throw in markSessionClosed also skipped the badge — one failure taking down an unrelated write that would
+        // have succeeded. That is the Playbook harvest silent-drop shape, and the comment above persistCoachingPlan
+        // in this same file already spells out why not to do it; these call sites had simply never been brought in
+        // line. The badge matters twice over: it is what the close NAMES to the member.
         try {
           await markSessionClosed(db, memberId, 'RBLD-B3');
+        } catch (e) {
+          console.error(`B3 markSessionClosed FAILED for member=${memberId}:`, (e as Error).message);
+        }
+        try {
           // Earn the milestone (idempotent) but do NOT surface the badge beat here — B3 only SETS UP the pilot; the
           // "week of noticing" is celebrated in the Rebuild ceremony, so a beat at the close is a duplicate (Donna).
           await acknowledgeSessionBadge(db, memberId, 'RBLD-B3');
-        } catch {
-          /* swallow — the session still completed; the forecast advance is best-effort */
+        } catch (e) {
+          console.error(`B3 badge acknowledge FAILED for member=${memberId}:`, (e as Error).message);
         }
       }
       await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
@@ -302,10 +326,15 @@ export async function rebuildTurnAction(
             console.error(`B2 self-management reading FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
         }
+        // NO LONGER "A BONUS, NOT LOAD-BEARING" (Jay, 2026-08-26). That was true while nothing pointed at the
+        // week. It is not true now: the Session close tells the member to open This week and tick the days, and
+        // the end card names and previews this exact tracker. A silent failure here produces a close instructing
+        // them to visit a week that will not be there. Still best-effort — a hiccup must not block their close —
+        // but never silent again.
         try {
           await startPracticeWeek(db, memberId, 'b2_noticing');
-        } catch {
-          /* swallow — the noticing nudge is a bonus, not load-bearing */
+        } catch (e) {
+          console.error(`B2 startPracticeWeek(b2_noticing) FAILED for member=${memberId} — the close points at a week that will not be there:`, (e as Error).message);
         }
       } else {
         // B1: score the 12 responses → the SDT profile → store it (RB-1: stored, not displayed).
@@ -320,12 +349,22 @@ export async function rebuildTurnAction(
         }
       }
       // Mark the Session closed so the v2.4 forecast advances the member (B1 → B2 → B3). Best-effort.
+      //
+      // SEPARATE TRYS, because these are two independent facts (Jay, 2026-08-26). Paired inside one bare catch, a
+      // throw in markSessionClosed also skipped the badge — one failure taking down an unrelated write that would
+      // have succeeded. That is the Playbook harvest silent-drop shape, and the comment above persistCoachingPlan
+      // in this same file already spells out why not to do it; these call sites had simply never been brought in
+      // line. The badge matters twice over: it is what the close NAMES to the member.
+      const assetId = session === 'b2' ? 'RBLD-B2' : 'RBLD-B1';
       try {
-        const assetId = session === 'b2' ? 'RBLD-B2' : 'RBLD-B1';
         await markSessionClosed(db, memberId, assetId);
+      } catch (e) {
+        console.error(`${assetId} markSessionClosed FAILED for member=${memberId}:`, (e as Error).message);
+      }
+      try {
         earnedBadge = await acknowledgeSessionBadge(db, memberId, assetId); // newly-earned milestone → named at the close
-      } catch {
-        /* swallow — the session still completed; the forecast advance is best-effort */
+      } catch (e) {
+        console.error(`${assetId} badge acknowledge FAILED for member=${memberId}:`, (e as Error).message);
       }
     }
     await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
