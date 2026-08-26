@@ -800,15 +800,25 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
 
 /* ── Companion Ceremony surface (Threshold + future ceremonies) ─────────────── */
+/* A LONG BEAT MUST NOT PUSH ITS OWN TOP OFF THE SCREEN (Jay, 2026-08-26: "Legacy Letter needs padding").
+   It was not the padding — the padding was there and unreachable. `align-items: center` on a flex container
+   centres an oversized child by giving it NEGATIVE offset, so the Legacy Letter beat, which is longer than every
+   other beat in the product by an order of magnitude, had its heading and its 30px of top padding scrolled above
+   the viewport with no way to get to them. The member reads a letter they wrote to themselves with the first
+   line clipped.
+   `overflow-y: auto` + `margin: auto` on the card is the pair that fixes it: still centred when it fits, and
+   scrollable WITH its padding intact when it does not. `align-items: flex-start` alone would have un-centred
+   every short beat to fix the one long one. */
 .cer-overlay {
   position: fixed; inset: 0; z-index: 50;
   display: flex; align-items: center; justify-content: center; padding: 24px;
+  overflow-y: auto;
   background: rgba(16, 16, 69, 0.55); /* dims the live dashboard underneath */
   backdrop-filter: blur(3px);
 }
 .cer-card {
   background: #fff; border: 1px solid var(--panel-line); border-radius: 20px;
-  padding: 30px 32px; max-width: 560px; width: 100%;
+  padding: 30px 32px; max-width: 560px; width: 100%; margin: auto;
   box-shadow: 0 18px 60px rgba(55, 79, 99, 0.28); cursor: pointer;
 }
 .cer-comp { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
@@ -861,7 +871,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    button she might not press means she never does. */
 .cer-legacy { margin: 8px 0 0; }
 .cer-legacy-body {
-  margin: 8px 0 0; padding: 10px 0 2px 14px; border-left: 3px solid var(--teal);
+  margin: 12px 0 4px; padding: 12px 0 12px 16px; border-left: 3px solid var(--teal);
   font-size: 0.95rem; line-height: 1.6; color: var(--navy); white-space: pre-wrap;
 }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }

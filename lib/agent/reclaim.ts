@@ -7,6 +7,7 @@
 // confirm commits it back to the live list (propose→confirm→commit, Decision L — never silent mutation). Flag-gated by
 // RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
+import { sentenceStart } from '../content/member-words.ts';
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
@@ -805,7 +806,11 @@ function sanitizeQualityDay(q: ModelTurn['qualityDay'], memberTexts: readonly st
   return { nonNegotiables, contributors: clean(q.contributors), disruptors: clean(q.disruptors) };
 }
 function proposeQualityDay(q: QDCapture): string {
-  const list = (xs: string[]) => xs.map((x) => `  • ${x}`).join('\n');
+  // CAPITALISED FOR DISPLAY ONLY (Jay, 2026-08-26: "should have capitalized my contributor"). His list read
+  // "A bike ride / Pushing the G4L Movement forward / keeping my eating routine constant" — the third lifted from
+  // the middle of a sentence, so it arrived mid-sentence-cased and looked like a mistake about him. What we STORE
+  // is still the verbatim span he said; only the bullet is presented.
+  const list = (xs: string[]) => xs.map((x) => `  • ${sentenceStart(x)}`).join('\n');
   const parts = [
     `Non-negotiables — a day's hard to call quality without these:\n${list(q.nonNegotiables)}`,
     q.contributors.length ? `Strong contributors:\n${list(q.contributors)}` : '',

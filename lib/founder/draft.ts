@@ -121,7 +121,7 @@ const firstNameOr = (c: FounderContext) => c.firstName || 'there';
 /** "the Swimmer" is right mid-sentence and wrong at the start of one. Caught by RENDERING these for the Cowork
  *  bundle — the template read fine; the email said "…set against The Career Cliff. the Swimmer is a little
  *  closer." Interpolated copy has to be read as copy, which is the argument for rendering it at all. */
-const sentenceStart = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+import { sentenceStart } from '../content/member-words.ts'; // one definition — see the note there
 
 export function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
   const name = firstNameOr(c);

@@ -21,6 +21,7 @@
 // load-bearing, not deferrable), and the handoff into the confirmation card. The flow is now END-TO-END
 // behind the flag — the first live-eval gate.
 
+import { sentenceStart } from '../content/member-words.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
@@ -84,7 +85,7 @@ import {
 // Re-exported so existing callers/tests can keep importing it from the engine surface.
 export { correctsReflection };
 
-const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+const capFirst = sentenceStart; // one definition — see lib/content/member-words.ts
 
 // ── Contract 1 — one question per turn (docs/arc-reliability-hardening.md) ─────────────────────────────────────────
 // When the engine hands into the next beat, it prepends the model's in-voice acknowledgment (receive-before-you-move).
