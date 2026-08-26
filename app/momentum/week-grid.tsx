@@ -135,6 +135,11 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
   };
 
   return (
+    // `wk-saving` is a STATE HOOK, NOT A STYLE. It used to dim the whole grid while a toggle was in flight, which
+    // meant every tap faded the ticks already on screen — and since router.refresh() below runs inside the same
+    // transition, "in flight" is a whole server round-trip, long enough to read as a blink (Jay, 2026-08-26). The
+    // tick is optimistic and already correct by the time the request leaves; the only thing worth showing is the
+    // failure, and that has its own path. The class survives because scripts/w3-grid-walk.ts waits on it.
     <div className={`wk-grid${pending ? ' wk-saving' : ''}`}>
       {/* THE FIRST FEW DAYS, KEPT ON SCREEN. A Session that closed midweek runs a short stub to the Sunday and
           then rolls into a full Monday–Sunday. Without this, a member who ticked four days Thu–Sun would open the

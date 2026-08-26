@@ -1505,7 +1505,13 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    never a gate (Decision MM/R1), and a grid that scolds is a grid people stop opening. Today's column is OUTLINED
    rather than filled, so "where am I" reads without a legend. Deliberate divergence from his spreadsheet's red. */
 .wk-grid { margin: 0 0 1rem; padding: 0.85rem 0.9rem 0.6rem; background: var(--white); border: 1px solid #e3e2df; border-radius: 12px; }
-.wk-grid.wk-saving { opacity: .85; }
+/* .wk-saving DELIBERATELY HAS NO VISUAL WEIGHT (Jay, 2026-08-26: "the boxes end up checked after I select them,
+   but are still blinking once as I tap on the next one"). It used to dim the whole grid to opacity .85 while a
+   toggle was in flight — and because the transition also wraps router.refresh(), "in flight" is a full server
+   round-trip, so every tap visibly faded the ticks the member had ALREADY made and watched land. A spinner over
+   work that is already done reads as "did that not take?", which is the exact doubt the optimistic tick exists to
+   prevent. The failure path is what carries information here: it snaps back and says why (.wk-refusal).
+   The class stays on the element as a settle hook for scripts/w3-grid-walk.ts. Do not give it a style. */
 /* The row now carries "Log today →" on the left as well as the day count on the right — but ONLY for C3, so the
    layout has to work with one child or two. `margin-left:auto` on the day count does that with no :has() and no
    modifier class: alone it pushes itself right (the old look, unchanged for B3/B2/W3); with a link beside it, the

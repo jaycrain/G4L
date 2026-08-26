@@ -34,10 +34,24 @@ const fails: string[] = [];
 const ok = (m: string) => console.log(`  ✓ ${m}`);
 const bad = (m: string) => { fails.push(m); console.log(`  ✗ ${m}`); };
 
-/** The W3 grid, found by its row labels rather than by position — the Playbook renders several weeks. */
+/**
+ * The W3 grid, found by a trigger row the seed itself plants — the Playbook renders several weeks at once and
+ * "overlapping practice weeks are the point", so the walk has to say WHICH grid it means.
+ *
+ * IT USED TO ANCHOR ON THE WEEK HEADING, and that was stale in two independent ways by 2026-08-26. The heading
+ * text is no longer "Noticing your days" (it is "Your triggers this week"), and — the part worth remembering —
+ * the heading only renders at all when the member is running MORE THAN ONE week, because with one the section
+ * title above already named it. A freshly seeded member runs exactly one. So this walk could not find its own
+ * grid, on a page where the grid was plainly rendering.
+ *
+ * Anchoring on a seeded ROW avoids both: the seed owns that string, so the locator and the fixture move together.
+ */
 function w3Grid(page: Page) {
-  return page.locator('.pb-week', { hasText: 'Noticing your days' }).locator('.wk-grid');
+  return page.locator('.wk-grid').filter({ hasText: SEEDED_TRIGGER });
 }
+const SEEDED_TRIGGER = 'A brutal week';
+/** The `logged` row — the day itself, not a trigger. Renamed from "Noticed the day" before 2026-08-26. */
+const LOGGED_ROW = 'Checked in';
 const cell = (page: Page, row: string, day: number) =>
   w3Grid(page).locator('tbody tr', { hasText: row }).locator('.wk-cell').nth(day);
 
@@ -90,17 +104,17 @@ async function main(): Promise<void> {
   // ---- 1 · THE CELL IS ENABLED ---------------------------------------------------------------------------------
   await openThisWeek(page, memberId);
   const today = 2; // the seed opens the week two days ago, so today is column index 2
-  const enabled = await cell(page, 'Noticed the day', today).isEnabled().catch(() => false);
+  const enabled = await cell(page, LOGGED_ROW, today).isEnabled().catch(() => false);
   if (enabled) ok('the cell is tappable — not a disabled box');
   else { bad('the W3 cell is still disabled'); await browser.close(); return finish(); }
 
   // ---- 2 · THE TICK SURVIVES A RELOAD ---------------------------------------------------------------------------
-  await tap(page, 'Noticed the day', today);
-  if (await isOn(page, 'Noticed the day', today)) ok('the day ticks');
+  await tap(page, LOGGED_ROW, today);
+  if (await isOn(page, LOGGED_ROW, today)) ok('the day ticks');
   else bad('the tick did not register');
 
   await openThisWeek(page, memberId);
-  if (await isOn(page, 'Noticed the day', today)) ok('and it is still there after a reload — the write landed');
+  if (await isOn(page, LOGGED_ROW, today)) ok('and it is still there after a reload — the write landed');
   else bad('the tick vanished on reload — a successful write rendering as a failure');
 
   // ---- 3 · A SECOND TRIGGER MOVES THE RECORD --------------------------------------------------------------------
@@ -120,16 +134,35 @@ async function main(): Promise<void> {
 
   // ---- 4 · A TICK NEVER EATS WHAT THEY WROTE --------------------------------------------------------------------
   // Day 0 carries a reflection (planted by the seed). Un-ticking it must refuse, and must SAY SO.
-  if (!(await isOn(page, 'Noticed the day', 0))) {
+  if (!(await isOn(page, LOGGED_ROW, 0))) {
     bad('the written day is not showing as logged — the walk cannot test the refusal');
   } else {
-    await tap(page, 'Noticed the day', 0);
+    await tap(page, LOGGED_ROW, 0);
     const refusal = ((await w3Grid(page).locator('.wk-refusal').textContent().catch(() => '')) ?? '').trim();
     if (/wrote something/i.test(refusal)) ok(`the refusal is spoken: "${refusal}"`);
     else bad(`un-ticking a written day said nothing to the member (saw: "${refusal}")`);
-    if (await isOn(page, 'Noticed the day', 0)) ok('and the day stays ticked — their words are safe');
+    if (await isOn(page, LOGGED_ROW, 0)) ok('and the day stays ticked — their words are safe');
     else bad('THE DAY WAS UN-TICKED — a checkbox just deleted something the member wrote');
   }
+
+  // ---- 5 · SAVING IS INVISIBLE ----------------------------------------------------------------------------------
+  // Jay, 2026-08-26: "the boxes end up checked after I select them, but are still blinking once as I tap on the
+  // next one." `.wk-saving` dimmed the whole grid while a toggle was in flight, and because router.refresh() runs
+  // inside the same transition, "in flight" is a full server round-trip — so every tap visibly faded the ticks the
+  // member had already made and watched land. Asserted by FORCING the class rather than racing the request: the
+  // invariant is that the class carries no visual weight, and that is true or false without a stopwatch.
+  const dim = await page.evaluate(() => {
+    const el = document.querySelector('.wk-grid');
+    if (!el) return null;
+    const had = el.classList.contains('wk-saving');
+    el.classList.add('wk-saving');
+    const o = getComputedStyle(el).opacity;
+    if (!had) el.classList.remove('wk-saving');
+    return o;
+  });
+  if (dim === null) bad('could not find a grid to measure the in-flight state on');
+  else if (Number(dim) === 1) ok('a save in flight does not dim the grid — no blink on the next tap');
+  else bad(`the grid fades to opacity ${dim} while saving — the ticks blink on every tap`);
 
   await browser.close();
   finish();
