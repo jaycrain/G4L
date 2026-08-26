@@ -21,6 +21,7 @@
 // load-bearing, not deferrable), and the handoff into the confirmation card. The flow is now END-TO-END
 // behind the flag — the first live-eval gate.
 
+import { looksLikeMachineLine } from './member-display.ts';
 import { sentenceStart } from '../content/member-words.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
@@ -530,6 +531,23 @@ export function joinGapChapters(prev: string, next: string): string {
 // words — governance: it's the member's own account, kept in their voice (milie@ walk: the raw fallback showed
 // run-ons/fragments unpolished; set_gap is the primary tidy, this is the safety net so the fallback is never that raw).
 export function tidyGapProse(s: string): string {
+  // ── THE BOUNDARY: A TAP IS NEVER PROSE ────────────────────────────────────────────────────────────────────
+  //
+  // Jay's own gap, read off prod on 2026-08-25, contained `[gap-confirm] more keep:grind` — the wire string his
+  // chip serialized — sitting in the story of how his life narrowed. It is the FOURTH instance of that shape
+  // (member-display.ts was built for the third), and the standing rule here is that the fourth patch is where
+  // brittleness is born: fix the boundary, not the call site.
+  //
+  // THIS FUNCTION IS THE BOUNDARY. Every gap write in the engine passes through it, so one guard closes all of
+  // them — including the site that leaked, which reached joinGapChapters directly and is now routed here too.
+  // `looksLikeMachineLine` already existed in member-display.ts and was used ONLY by a guard test; a detector
+  // that never runs on the write path is a rule that does not run.
+  //
+  // Returning '' rather than throwing is deliberate. A tap carries no story, so there is nothing to lose by
+  // dropping it — and the caller's `joinGapChapters` treats an empty chapter as nothing to append, which leaves
+  // the member's real prose exactly as it was. Never drop what they gave you; a wire string is not something
+  // they gave you.
+  if (looksLikeMachineLine(s ?? '')) return '';
   let t = (s ?? '').replace(/\s+/g, ' ').trim();
   if (!t) return t;
   t = t.replace(/\s+([.,;:!?])/g, '$1'); // no space before punctuation
@@ -1887,7 +1905,9 @@ const gapStage: StageDef = {
       }
       // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT.
       const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
-      if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
+      // THROUGH tidyGapProse, like every other gap write. This site reached joinGapChapters raw, which is how a
+      // tap's wire string reached Jay's stored fade story — the one write of four that skipped the boundary.
+      if (!modelTaggedGap) b.collected.gap = tidyGapProse(joinGapChapters(b.collected.gap ?? '', tidyGapProse(b.memberMessage)));
       b.collected.doorsProposed = proposeDoors(b.collected, gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
       // ANTI-LOOP (shared contract): a rambling / drifting member's every reply reads as an 'addition', so this

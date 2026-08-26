@@ -110,14 +110,23 @@ const BEATS: Beat[] = [
     ordered: true,
     list: [
       { term: 'Getting ready', text: 'you’re in it.' },
-      { term: 'Getting to know you', text: 'chat with your Companion and take an initial assessment. Plan for about 20 minutes.' },
+      { term: 'Getting to know you', text: 'chat with your Companion and take an initial assessment. Give it a good half hour.' },
       { term: 'What you found', text: 'see what surfaced.' },
       { term: 'A look around', text: 'a quick tour to show you where it all lives.' },
     ],
     // NO DAILY-TIME FORECAST, ANYWHERE. The old close promised "after today, it's a few minutes a day" — which is
     // false (Sessions run 20-30 minutes) and contradicts the upstream "as fast or slow as your life allows". Item 2
     // in the list above already sizes today honestly, so nothing here needs to forecast tomorrow.
-    tail: ['We go deep out of the gate, so make yourself comfortable and give yourself the time here. Congratulations on getting started on your comeback.'],
+    // THE SHAPE OF THE WHOLE THING, NOT JUST TODAY (Greg, 8/07: "I think the durations are about right. We can
+    // fine-tune and explain on the front end that it is about a 6 week experience for Cycle 1"). Jay's own walk
+    // is the other half of the case: Reconnect ran 65 minutes against a single "about 20 minutes" said once
+    // about Part 2 of 4, and his ruling was that none of the content comes out — so the fix is the expectation,
+    // not the length. A member who is told the shape can pace themselves; one who isn't measures every session
+    // against a number we never meant to be the whole story.
+    tail: [
+      'We go deep out of the gate, so make yourself comfortable and give yourself the time here.',
+      'After today it opens out: a first cycle runs about six weeks, at whatever pace your life allows. Congratulations on getting started on your comeback.',
+    ],
     // "Clip in →" rather than "Let's go →": the language screen defined the word a moment ago, and this is the
     // button where they do it. The word is never explained again after this.
     cta: 'Clip in →',

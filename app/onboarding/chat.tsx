@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
-import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
+import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction,
+  recordProspectAtGateAction,
+} from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import GapConfirm from './gap-confirm.tsx';
@@ -140,6 +142,27 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     ls.set(LS.name, ctx.name); // remember so a return visit pre-fills name + email (Decision Z) — never the password
     ls.set(LS.email, ctx.email);
     setError(null);
+    // RECORD THEM NOW, NOT ON THE FIRST TURN. Until this, the only thing that wrote a prospect row was the
+    // opening turn of the conversation — so anyone who filled the gate and closed the tab, or stopped on the
+    // ramp between the account and the first question, left no trace at all. "Signed up, never started" was
+    // unmeasurable, and it is the number that separates a funnel problem from a conversation problem.
+    //
+    // Fire-and-forget on purpose: this is a measurement, and a measurement must never stand between a member and
+    // starting. It mints the resume token first so the row IS their session, not a stray the first turn would
+    // duplicate. The password stays in memory and never rides along.
+    void (async () => {
+      try {
+        let t = localStorage.getItem(LS.token) ?? '';
+        if (!t) {
+          t = crypto?.randomUUID?.() ?? String(Date.now());
+          localStorage.setItem(LS.token, t);
+        }
+        tokenRef.current = t;
+        await recordProspectAtGateAction(ctx.name, ctx.email, t);
+      } catch {
+        /* no storage, or the write failed — the first turn still records them */
+      }
+    })();
     // THE RAMP sits between the account and the first question (Cowork/Jay, 2026-08-13): a beat that says what the
     // conversation is and that the identity word is a handle, not a verdict. Only for a member who saw the welcome —
     // a returner is mid-conversation and does not need re-briefing, and the flag-off funnel is unchanged.

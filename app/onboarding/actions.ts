@@ -284,3 +284,43 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
   }
   return { ok: true, memberId: res.memberId, next };
 }
+
+/**
+ * RECORD THE PROSPECT AT THE GATE — before a word is said.
+ *
+ * Jay, walking his own signup: "Just set a new name, email, password and not seeing it show up on Prospects."
+ * The row appeared a moment later, once the conversation's opening turn fired — because `runOnboardingTurn` was
+ * the first and only thing that wrote it.
+ *
+ * WHAT THAT COST IS THE MEASURE HE ASKED FOR. Someone who fills the gate and closes the tab — or stalls on the
+ * ramp between the account and the first question — leaves NO trace anywhere. "Signed up, never started" was
+ * invisible, and it is the single most actionable number a pre-launch product has: it separates a funnel that
+ * isn't converting from a conversation that isn't landing.
+ *
+ * DELIBERATELY MINIMAL AND BEST-EFFORT. It writes the name, the email and an empty transcript, so the Prospects
+ * panel shows them at zero turns; it never blocks the member's route, and a failure here must never be the reason
+ * someone cannot start. The password is not here and never touches a server before the commit (Decision Z).
+ *
+ * The token is the member's own per-device resume token, so this row IS their session rather than a stray one the
+ * first turn would then duplicate — the upsert in saveOnboardingSession keys on email and simply grows.
+ */
+export async function recordProspectAtGateAction(
+  name: string,
+  email: string,
+  token: string,
+): Promise<{ ok: boolean }> {
+  const e = (email ?? '').trim();
+  const t = (token ?? '').trim();
+  if (!e || !t || !/.+@.+\..+/.test(e)) return { ok: false };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    // An EMPTY state, not a fabricated stage. The panel reads `state->>'stage'` and a made-up value would claim
+    // they had reached a beat they never saw — the same class of lie as a progress row with no conversation.
+    await saveOnboardingSession(db, e, t, {} as never, [], (name ?? '').trim() || null);
+    return { ok: true };
+  } catch (err) {
+    // Logged, never thrown: this is a measurement, and a measurement must not stand between someone and starting.
+    console.warn('prospect gate capture failed (non-fatal):', (err as Error).message);
+    return { ok: false };
+  }
+}
