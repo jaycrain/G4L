@@ -10,6 +10,7 @@
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { isMemberContent, isDeclineReply } from './member-turn.ts';
+import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
 import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
@@ -494,8 +495,19 @@ const holdStage: StageDef = {
     //
     // A beat that asks a question owns the answer. isMemberContent keeps it from swallowing a bare reaction ("wow",
     // "that's powerful") as scene material, and is biased to keep, so real detail always lands.
+    // FILTERED PER PIECE, NOT AT THE END (Jay's walk, 2026-08-25). The picture is COMPOSED from every message
+    // this beat collects, and the harvest seam's guard (harvest.ts) only ever sees the finished join. His card
+    // read "Big Sugar Sorry, I thought that was on my Reclaim List. It's a gravel race I'm signed up for in
+    // October Can you add it to my list?" — a destination, an apology and a request to the Companion, welded
+    // into one sentence and offered back as the scene he had built.
+    //
+    // Filtering the JOIN cannot work: it would drop "Big Sugar" and the race along with the request. The check
+    // has to happen where the pieces are still separate, which is here. Real content survives, the housekeeping
+    // does not, and a mixed line is KEPT — losing a member's own detail is the more expensive mistake.
     const lastPiece = (b.memberMessage ?? '').trim();
-    if (isMemberContent(lastPiece)) (b.collected.w2Image ??= []).push(lastPiece);
+    if (isMemberContent(lastPiece) && !isConversationalMeta(lastPiece) && !isAboutTheApp(lastPiece)) {
+      (b.collected.w2Image ??= []).push(lastPiece);
+    }
     // Same close discipline as W3: the model's line is a receipt, so strip a trailing question before the wrap beats.
     const reflected = dropTrailingQuestion(b.modelText ?? '');
     b.pendingHarvest.push({

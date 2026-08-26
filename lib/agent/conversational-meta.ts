@@ -88,9 +88,19 @@ export function isConversationalMeta(text: string): boolean {
 const PRODUCT_NOUN =
   /\b(app|screen|page|button|field|form|list|prompt|question|companion|chat|ui|interface|dashboard|playbook|reclaim list|onboarding|this thing)\b/i;
 
-/** A fix aimed at US — "we/you need to", "should be", "make it", "change this". */
+/** A fix aimed at US — "we/you need to", "should be", "make it", "change this" — or a REQUEST that we do
+ *  something to it: "can you add it to my list?".
+ *
+ *  THE REQUEST FORM WAS MISSING (Jay's walk, 2026-08-25). He typed "Can you add it to my list?" mid-Session and
+ *  it was composed into his Visualization picture and offered back as a keeper — his own housekeeping request,
+ *  stored as the scene he had built. Neither predicate saw it: isConversationalMeta needs a repeat-claim or a
+ *  question about our CONDUCT, and this asks us to perform an ACTION; isAboutTheApp had the product noun ("list")
+ *  and no fix-verb, because asking politely is not the same shape as "you need to change this".
+ *
+ *  Still safe against a real want, because isAboutTheApp requires a PRODUCT NOUN alongside this. "Can you believe
+ *  how long it's been?" has the request form and no product noun, so it stays out. */
 const FIX_AT_US =
-  /\b(we|you)\s+(need|should|could|have)\s+to\b|\b(needs?|should)\s+to\s+(be|change|say|show)\b|\bmake\s+(it|this|that)\b|\bchange\s+(it|this|that|how)\b|\bfix\s+(it|this|that)\b/i;
+  /\b(we|you)\s+(need|should|could|have)\s+to\b|\b(needs?|should)\s+to\s+(be|change|say|show)\b|\bmake\s+(it|this|that)\b|\bchange\s+(it|this|that|how)\b|\bfix\s+(it|this|that)\b|\b(can|could|would|will)\s+you\s+\w+/i;
 
 /** Plain frustration ABOUT something, not a wish for something back. */
 const FRUSTRATION =
