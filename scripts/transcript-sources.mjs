@@ -78,6 +78,9 @@ export const SECTIONS = [
   // at the end of all thirteen Sessions, so it is quotable and belongs in canon.
   { title: 'The Session close — where it lives', files: ['lib/content/where-it-lives.ts'] },
   { title: 'The Session close — the tracker it just built', files: ['lib/content/session-tracker.ts'] },
+  // The practice-week grids carry member-facing row labels ("Five minutes: …", "Checked in") — the words a
+  // member reads every day of a tracked week, so they belong in the transcript marketing and the book quote from.
+  { title: 'The practice week — the rows a member ticks', files: ['lib/practice/grid.ts'] },
   // The in-Session teaching layer (2026-08-17). "Why this matters" and "Explore the Science" stopped being
   // optional header widgets and became required beats INSIDE each Session — so this copy is now something every
   // member reads on the way through, not something a curious one opens. teaching.ts resolves the beats and holds

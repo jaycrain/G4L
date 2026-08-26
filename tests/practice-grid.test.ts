@@ -156,10 +156,28 @@ test('W3 · reads its OWN daily entries, not momentum_call', async () => {
 
 // ── the shapes that have no grid, and the summary ─────────────────────────────────────────────────────────────
 
-test('W2 gets no grid — five minutes in a picture is not countable', async () => {
+// REVERSED 2026-08-26. This asserted that W2 gets NO grid, "because five minutes in a picture is not countable
+// and forcing a grid onto it would be noise". Jay found the hole by counting: five practice weeks open on his
+// Playbook, four rendering — "I thought one was missing."
+//
+// The old reasoning does not survive what the product TELLS him. W2's close: "Here's your work this week, and
+// it's small: five minutes each morning with that image." The Momentum line: "This week: step into your picture
+// — five minutes a day." We say the number ourselves. What W2 lacks is member-authored ROWS, not a countable
+// act — and that is a reason for ONE row, not for none.
+//
+// Inverted rather than deleted, so the reversal is on the record and nobody re-derives the original argument.
+test('W2 gets ONE row — we tell them five minutes a day, so they can mark the day', async () => {
   const { db, memberId } = await seed();
   await startPracticeWeek(db, memberId, 'w2_image');
-  assert.deepEqual((await weekGrid(db, memberId))!.rows, [], 'forcing a grid onto it would be noise, not information');
+  const rows = (await weekGrid(db, memberId))!.rows;
+  assert.equal(rows.length, 1, 'one practice, one row — not none, and not a list it does not have');
+  assert.match(rows[0]!.label, /Five minutes/i, 'the row names the practice the close asked for');
+  assert.equal(rows[0]!.done, 0, 'a fresh week starts unmarked');
+});
+
+test('and that row is TICKABLE — the tick is the only record this week has', async () => {
+  const { isTappable } = await import('../lib/practice/mark.ts');
+  assert.equal(isTappable('w2_image'), true, 'a box that refuses is friction with nothing behind it');
 });
 
 test('no active week reads as null, not as an empty grid', async () => {
@@ -257,4 +275,52 @@ test('toggle is a round trip — tick, un-tick, and the row is gone', async () =
   assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 1);
   assert.deepEqual(await toggleMark(db, memberId, active, 'activity', 0, 'companion'), { ok: true, on: false });
   assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 0, 'a mis-tap must be undoable');
+});
+
+// A TICK MUST SURVIVE THE READ THAT FOLLOWS IT — B2's ticks did not, and only for real members.
+//
+// Found 2026-08-26, downstream of Jay counting grids on his Playbook. B2's ticks were written with
+// `commitment_id = null` — a "day-level note", which was correct when B2 drew ONE generic row — while b2Rows had
+// since started drawing one row PER SKILL, keyed `skill-3`. A tick on "Managing your time" landed under no slot:
+// the optimistic UI showed it, the next read matched it against nothing, and it vanished.
+//
+// IT WAS INVISIBLE IN TWO WAYS AT ONCE. You had to reload to see it (the optimistic tick looked right), and it
+// only happened for members who HAVE a skills reading — which is every member who has finished B2, and no member
+// in any fixture that skipped the reading. The demo account passed because it fell back to the generic row.
+//
+// B2 and W2 now carry real practice_commitment rows like B3, so the write and the read share one key.
+test('a B2 tick lands under the SKILL it was made on, and reads back', async () => {
+  const { db, memberId } = await seed();
+  const { persistSkillsReading } = await import('../lib/rebuild/store.ts');
+  const { toggleMark } = await import('../lib/practice/mark.ts');
+  const { activePracticeWeek } = await import('../lib/practice/store.ts');
+  // A real reading — the condition under which the bug existed at all.
+  await persistSkillsReading(db, memberId, Array.from({ length: 24 }, (_, i) => (i % 4) + 1));
+  await startPracticeWeek(db, memberId, 'b2_noticing');
+
+  const before = (await weekGrid(db, memberId))!;
+  assert.ok(before.rows.length > 1, 'a scored B2 draws per-skill rows, not one generic line');
+  const slot = before.rows[0]!.slot;
+  assert.match(slot, /^skill-\d+$/, `expected a per-skill slot, got ${slot}`);
+
+  const pw = (await activePracticeWeek(db, memberId))!;
+  const res = await toggleMark(db, memberId, pw, slot, before.day - 1, 'grid');
+  assert.equal(res.ok, true, `the tick was refused: ${res.error}`);
+
+  const after = (await weekGrid(db, memberId))!;
+  const row = after.rows.find((r) => r.slot === slot)!;
+  assert.equal(row.done, 1, 'the tick did not survive the read — it landed under a slot nothing matches');
+  assert.equal(row.marks[before.day - 1], true, 'and it must land on the day it was made');
+});
+
+test('W2 ticks the same way — one row, and it persists', async () => {
+  const { db, memberId } = await seed();
+  const { toggleMark } = await import('../lib/practice/mark.ts');
+  const { activePracticeWeek } = await import('../lib/practice/store.ts');
+  await startPracticeWeek(db, memberId, 'w2_image');
+  const g = (await weekGrid(db, memberId))!;
+  const pw = (await activePracticeWeek(db, memberId))!;
+  const res = await toggleMark(db, memberId, pw, g.rows[0]!.slot, g.day - 1, 'grid');
+  assert.equal(res.ok, true, `W2 refused its own row: ${res.error}`);
+  assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 1);
 });

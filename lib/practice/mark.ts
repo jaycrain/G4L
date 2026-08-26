@@ -36,7 +36,11 @@ import type { ActivePractice, PracticeKind } from './store.ts';
  * record or says where the record is written.
  */
 export function isTappable(kind: PracticeKind): boolean {
-  return kind === 'b3_pilot' || kind === 'b2_noticing' || kind === 'w3_logging' || kind === 'reclaim_item';
+  return kind === 'b3_pilot' || kind === 'b2_noticing' || kind === 'w3_logging' || kind === 'reclaim_item'
+    // W2 JOINED 2026-08-26. It had no grid at all until Jay noticed one missing from his Playbook; now that it has
+    // a row, the row has to be tickable — a box that refuses is the friction Greg's memo warns about, and this
+    // week's whole record IS the tick. Nothing else stores it.
+    || kind === 'w2_image';
 }
 
 /**
@@ -160,18 +164,11 @@ export async function toggleMark(
     return { ok: true, on };
   }
 
-  if (pw.kind === 'b2_noticing') {
-    const del = await db.query(
-      `delete from practice_mark where member_id=$1 and kind=$2 and commitment_id is null and marked_on=$3 returning id`,
-      [memberId, pw.kind, markedOn],
-    );
-    if (del.rows.length) return { ok: true, on: false };
-    await db.query(
-      `insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing`,
-      [memberId, pw.kind, markedOn, source],
-    );
-    return { ok: true, on: true };
-  }
+  // (The B2 special case is GONE, 2026-08-26.) It wrote every tick with `commitment_id = null` — a day-level note,
+  // correct when B2 had one generic row — while the grid had since started drawing one row PER SKILL. A tick on
+  // "Managing your time" therefore landed under no slot, showed in the optimistic UI, and vanished on the next
+  // read. B2 and W2 now carry real practice_commitment rows like B3, so they fall through to the one path below
+  // and the branch that could drift out of step with its own reader no longer exists.
 
   const commitment = (
     await db.query<{ id: string }>(

@@ -309,6 +309,46 @@ async function noteRows(db: Db, memberId: string, kind: PracticeKind, window: Me
 }
 
 /**
+ * MAKE SURE THIS WEEK'S ROWS EXIST AS COMMITMENTS, then read them back the way every other week does.
+ *
+ * WHY THIS EXISTS — a bug Jay surfaced by counting grids on 2026-08-26, which turned out to be the smaller half.
+ * B2's ticks were being WRITTEN with `commitment_id = null` (a "day-level note", correct when B2 had one generic
+ * row) while b2Rows had since started building one row PER SKILL, keyed `skill-3`. So a tick on "Managing your
+ * time" landed under no slot at all: the optimistic UI showed it, the reload read it back against a slot it did
+ * not match, and it vanished. A successful write rendering as a failure — the exact shape that teaches a member
+ * the tool cannot be trusted, and it only ever appeared for members who HAVE a skills reading, which is every
+ * member who has finished B2. Reproduced live before changing anything.
+ *
+ * The fix is not another special case. practice_commitment is literally "a stable per-kind slot + the member's
+ * own label", which is what a B2 skill row and a W2 picture row already are — so both now use the same storage
+ * B3 has always used, and toggleMark's B2 branch could be deleted rather than patched.
+ *
+ * ENSURED ON READ, idempotently, because existing open weeks need healing too: a member mid-B2 today has rows on
+ * screen and no commitments behind them, and waiting for the next Session close would strand them.
+ */
+async function commitmentBackedRows(
+  db: Db,
+  memberId: string,
+  kind: PracticeKind,
+  window: MemberWeek,
+  rows: { slot: string; label: string; strength?: boolean }[],
+): Promise<GridRow[]> {
+  for (const [i, r] of rows.entries()) {
+    await db.query(
+      `insert into practice_commitment (member_id, kind, slot, label, target_days, sort_order)
+       values ($1,$2,$3,$4,null,$5)
+       on conflict (member_id, kind, slot)
+       do update set label = excluded.label, sort_order = excluded.sort_order, updated_at = now()`,
+      [memberId, kind, r.slot, r.label, i],
+    );
+  }
+  const built = await commitmentRows(db, memberId, kind, window);
+  // Carry the strength flag back onto the built row — commitmentRows knows nothing about B2's distinction.
+  const flag = new Map(rows.map((r) => [r.slot, r.strength === true]));
+  return built.map((b) => (flag.get(b.slot) ? { ...b, strength: true } : b));
+}
+
+/**
  * B2 · the noticing week — rows are THE MEMBER'S OWN GROWING EDGES, not one generic line.
  *
  * DONNA, 2026-08-17: "these tracking items should be proposed based on the user's actual conversation with the
@@ -370,11 +410,7 @@ async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
         where member_id = $1 and kind = 'b2_noticing'`,
       [memberId],
     );
-    const rowFor = (no: number, label: string, strength: boolean): GridRow => {
-      const slot = `skill-${no}`;
-      const marks = rows.filter((r) => (r.commitment_id ?? 'noticed') === slot).map((r) => r.marked_on);
-      return { ...buildRow(slot, label, null, window, marks), strength };
-    };
+    const spec = (no: number, label: string, strength: boolean) => ({ slot: `skill-${no}`, label, strength });
     // THE STRENGTH LEADS. A member reads a grid top-down, and opening on three deficits sets the frame for
     // everything under it — which is the reading Greg's tone spec exists to prevent. It is also the order the
     // close speaks in: "a strength of yours… the skill with the most room to grow".
@@ -382,11 +418,10 @@ async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     // Guarded against a collision: if the strongest skill somehow also came back as a growing edge, one row would
     // silently swallow the other's marks (same slot). It cannot happen while `steady` splits the profile at its
     // own median, but "cannot happen" is how the last three of these started.
-    const strengthRow = rowFor(top.no, skillLabel(top.no, top.skill), true);
-    return [
-      ...(edges.some((e) => e.no === top.no) ? [] : [strengthRow]),
-      ...edges.map((e) => rowFor(e.no, e.label, false)),
-    ];
+    return commitmentBackedRows(db, memberId, 'b2_noticing', window, [
+      ...(edges.some((e) => e.no === top.no) ? [] : [spec(top.no, skillLabel(top.no, top.skill), true)]),
+      ...edges.map((e) => spec(e.no, e.label, false)),
+    ]);
   } catch (err) {
     // Same degrade posture as the rest of this file: one bad read costs the personalisation, never the grid.
     console.error(`b2Rows failed for member=${memberId}:`, err);
@@ -405,7 +440,42 @@ async function rowsFor(db: Db, memberId: string, kind: PracticeKind, window: Mem
     : kind === 'c3_quality' ? c3Rows(db, memberId, window)
     : kind === 'w3_logging' ? w3Rows(db, memberId, window)
     : kind === 'b2_noticing' ? b2Rows(db, memberId, window)
-    : []; // w2_image is five minutes in a picture — nothing countable, and forcing a grid onto it would be noise
+    : kind === 'w2_image' ? w2Rows(db, memberId, window)
+    : [];
+}
+
+/**
+ * W2 · the picture week — ONE row, and it took a founder counting grids to find it.
+ *
+ * Jay, 2026-08-26, on his Playbook: "I thought one was missing." Five practice weeks were open and four rendered.
+ * This kind was excluded with the reasoning "five minutes in a picture — nothing countable, and forcing a grid
+ * onto it would be noise."
+ *
+ * THAT REASONING DOES NOT SURVIVE WHAT WE TELL HIM. W2's close: "Here's your work this week, and it's small:
+ * five minutes each morning with that image." The Momentum line: "This week: step into your picture — five
+ * minutes a day." The daily nudge names his own picture back to him. Five minutes a day for a week is the most
+ * countable thing in the product — we say the number ourselves.
+ *
+ * What W2 actually lacks is member-authored ROWS, not a countable act. Every other week draws its rows from
+ * something the member wrote (their triggers, their skills, their plan), and W2 has one practice rather than a
+ * list. That is a reason for ONE row, not for none — and asking someone to do something daily while giving them
+ * nowhere to mark it is the same shape as a Session that opens a tracker and never mentions it.
+ *
+ * THE ROW IS THEIR OWN PICTURE. imageHook takes the first line of the image they built, which is what the daily
+ * nudge already says back to them, so the grid and the nudge cannot drift into describing different practices.
+ */
+async function w2Rows(db: Db, memberId: string, window: MemberWeek): Promise<GridRow[]> {
+  try {
+    const { latestImageKeeper, imageHook } = await import('./store.ts');
+    const hook = imageHook(await latestImageKeeper(db, memberId));
+    // Their words when we have them; the practice itself when we do not. Never an empty grid.
+    return commitmentBackedRows(db, memberId, 'w2_image', window, [
+      { slot: 'picture', label: hook ? `Five minutes: ${hook}` : 'Five minutes with your picture' },
+    ]);
+  } catch (err) {
+    console.error(`w2Rows failed for member=${memberId}:`, err);
+    return commitmentBackedRows(db, memberId, 'w2_image', window, [{ slot: 'picture', label: 'Five minutes with your picture' }]);
+  }
 }
 
 async function gridFor(db: Db, memberId: string, pw: ActivePractice): Promise<WeekGrid> {
