@@ -42,3 +42,52 @@ export async function keepScienceAction(
   const r = await keepSessionScience(db, memberId, key, sourceLabel, chosenLine, stage);
   return { ok: r.ok, reason: r.reason };
 }
+
+// THE TRACKER THE SESSION JUST OPENED — read at the close so the end card can name it, preview it, and link to it.
+//
+// Read-only and owner-gated like readArtifactAction, and it degrades to null on any fault rather than throwing:
+// the end card is the member's receipt for finishing something, and a hiccup reading a practice week must never
+// be what stands between them and it. Null simply means the card renders without the tracker block.
+//
+// PREVIEW ROWS ARE TRUNCATED HERE, NOT IN THE COMPONENT. The block is a recognition aid — the shape they will see
+// on the Playbook — and a member who ends a Session with six rows does not need all six to recognise it. Three
+// with a count of the rest keeps it a preview instead of a second copy of the grid.
+export async function readSessionTrackerAction(
+  memberId: string,
+  key: string,
+): Promise<{
+  title: string;
+  blurb: string;
+  cta: string;
+  href: string;
+  day: number;
+  days: number;
+  rows: { label: string; marks: boolean[] }[];
+  more: number;
+} | null> {
+  if (!(await authorizeMember(memberId))) return null;
+  if (!isSessionKey(key)) return null;
+  const { trackerKindFor, trackerCopy, trackerHref } = await import('../../lib/content/session-tracker.ts');
+  const kind = trackerKindFor(key);
+  if (!kind) return null;
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const { weekGrids } = await import('../../lib/practice/grid.ts');
+    const grid = (await weekGrids(db, memberId)).find((g) => g.kind === kind);
+    // A closed week is not news. If the Session re-ran against a window that has already finished, the member has
+    // nothing to go and tick, and "new on your Playbook" would be false.
+    if (!grid || grid.closed || !grid.rows.length) return null;
+    const copy = trackerCopy(kind);
+    return {
+      ...copy,
+      href: trackerHref(memberId),
+      day: grid.day,
+      days: grid.window.days,
+      rows: grid.rows.slice(0, 3).map((r) => ({ label: r.label, marks: r.marks })),
+      more: Math.max(0, grid.rows.length - 3),
+    };
+  } catch (e) {
+    console.error(`readSessionTracker failed for member=${memberId} key=${key}:`, (e as Error).message);
+    return null;
+  }
+}

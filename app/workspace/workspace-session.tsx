@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
-import { readArtifactAction } from './actions.ts';
+import { readArtifactAction, readSessionTrackerAction } from './actions.ts';
 import { useRouter } from 'next/navigation';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { reconnectStageTitle } from '../../lib/content/explore.ts';
 import { whereItLives } from '../../lib/content/where-it-lives.ts';
+import { hasHandoff } from '../../lib/content/session-tracker.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { PostSessionNudge } from '../../lib/connect/post-session-nudge.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
@@ -17,6 +18,9 @@ import RewireChat from '../rewire/rewire-chat.tsx';
 import RebuildChat from '../rebuild/rebuild-chat.tsx';
 import ReclaimChat from '../reclaim/reclaim-chat.tsx';
 import SessionVisualView from './session-visual.tsx';
+
+/** What the close knows about the week the Session just opened. Null when it opened none — see session-tracker.ts. */
+type SessionTracker = Awaited<ReturnType<typeof readSessionTrackerAction>>;
 
 // Redesign Layer 3 — the PROGRAM WORKSPACE, now SINGLE-COLUMN (2026-07-21, direction A). A Session is ONE conversation,
 // not a two-pane canvas+rail: a slim wayfinding header sits over the guided conversation, and answers are kept inline as
@@ -86,6 +90,7 @@ export default function WorkspaceSession({
   // The "here's what you built" card — the RECEIPT for the session, raised when the member continues from the
   // finished conversation, not the instant the arc completes.
   const [endCard, setEndCard] = useState(false);
+  const [tracker, setTracker] = useState<SessionTracker>(null);
   const router = useRouter();
 
   // Fill from committed state: an immediate PUSH after each turn (the chat fires ARTIFACT_REFRESH_EVENT once its turn —
@@ -100,12 +105,28 @@ export default function WorkspaceSession({
     const onCommitted = () => void refresh();
     // The member finished reading the close and hit Continue: read the final artifact, then raise the receipt.
     const onComplete = async () => {
-      const next = await readArtifactAction(memberId, sessionKey);
+      const [next, tr] = await Promise.all([
+        readArtifactAction(memberId, sessionKey),
+        readSessionTrackerAction(memberId, sessionKey),
+      ]);
       if (cancelled) return;
       if (next) setArtifact(next);
+      setTracker(tr);
       // NO DEAD END. The card is what the Continue button now asks for, so when there is nothing to show it — a
       // session that kept nothing — the click must still take them home rather than doing visibly nothing.
-      const hasSomething = (next ?? artifact).slots.some((sl) => (sl.value ?? '').trim().length > 0);
+      //
+      // "NOTHING TO SHOW" USED TO MEAN "NO FILLED SLOTS", AND THAT WAS TOO NARROW (Jay, 2026-08-26). B1, B2 and
+      // C2 are administered instruments: their artifact is a qualitative frame with an EMPTY slots array, so this
+      // returned early and the end card never rendered for them at all. Which means `whereItLives.b2` — authored,
+      // covered by a test, sitting in the table — had never been shown to a single member. Jay finished B2, got a
+      // five-day tracker built from his own answers, and was told nothing about either. A hand-off has something
+      // to say when there is a destination or a tracker, not only when there are slots to recite.
+      const lives = whereItLives(sessionKey);
+      const hasSomething = hasHandoff({
+        filledSlots: (next ?? artifact).slots.filter((sl) => (sl.value ?? '').trim().length > 0).length,
+        hasTracker: !!tr,
+        hasDestination: !!lives.href,
+      });
       if (!hasSomething) {
         router.refresh();
         router.push(`/dashboard/${memberId}`);
@@ -224,23 +245,29 @@ export default function WorkspaceSession({
           It is raised when the member CONTINUES from the finished conversation, not the instant the arc completes.
           Firing it on completion put it on top of the Companion's close before that close could be read; the wrap
           earns the receipt, so it comes first. From here "Continue →" leaves for the dashboard. */}
-      {endCard && !review && filled.length > 0 && (
+      {endCard && !review && (
         <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you saw">
           <div className="ws-endcard">
             <div className="ws-endcard-eyebrow">Session complete</div>
-            <h2 className="ws-endcard-title">Here’s what you saw</h2>
-            <div className="ws-built-slots">
-              {filled.map((s, i) => (
-                <div key={i} className="ws-built-slot">
-                  <div className="ws-slot-lab">{s.label}</div>
-                  <ul className="ws-slot-list">
-                    {(s.value ?? '').split('\n').map((l) => l.trim()).filter(Boolean).map((ln, j) => (
-                      <li key={j} className="ws-slot-line"><span className="ws-slot-tick" aria-hidden="true">✓</span>{ln}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+            {/* THE TITLE HAS TO SURVIVE HAVING NOTHING TO LIST. Since the card now also raises for the administered
+                instruments (B1, B2, C2), whose artifact is a qualitative frame with no slots, "Here's what you saw"
+                would sit over empty space. A member who answered twenty-four items and is shown a heading with
+                nothing under it reads it as the answers going nowhere — the exact fear this card exists to settle. */}
+            <h2 className="ws-endcard-title">{filled.length ? 'Here’s what you saw' : 'That’s recorded'}</h2>
+            {filled.length > 0 && (
+              <div className="ws-built-slots">
+                {filled.map((s, i) => (
+                  <div key={i} className="ws-built-slot">
+                    <div className="ws-slot-lab">{s.label}</div>
+                    <ul className="ws-slot-list">
+                      {(s.value ?? '').split('\n').map((l) => l.trim()).filter(Boolean).map((ln, j) => (
+                        <li key={j} className="ws-slot-line"><span className="ws-slot-tick" aria-hidden="true">✓</span>{ln}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
             {/* WHERE IT LIVES — the middle third of the close (Donna's End-of-Session Flow, 2026-08-19). The card
                 already showed WHAT she built and HOW to leave; it never said where the thing went. That gap is
                 what produced two separate reports from her ("True Lines: no visibility after Session Complete",
@@ -261,6 +288,48 @@ export default function WorkspaceSession({
                 </div>
               );
             })()}
+            {/* THE TRACKER THIS SESSION JUST BUILT — visually its own block, with the rows previewed and one tap in.
+                Jay, 2026-08-26: "we've got to orient a Member to what we're creating for them, where it is, and
+                immediate access to it. It's not intuitive, but once learned is easy."
+
+                SEPARATE FROM "WHERE IT LIVES" ON PURPOSE, not for emphasis. That line answers "the thing I made —
+                where did it go", about a record to go and read. This is a thing we built FOR them that wants them
+                back tomorrow. Folded into the same sentence the second one vanished: B2's line names the
+                development map and never mentions that a five-day tracker opened with two of the member's own
+                skills as its rows. Jay finished B2 and found them on his Playbook with no idea where they came from.
+
+                THE PREVIEW IS THE ORIENTING DEVICE. Real row labels, real day boxes, today outlined — so landing
+                on the Playbook is recognising something they have seen, not decoding a sentence from a minute ago.
+                "Once learned is easy" is why it is the same block in the same place after every Session that opens
+                a week; the second time, they already know what it is. */}
+            {tracker && (
+              <div className="ws-endcard-tracker">
+                <p className="ws-endcard-tracker-eyebrow">New on your Playbook</p>
+                <p className="ws-endcard-tracker-title">{tracker.title}</p>
+                <p className="ws-endcard-tracker-blurb">{tracker.blurb}</p>
+                <div className="ws-endcard-tracker-grid" aria-hidden="true">
+                  {tracker.rows.map((r, i) => (
+                    <div key={i} className="ws-endcard-tracker-row">
+                      <span className="ws-endcard-tracker-lab">{r.label}</span>
+                      <span className="ws-endcard-tracker-days">
+                        {r.marks.map((on, d) => (
+                          <span
+                            key={d}
+                            className={`ws-endcard-tracker-box${on ? ' is-on' : ''}${d === tracker.day - 1 ? ' is-today' : ''}`}
+                          />
+                        ))}
+                      </span>
+                    </div>
+                  ))}
+                  {tracker.more > 0 && (
+                    <p className="ws-endcard-tracker-more">
+                      and {tracker.more} more {tracker.more === 1 ? 'row' : 'rows'}
+                    </p>
+                  )}
+                </div>
+                <a className="ws-endcard-tracker-cta" href={tracker.href}>{tracker.cta} →</a>
+              </div>
+            )}
             {/* THE HUMAN STEP. Jay, 2026-08-17: "we want to emphasize the human side that exists on the app, and
                 it's a credibility builder for the Companion to encourage human interaction. Loss of connection is
                 a huge factor in midlife loneliness and identity loss."

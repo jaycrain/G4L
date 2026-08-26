@@ -2345,6 +2345,50 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 }
 .ws-endcard-human-cta:hover { text-decoration: underline; }
 
+/* ── THE TRACKER A SESSION JUST BUILT ────────────────────────────────────────────────────────────────────────
+   Jay, 2026-08-26: the call-out for a derived grid "should be visually different and have a link/button like
+   'Check it out' with an arrow… orient a Member to what we're creating for them, where it is, and immediate
+   access to it."
+
+   VISUALLY DIFFERENT means a BLOCK, not louder prose. Light grey ground + a teal edge separates it from the
+   white card without inventing a colour — the palette is nine values and tints are not among them, so a "subtle
+   teal wash" is off-brand no matter how good it looks.
+
+   THE BUTTON IS NAVY, NOT TEAL, AND THAT IS A CONTRAST DECISION. White on teal (#3B9495) measures 3.6:1 —
+   under the 4.5:1 a 15px label needs. Navy is 8.5:1. Teal survives as the border, where it is a UI edge rather
+   than something to read. Same trap as every other teal-on-white call in this file. */
+.ws-endcard-tracker {
+  margin: 1rem 0 0; padding: 14px 16px; text-align: left;
+  background: var(--grey); border: 1px solid var(--teal); border-radius: 10px;
+}
+.ws-endcard-tracker-eyebrow {
+  margin: 0 0 5px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--navy);
+}
+.ws-endcard-tracker-title { margin: 0 0 3px; font-size: 17px; font-weight: 700; color: var(--navy); line-height: 1.3; }
+.ws-endcard-tracker-blurb { margin: 0 0 12px; font-size: 14px; line-height: 1.55; color: var(--charcoal); }
+/* The preview sits on WHITE inside the grey block, so it reads as the thing itself rather than more copy. */
+.ws-endcard-tracker-grid { background: var(--white); border-radius: 8px; padding: 11px 13px; margin: 0 0 14px; }
+.ws-endcard-tracker-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ws-endcard-tracker-row + .ws-endcard-tracker-row { margin-top: 9px; }
+.ws-endcard-tracker-lab { font-size: 13px; color: var(--navy); line-height: 1.35; }
+.ws-endcard-tracker-days { display: flex; gap: 5px; flex: 0 0 auto; }
+/* Deliberately the same 16px rounded square as .wk-cell, scaled down — this is a picture of THAT grid. */
+.ws-endcard-tracker-box { width: 16px; height: 16px; border: 1px solid #e3e2df; border-radius: 4px; }
+.ws-endcard-tracker-box.is-today { border-color: var(--teal); }
+.ws-endcard-tracker-box.is-on { background: var(--olive-text); border-color: var(--olive-text); }
+.ws-endcard-tracker-more { margin: 9px 0 0; font-size: 12.5px; color: var(--muted-grey); }
+.ws-endcard-tracker-cta {
+  display: inline-block; background: var(--navy); color: #fff; text-decoration: none;
+  font-size: 15px; font-weight: 700; border-radius: 8px; padding: 9px 18px;
+}
+.ws-endcard-tracker-cta:hover { text-decoration: none; opacity: 0.92; }
+/* CONTINUE STEPS DOWN when a tracker is on the card. Two filled buttons is two primaries, and the one that means
+   "leave" wins on position — which is the wrong outcome when the tracker IS the next step. */
+.ws-endcard-tracker ~ .ws-endcard-cta {
+  background: var(--white); color: var(--navy); border: 1px solid #e3e2df; box-shadow: none;
+}
+
 /* The rail hosts the existing arc chat client — make it fill the sticky rail and scroll internally. */
 .ws-rail { padding: 0; }
 .ws-rail > div { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px 18px; overflow: hidden; }
