@@ -64,6 +64,12 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
             )}
             <span className="cer-chip">Reconnect</span>
           </div>
+          {/* THE STARTING LINE, which the other three ceremonies carry and this one did not (Jay, 2026-08-26).
+              A move with no "from" is a number, not a move — and Reconnect is where the member meets the Index
+              for the first time, so it is the beat that can least afford to state a figure with no origin. */}
+          {r.reconnectBaseline != null && (
+            <p className="cer-grinta-from">from your starting line of {r.reconnectBaseline} / 5</p>
+          )}
           <p className="cer-grinta-overall">
             Your overall Grinta Index reads {r.composite} / 5
             {r.changePct !== null && r.direction && r.direction !== 'flat'

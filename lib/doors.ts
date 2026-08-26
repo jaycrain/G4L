@@ -95,7 +95,22 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   empty_nest: ['empty nest', 'kids moved out', 'kids left home', 'kids are grown', 'last one left', 'off to college', 'house got quiet'],
   loss: ['passed away', 'lost my husband', 'lost my wife', 'lost my partner', 'death of', 'when he died', 'when she died'],
   diagnosis: ['diagnosed', 'the diagnosis', 'my diagnosis'],
-  marriage: ['divorce', 'divorced', 'separated', 'my marriage ended'],
+  // THE BODY DELIBERATELY HAS NO ALIAS LIST, and the walk-queue item asking for one was WRONG (2026-08-26).
+  // It is matched by CONCRETE_PHYSICAL_EVENT in matchDoors below — a regex over the member's own physical
+  // language (knees, bad back, injury, blew out, can't run, threw my back out) that was promoted to a PRIMARY
+  // signal precisely so this Door is caught when the literal word "body" never appears. Adding a keyword list
+  // beside it would be a second matcher for one Door, which is the drift this file exists to avoid.
+  // THE RELATIONSHIP — the aliases named only the ENDING while the descriptor names the DRIFT ("the drift from
+  // partnership into just coexisting"), so the commonest form of this Door was unmatchable (Jay, 2026-08-25).
+  // Every addition is anchored to the partnership itself — "we", "my wife", "my husband", "the marriage" — so a
+  // member drifting from friends or from their own body cannot land here.
+  marriage: [
+    'divorce', 'divorced', 'separated', 'my marriage ended',
+    'like roommates', 'more like roommates', 'just roommates', 'just coexisting', 'coexisting',
+    'we grew apart', 'grew apart from my wife', 'grew apart from my husband', 'grew apart from my partner',
+    'we drifted apart', 'drifted from my wife', 'drifted from my husband',
+    'my marriage drifted', 'the marriage drifted', 'my marriage is', 'estranged', 'estrangement',
+  ],
   vanishing: ['friends drifted', 'lost touch', 'friendships faded', 'friends slipped away', 'no close friends', 'stopped being known'],
   // The Grind = work/ambition that GREW until it crowded out the self (addition: took over, consumed).
   grind: ['work took over', 'took over my life', 'crazy hours', 'longer hours', 'bigger job', 'more responsibility', 'grew bigger', 'global team', 'consumed me', 'all-consuming', 'work became everything', 'no room left for', 'ate everything', 'the grind'],

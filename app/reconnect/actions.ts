@@ -328,6 +328,8 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
         direction: g.direction,
         reconnect: g.strands.reconnect,
         reconnectChangePct: grintaChangePct(g.strands.reconnect, base?.strands.reconnect ?? null),
+        // The "from" for the move above. Same source as the pct — a move with no starting line is a number.
+        reconnectBaseline: base?.strands.reconnect ?? null,
       };
     }
     return {

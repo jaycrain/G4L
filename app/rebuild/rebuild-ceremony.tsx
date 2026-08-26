@@ -46,7 +46,11 @@ export default function RebuildCeremony({ memberId, data }: { memberId: string; 
           </div>
           {r.componentBaseline != null && <p className="cer-grinta-from">from your starting line of {r.componentBaseline} / 5</p>}
           {/* composite = quiet background context, not the number the moment leans on. */}
-          <p className="cer-grinta-overall">Your overall Grinta Index reads {r.composite} / 5.</p>
+          {/* WHY THE OVERALL IS LOWER THAN THE PHASE. Reconnect's beat has always explained this and the other
+                  three stated a bare number, so a member reading 4/5 above an overall of 3.67 had nothing to
+                  reconcile them with. The composite averages in phases still at baseline — it UNDERSTATES the
+                  work by design, and saying so is the difference between a lower number and a contradiction. */}
+          <p className="cer-grinta-overall">Your overall Grinta Index reads {r.composite} / 5 — it keeps rising as the other Phases catch up.</p>
         </div>
       );
     }

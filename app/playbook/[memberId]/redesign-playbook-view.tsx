@@ -642,7 +642,7 @@ export default function RedesignPlaybookView({
               <div className="pb-sec">This week</div>
               <div className="pb-sec-d">
                 {grids.length === 1
-                  ? `Day ${grids[0]!.day} of 7.`
+                  ? `Day ${grids[0]!.day} of ${grids[0]!.window.days}.`
                   : `${grids.length} weeks running.`}
               </div>
               {grids.map((g) => (
@@ -651,7 +651,7 @@ export default function RedesignPlaybookView({
                       which row they are ticking. With one, the heading above already said it. */}
                   {grids.length > 1 && (
                     <div className="pb-week-h">
-                      {WEEK_LABEL[g.kind] ?? 'This week'} <span className="pb-week-day">Day {g.day} of 7</span>
+                      {WEEK_LABEL[g.kind] ?? 'This week'} <span className="pb-week-day">Day {g.day} of {g.window.days}</span>
                     </div>
                   )}
                   <WeekGridPanel memberId={memberId} grid={g} />

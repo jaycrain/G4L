@@ -13,7 +13,7 @@ import { BADGE_BEAT_COPY, type BadgeRevealData } from './badge-reveal.ts';
 
 export type ReconnectCeremonyReveal =
   | { kind: 'score'; idScore: number | null; dimensions: Dimensions | null } // the ID Score radar (the mirror)
-  | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } // §2e — the Index (headline) moved BY Reconnect (the driver)
+  | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null; reconnectBaseline: number | null } // §2e — the Index (headline) moved BY Reconnect (the driver)
   | { kind: 'playbook'; keepers: string[] } // the §2d keepers (the drift recognition + the spark)
   | { kind: 'doors'; doors: string[] } // the member's Door(s), as they stand after any re-seeing
   | { kind: 'journey_rewire' } // the 4Rs Journey — Reconnect complete, Rewire lit
@@ -27,7 +27,7 @@ export type ReconnectCeremonyBeat = { text: string; small?: boolean; reveal?: Re
 export type ReconnectCeremonyData = {
   idScore: number | null; // baseline ID Score (§2c) — the mirror; null if somehow uncaptured
   dimensions: Dimensions | null; // the four subscores (/30) for the radar shape
-  grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } | null; // §2e — null until a Checkpoint moves it
+  grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null; reconnectBaseline: number | null } | null; // §2e — null until a Checkpoint moves it
   keepers: string[]; // the §2d Playbook keepers, in the member's own words (drift recognition, the spark)
   doors: string[]; // display names, primary first (post-revision)
   badge?: BadgeRevealData | null; // the earned milestone medal — set only in the redesign (Decision WW)
@@ -80,7 +80,7 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
   if (d.grinta) {
     // Branch the spoken line on the delta sign: up = grew, down = clearer-seeing (never failure), flat/null = held.
     const grintaText = d.grinta.direction === 'down' ? c.grintaDown : d.grinta.direction === 'up' ? c.grinta : c.grintaFlat;
-    beats.push({ text: grintaText, reveal: { kind: 'grinta', composite: d.grinta.composite, changePct: d.grinta.changePct, direction: d.grinta.direction, reconnect: d.grinta.reconnect, reconnectChangePct: d.grinta.reconnectChangePct } });
+    beats.push({ text: grintaText, reveal: { kind: 'grinta', composite: d.grinta.composite, changePct: d.grinta.changePct, direction: d.grinta.direction, reconnect: d.grinta.reconnect, reconnectChangePct: d.grinta.reconnectChangePct, reconnectBaseline: d.grinta.reconnectBaseline } });
   }
   // The Playbook keepers — the reveal only when something was actually kept (never an empty frame).
   beats.push(
