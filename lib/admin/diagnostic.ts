@@ -271,7 +271,15 @@ const REPORT_SQL = `select jsonb_build_object(
                        select kind, commitment_id, count(*) as days, min(marked_on)::text as first_on, max(marked_on)::text as last_on
                          from practice_mark where member_id = $1 group by kind, commitment_id) m)),
   'event_summary', (select coalesce(jsonb_object_agg(kind, n), '{}') from (select kind, count(*) n from member_event where member_id = $1 group by kind) t),
-  'furthest_step_by_session', (select coalesce(jsonb_object_agg(ref, mx), '{}') from (select ref, max(step) mx from member_event where member_id = $1 and step is not null and ref is not null group by ref) t),
+     -- READ FROM session_progress, NOT member_event (2026-08-26). This used to aggregate member_event rows carrying
+     -- BOTH step and ref; exactly one call site in the product writes step (idq_complete) and it passes no ref, so
+     -- the field returned an empty object for every member who has ever used this product. It rendered as a member
+     -- who never dropped off anywhere, which is the most misleading possible way to show "we are not measuring it".
+     -- session_progress.current_step is the real record: monotonic by greatest() since 0023, and advanced every
+     -- turn by recordFurthestStep as of today.
+     -- (No backticks in this comment: the whole query is a TS template literal, and the first one ended the string.)
+     'furthest_step_by_session', (select coalesce(jsonb_object_agg(session_id, current_step), '{}')
+        from session_progress where member_id = $1 and current_step is not null),
   'recent_events', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]') from (select kind, surface, ref, step, created_at from member_event where member_id = $1 order by created_at desc limit 25) e),
   -- WHY THE COMPANION WENT BLIND. recent_events deliberately drops meta (it is a timeline, not a dump), so a
   -- context_degraded row would appear there as a bare word with the reason stripped off — visible and useless.

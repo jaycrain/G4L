@@ -1351,6 +1351,21 @@ export interface ArcConfig {
   onComplete: (c: Collected) => string; // the completion reply (the card / the earned ceremony)
 }
 
+/**
+ * WHICH STAGE THE MEMBER REACHED, as a 1-based number — the drop-off point, in the only vocabulary an arc has.
+ *
+ * A conversational Session has no "step 7 of 12"; it has an ordered list of STAGES, and where a member stopped is
+ * which stage they were in. `stageOrder` is that list and it is already the arc's own definition of progress, so
+ * this needs no new concept and cannot drift from the thing it measures.
+ *
+ * Returns 0 for an unknown stage rather than guessing a position. The writer treats 0 as "do not record", because
+ * a wrong step is worse than a missing one: it reads as a member who stopped somewhere they never were.
+ */
+export function stageStep(arc: ArcConfig, stage: string | undefined | null): number {
+  if (!stage) return 0;
+  return arc.stageOrder.indexOf(stage as StageId) + 1;
+}
+
 // --- The SHARED administered-beat component (lifted so ANY arc reuses it: reconnect IDQ §2c, onboarding Grinta,
 // the §2e Checkpoint grit items). A validated instrument runs OFF the depth kernel — the generic loop is
 // parse a 1–5 → accumulate → deliver the next framed item → on the LAST item, hand off (the arc's onComplete

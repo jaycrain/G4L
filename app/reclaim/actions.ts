@@ -1,5 +1,6 @@
 'use server';
 
+import { recordFurthestStep } from '../../lib/agent/session-step.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { harvestSignal } from '../../lib/agent/harvest.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
@@ -81,6 +82,9 @@ const reclaimArcFor = (session: ReclaimSession): ArcConfig =>
 
 async function persistReclaimArcSession(db: Db, memberId: string, session: ReclaimSession, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
   try {
+    // WHERE THEY GOT TO, recorded before the early return so it covers the member who finishes AND the one who
+    // walks away mid-Session — the second is the whole point of the measure. Best-effort and self-swallowing.
+    await recordFurthestStep(db, memberId, session === 'checkpoint' ? 'RCL-C4' : `RCL-${session.toUpperCase()}`, turn.state, history.length);
     if (turn.complete || turn.state.stage === 'ceremony') {
       await clearArcSession(db, memberId, 'reclaim', session);
       return;

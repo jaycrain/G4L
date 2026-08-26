@@ -218,3 +218,43 @@ export async function hasGate(db: Db, memberId: string, gate: string): Promise<b
   const { rows } = await db.query<{ one: number }>('select 1 as one from phase_gate where member_id=$1 and gate=$2', [memberId, gate]);
   return rows.length > 0;
 }
+
+/**
+ * ADVANCE THE FURTHEST POINT A MEMBER REACHED IN A SESSION — the drop-off measure.
+ *
+ * WHY THIS EXISTS AND WHY IT IS NOT A NEW TABLE. `session_progress.current_step` has been here since 0023, with a
+ * `greatest()` on conflict so it can only ever move forward. It was written for the old step-based curriculum
+ * flow, whose one writer is `saveAnswer`. Every Session is now a CONVERSATION, and no arc calls `saveAnswer` — so
+ * on 2026-08-26 Jay's eleven completed Sessions all read `current_step: 1`. The column was right; nothing was
+ * turning it.
+ *
+ * The diagnostic's `furthest_step_by_session` was reading somewhere else entirely — `member_event` rows carrying
+ * both `step` and `ref` — and exactly one call site in the product writes `step` (the IDQ), which passes no `ref`.
+ * So that report field could never populate for anyone, ever. Two dead paths to one question.
+ *
+ * A ROW, NOT AN EVENT. Drop-off is a STATE — "where is this member stuck now" — not something that happened. An
+ * event per turn would be ~40 rows per member per Session and would still need aggregating to answer the
+ * question. This is an UPDATE on a row the Session already touches.
+ *
+ * SEPARATE FROM saveAnswer deliberately: that writer also merges an `answers` map, and an arc's answers are the
+ * member's own words. Those live in the transcript, and copying them into a second table would be two records of
+ * one fact — the thing this file's own header warns about.
+ */
+export async function markFurthestStep(db: Db, memberId: string, sessionId: string, step: number): Promise<void> {
+  if (!Number.isFinite(step) || step < 1) return; // an unknown stage must never rewrite a known one
+  try {
+    await db.query(
+      `insert into session_progress (member_id, session_id, current_step, status, updated_at)
+       values ($1,$2,$3,'in_progress', now())
+       on conflict (member_id, session_id) do update set
+         current_step = greatest(session_progress.current_step, excluded.current_step),
+         status = case when session_progress.status = 'closed' then session_progress.status else 'in_progress' end,
+         updated_at = now()`,
+      [memberId, sessionId, Math.round(step)],
+    );
+  } catch (e) {
+    // Telemetry must never break a save (2026-08-12). This runs beside the member's turn; a failure here costs a
+    // measurement, and taking their conversation down to protect a metric is the wrong trade every time.
+    console.error(`markFurthestStep FAILED for member=${memberId} session=${sessionId}:`, (e as Error).message);
+  }
+}

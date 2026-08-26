@@ -1,5 +1,6 @@
 'use server';
 
+import { recordFurthestStep } from '../../lib/agent/session-step.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
@@ -151,6 +152,9 @@ const rebuildArcFor = (session: RebuildSession): ArcConfig =>
 
 async function persistRebuildArcSession(db: Db, memberId: string, session: RebuildSession, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
   try {
+    // WHERE THEY GOT TO, recorded before the early return so it covers the member who finishes AND the one who
+    // walks away mid-Session — the second is the whole point of the measure. Best-effort and self-swallowing.
+    await recordFurthestStep(db, memberId, session === 'checkpoint' ? 'RBLD-B4' : `RBLD-${session.toUpperCase()}`, turn.state, history.length);
     if (turn.complete || turn.state.stage === 'ceremony') {
       await clearArcSession(db, memberId, 'rebuild', session);
       return;
