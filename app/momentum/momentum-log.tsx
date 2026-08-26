@@ -82,14 +82,36 @@ export default function MomentumLog({ memberId }: { memberId: string }) {
           </button>
         ))}
       </div>
+      {/* THE NOTE IS REQUIRED IN CYCLE 1 (Greg, 8/04; Jay ruled it 2026-08-26). His reasoning, verbatim: "it is
+          easy to just click a button but the person wouldn't remember what they were coding without the note as a
+          reminder... we can explain that we are requiring it now in Cycle 1 to build their reflection skills and
+          that they can turn it off later."
+
+          He is describing data neither the member nor the Companion can read back. A bare pill says a day was
+          good; it never says WHY, so the record cannot answer the one question the Playbook exists for — how did
+          I handle this before? Greg saw it on his own walk: he pressed 'good call' and could not reconstruct what
+          he had meant.
+
+          THE ASK IS EXPLAINED RATHER THAN ENFORCED SILENTLY, which is his point too. A disabled button with no
+          reason reads as a broken form; a member who is told the requirement is temporary and what it is FOR will
+          spend the ten seconds. Told once, above the field, not as an error after they try to submit. */}
       <textarea
         className="momentum-log-note"
         value={note}
         onChange={(e) => setNote(e.target.value)}
-        placeholder="Add a note (optional)"
+        placeholder="What happened? A line is enough."
         rows={2}
       />
-      <button type="button" className="momentum-log-commit" disabled={!picked || pending} onClick={log}>
+      <p className="momentum-log-why">
+        A line of your own is what makes this readable later — yours and your Companion&rsquo;s. It stops being
+        required once the habit is yours.
+      </p>
+      <button
+        type="button"
+        className="momentum-log-commit"
+        disabled={!picked || !note.trim() || pending}
+        onClick={log}
+      >
         {pending ? 'Logging…' : 'Log it'}
       </button>
       {doneLine && <p className="momentum-log-done">{doneLine}</p>}
