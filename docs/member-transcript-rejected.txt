@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 41b3bed · 2026-08-26)
+# Strings EXCLUDED from the member transcript (app @ 2b7b674 · 2026-08-26)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -115,7 +115,7 @@
 [app/onboarding/welcome.tsx] our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
 [app/onboarding/welcome.tsx] today goes.
 [app/onboarding/welcome.tsx] you’re in it.
-[app/onboarding/welcome.tsx] chat with your Companion and take an initial assessment. Plan for about 20 minutes.
+[app/onboarding/welcome.tsx] chat with your Companion and take an initial assessment. Give it a good half hour.
 [app/onboarding/welcome.tsx] see what surfaced.
 [app/onboarding/welcome.tsx] (typeof s === 'string' ?
 [app/onboarding/welcome.tsx] onbwel-dot${x === i ? ' on' : ''}
@@ -536,9 +536,12 @@
 [lib/content/teaching.ts] Reclaim
 [lib/content/teaching.ts] the Program
 [lib/content/teaching.ts] ${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}
+[lib/rebuild/skills-map.ts] Predisposing
+[lib/rebuild/skills-map.ts] Enabling
+[lib/rebuild/skills-map.ts] Reinforcing
 [lib/rebuild/skills-map.ts] ${map.strongest} is your strongest single skill.
 [lib/rebuild/skills-map.ts] ${best}Your three families read evenly. The skills below are the ones with the most room.
-[lib/rebuild/skills-map.ts] ${best}You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.
+[lib/rebuild/skills-map.ts] ${best}You are steadiest at ${steady}. The ${thin.name} skills — ${thin.gloss} — are the thinnest of the three, and where practice would pay most.
 [lib/curriculum/registry.ts] light (did-you / yes-no)
 [lib/curriculum/registry.ts] milestone + gate
 [lib/curriculum/registry.ts] Excavation
@@ -657,7 +660,7 @@
 [app/dashboard/dashboard-triptych.tsx] tri-seg-btn${pane === p.key ? ' on' : ''}
 [app/dashboard/triptych-center.tsx] ${Math.min(el.scrollHeight, 160)}px
 [app/dashboard/triptych-center.tsx] come back N times
-[app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
+[app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}${heroCollapsed ? ' is-hero-collapsed' : ''}
 [app/dashboard/triptych-center.tsx] rmsg ${m.role}
 [app/dashboard/triptych-center.tsx] Thinking…
 [app/dashboard/triptych-center.tsx] Enter
@@ -871,8 +874,9 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 1.1rem
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0.35rem
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
-[app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of ${grids[0]!.window.days}.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-profile-fill${thin ? ' is-thin' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile
