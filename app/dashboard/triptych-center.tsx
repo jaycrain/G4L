@@ -1,5 +1,6 @@
 'use client';
 
+import { heroCollapseNext } from '../../lib/dashboard/hero-collapse.ts';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
@@ -174,6 +175,27 @@ export default function TriptychCenter({
   // as a member ask ("Can we go back through my …?") and let it walk them through it. Strip the param so a refresh
   // doesn't re-fire. Fires exactly once. NEVER resets a gate or the Program flow — it's just a message.
   const rerunFired = useRef(false);
+
+  // ── THE HERO GETS OUT OF THE WAY (Jay, 2026-08-26) ─────────────────────────────────────────────────────────
+  //
+  // "The conversation is the highest value real estate in the entire app." The hero is pinned so a member always
+  // knows which step they are on, which is right — and it costs ~200px that the thread needs more, especially on
+  // a phone where the hero is a far bigger share of the viewport and 200px is the difference between two visible
+  // turns and four.
+  //
+  // COLLAPSE ON SCROLL, RETURN ON SCROLL UP. Jay chose this over a permanent shrink for both halves: it gives the
+  // conversation everything while reading, and bringing the hero back by scrolling up is what a member already
+  // expects from every app they use. Nothing is hidden, only deferred.
+  //
+  // HYSTERESIS, NOT A SINGLE THRESHOLD. Collapse at 48px and expand at 8px, so a thread resting near the boundary
+  // cannot flutter between the two states on every wheel tick — which would be worse than never collapsing.
+  const [heroCollapsed, setHeroCollapsed] = useState(false);
+  const onThreadScroll = useCallback(() => {
+    const el = chatRef.current;
+    if (!el) return;
+    const y = el.scrollTop;
+    setHeroCollapsed((was) => heroCollapseNext(was, y));
+  }, []);
   useEffect(() => {
     if (!threadReady || rerunFired.current || typeof window === 'undefined') return;
     rerunFired.current = true;
@@ -191,7 +213,7 @@ export default function TriptychCenter({
   }, [threadReady, runSend, memberId]);
 
   return (
-    <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`} data-tour="companion">
+    <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}${heroCollapsed ? ' is-hero-collapsed' : ''}`} data-tour="companion">
       {/* AI disclosure is NOT rendered here — it's the first line of the Companion's opening message in the thread
           (checkinOpening prepends AI_DISCLOSURE, the single governance anchor shared across every surface). A pinned copy
           here was a duplicate (Jay, 2026-07-23). */}
@@ -268,7 +290,7 @@ export default function TriptychCenter({
       )}
 
       {/* Keeper + thread scroll beneath the pinned hero. */}
-      <div ref={chatRef} className="tri-comp-scroll">
+      <div ref={chatRef} className="tri-comp-scroll" onScroll={onThreadScroll}>
       <div className="tri-comp-stream">
         {messages.map((m, i) => (
           <div key={i} className={`rmsg ${m.role}`}>

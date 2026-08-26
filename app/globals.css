@@ -3119,6 +3119,51 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   .auth-hero-h { font-size: clamp(40px, 12vw, 56px); }
 }
 
+/* AT TOP LEVEL, NOT INSIDE THE MOBILE MEDIA QUERY. This block was first appended beside the is-conversing
+   rule, which lives inside `@media (max-width: 1000px)` — so it reclaimed 233px on a phone and exactly 0 on
+   desktop. The browser measurement caught it; the diff looked correct. Desktop is where the hero is largest
+   in absolute pixels, so the half that silently did nothing was the half with the most to give back. */
+/* ── THE HERO COLLAPSES ON SCROLL, AND COMES BACK ──────────────────────────────────────────────────────────────
+   Jay, 2026-08-26: "the conversation is the highest value real estate in the entire app" — and the pinned hero
+   spends ~200px of it. He chose collapse-on-scroll over a permanent shrink for two reasons: more room while
+   reading, and scrolling up to get a header back is behaviour every member already has.
+
+   WHAT SURVIVES THE COLLAPSE is the wayfinding — the crumb (which step am I on) and the next action. Everything
+   that is re-readable rather than orienting goes: the headline, the summary line, the progress ring.
+
+   THE BAR IS WHITE, NOT TEAL, AND THAT IS MEASURED. Jay asked whether teal would make the next-step line more
+   noticeable. On this navy ground it is 2.38:1 — it FAILS even the 3:1 floor for large text, and would be the
+   least legible option on the bar, below the grey already there at 3.93:1. Navy and teal sit too close in
+   luminance: the eye gets a hue change with no lightness change, which is exactly what dissolves on a phone
+   outdoors. Orange (2.58) and olive (2.66) fail the same way. On navy only white (8.53) and light grey (6.86)
+   carry, so the hierarchy is made with contrast and weight instead of hue. Teal stays where it works: as a FILL
+   behind white text, which is a UI component rather than text — what the composer's Send button already does. */
+.tri-companion.is-hero-collapsed .tri-hero {
+  padding: 8px 20px;
+  align-items: center;
+  gap: 12px;
+}
+.tri-companion.is-hero-collapsed .tri-hero-title,
+.tri-companion.is-hero-collapsed .tri-hero-copy,
+.tri-companion.is-hero-collapsed .tri-hero-ring { display: none; }
+/* The crumb stays, and stops being a whisper — at 8px tall it is the only thing naming where they are. */
+.tri-companion.is-hero-collapsed .tri-hero-crumb { display: block; margin-bottom: 0; font-size: 11.5px; }
+/* The next step becomes a compact chip on the same line rather than its own row. */
+.tri-companion.is-hero-collapsed .tri-hero-ctarow { margin-top: 0; }
+.tri-companion.is-hero-collapsed .tri-hero-cta {
+  padding: 6px 13px; font-size: 12.5px; color: #fff; font-weight: 600;
+}
+.tri-companion.is-hero-collapsed .tri-hero-text {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
+}
+/* A member who scrolls back up should see it RETURN, not blink into place. Height is not animatable here (the
+   children are display:none), so the padding carries the movement — enough to read as motion, short enough not
+   to lag the scroll. */
+.tri-hero { transition: padding 140ms ease; }
+@media (prefers-reduced-motion: reduce) {
+  .tri-hero { transition: none; }
+}
+
 /* ============ Dashboard triptych (reflect ← Companion → act) — light theme, docs/dashboard-triptych-spec.md ============ */
 /* --conf-h reserves the fixed proprietary strip. WITHOUT it the strip sits ON TOP of the last row of the
    triptych — on a phone that means the composer, its textarea and Send, so a member cannot type to their
@@ -3214,6 +3259,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
      thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
   .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }
+
   .tri-companion.is-conversing .tri-hero-title,
   .tri-companion.is-conversing .tri-hero-copy,
   .tri-companion.is-conversing .tri-hero-program,
