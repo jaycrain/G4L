@@ -10,6 +10,9 @@ import {
   rewireW3Opening,
   applyRewireW3Turn,
   W1_TURN_ASK_FALLBACK,
+  W3_REDIRECT,
+  W3_REFRAME_PROMPT,
+  W3_RESTART,
 } from '../lib/agent/rewire.ts';
 import type { Collected, ConvState } from '../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
@@ -399,4 +402,13 @@ test('W1 · the turn ask asks for ONE thing — the line, never which lie to pic
   const ask = W1_TURN_ASK_FALLBACK;
   assert.equal((ask.match(/\?/g) ?? []).length, 1, `the fallback asks more than one thing: ${ask}`);
   assert.doesNotMatch(ask, /start with the one/i, 'do not invite a pick in the beat that harvests the answer');
+});
+
+// The three move names are the vocabulary a member carries out of W3 and runs under pressure, so they look the
+// same every time. Only Redirect was bold, and not by design: the MODEL wrote that beat and bolded it itself,
+// while Reframe and Restart arrived as plain scripted strings (Jay, mid-walk 2026-08-25).
+test('W3 · Redirect, Reframe and Restart are all named the same way', () => {
+  for (const [name, copy] of [['Redirect', W3_REDIRECT], ['Reframe', W3_REFRAME_PROMPT], ['Restart', W3_RESTART]] as const) {
+    assert.ok(copy.includes(`**${name} —**`), `${name} is not bold: ${copy.slice(0, 60)}`);
+  }
 });

@@ -646,16 +646,22 @@ const W3_TRIGGER_AREAS =
   `reasonable-sounding lies they audited before); the risky time or place (the 3pm slump, the evening collapse).`;
 const TRIGGER_DRAWOUT_TURNS = 3; // draw out over ~2–3 exchanges, then hand into the protocol (never march a checklist)
 // ── Step 2 — Build the protocol (guided; reuses W1 + W2) ──
+//
+// THE THREE MOVE NAMES ARE BOLD, ALL THREE (Jay, mid-walk 2026-08-25). Only Redirect was, and not because anyone
+// styled it: the MODEL wrote that beat and bolded the label itself, while Reframe and Restart come through as
+// scripted strings and arrived plain. So the protocol read as one named move followed by two paragraphs, when it
+// is one move in three parts -- and Redirect/Reframe/Restart is vocabulary the member is meant to carry out of
+// here and run under pressure. A name you are supposed to remember should look the same every time it appears.
 const W3_PROTOCOL_INTRO = `Now we write the plan — for the trigger that gets you most. Three moves.`;
-const W3_REDIRECT =
-  `First, Redirect — the thing you do instead. When you don't want to do the work, the rule is five minutes: start, ` +
+export const W3_REDIRECT =
+  `First, **Redirect —** the thing you do instead. When you don't want to do the work, the rule is five minutes: start, ` +
   `and if you still want to quit after five, quit. (Usually you won't.) When it's food, name the specific swap — walk ` +
   `the block, call someone, leave the room. What's yours?`;
-const W3_REFRAME_PROMPT =
-  `Now Reframe — the true line for a bad day. You've written lines that answer your lies before; here's one for a ` +
+export const W3_REFRAME_PROMPT =
+  `Now **Reframe —** the true line for a bad day. You've written lines that answer your lies before; here's one for a ` +
   `slip: "A false start is the cost of changing, not proof I can't." Say it your way.`;
-const W3_RESTART =
-  `And Restart — when the old voice gets loud, you go back to the picture you built of where you're headed, standing ` +
+export const W3_RESTART =
+  `And **Restart —** when the old voice gets loud, you go back to the picture you built of where you're headed, standing ` +
   `in the goal you named. The campaign can't compete with a picture that real.`;
 // ── Step 3 — The week of noticing (the week is logged in the Playbook's "This week" tab, moved there 2026-08-08) ──
 const W3_STEP3_1 =
@@ -1025,7 +1031,7 @@ function rewireW3StageNote(state: ConvState): string {
       const line = firstTrueLine(c);
       return (
         "\n\nRIGHT NOW: the member just gave their REDIRECT (what they'll do instead). Acknowledge it warmly and " +
-        "specifically in a line, then pose the second move — NAME IT, open with 'Reframe —' so they see the step — as " +
+        "specifically in a line, then pose the second move — NAME IT, open with '**Reframe —**' (bold, exactly so) so they see the step — as " +
         "your single question: " +
         (line
           ? `offer THIS line they already wrote, verbatim — "Reframe: here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"`
@@ -1036,7 +1042,7 @@ function rewireW3StageNote(state: ConvState): string {
       const img = w3ImageOf(c);
       return (
         "\n\nRIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it), " +
-        "then pose the third move — NAME IT, open with 'Restart —' so they see the step: " +
+        "then pose the third move — NAME IT, open with '**Restart —**' (bold, exactly so) so they see the step: " +
         (img
           ? `point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to stay with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
           : "remind them to go back to the picture they built of where they're headed, and invite them to stay with it (a gentle question so it's not a dead end).")
@@ -1048,7 +1054,7 @@ function rewireW3StageNote(state: ConvState): string {
     return (
       "\n\nRIGHT NOW: you've drawn out enough triggers — do NOT ask for another. Reflect briefly, name the ONE or TWO " +
       "that seem heaviest (their words), then move into building THEIR PROTOCOL. Tell them it's THREE MOVES — Redirect, " +
-      "Reframe, Restart — so they see the shape, then pose the first: NAME IT, open with 'Redirect —' — what do you do " +
+      "Reframe, Restart — so they see the shape, then pose the first: NAME IT, open with '**Redirect —**' (bold, exactly so) — what do you do " +
       "INSTEAD when that moment hits (the five-minute rule: start, and if you still want to quit after five, quit; or a " +
       "specific swap — walk the block, call someone, leave the room)."
     );
