@@ -66,7 +66,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   b2: {
     short: 'Evaluate your skills that can make change stick.',
-    full: 'Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.',
+    full: 'Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three categories: Predisposing skills that help you get ready for change, Enabling skills that help you take action, and Reinforcing skills that help you stay consistent over time. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.',
   },
   b3: {
     short: 'Watch your everyday choices for a week and learn how your lifestyle actually works.',

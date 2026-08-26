@@ -65,7 +65,7 @@ async function main(): Promise<void> {
   ok('the map renders in "What you\'ve learned"');
 
   const fams = await page.locator('.pb-map-fam-n').allInnerTexts();
-  if (fams.join('|') === 'Getting ready|Taking action|Staying with it') ok(`three families, in Greg's order — ${fams.join(' → ')}`);
+  if (fams.join('|') === 'Predisposing|Enabling|Reinforcing') ok(`three families, in Greg's order — ${fams.join(' → ')}`);
   else bad(`families wrong or out of order: ${JSON.stringify(fams)}`);
 
   // THE ONE THAT MATTERS. A number on this surface turns a development map into a report card.
@@ -76,8 +76,8 @@ async function main(): Promise<void> {
 
   const b2 = page.locator('.pb-read').filter({ has: page.locator('.pb-map') });
   const lead = await b2.locator('.pb-read-line').first().innerText();
-  if (/staying with it/i.test(lead)) ok(`the lead names the thin family — "${lead.slice(0, 96)}…"`);
-  else bad(`the lead should name Staying with it as thinnest — got: ${lead}`);
+  if (/reinforcing/i.test(lead)) ok(`the lead names the thin family — "${lead.slice(0, 96)}…"`);
+  else bad(`the lead should name Reinforcing as thinnest — got: ${lead}`);
   if (!/not a (score|grade|test|verdict)|no wrong answers/i.test(lead)) ok('the lead declares rather than disclaims');
   else bad(`the lead still reassures: ${lead}`);
 

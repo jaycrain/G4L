@@ -25,11 +25,26 @@ import { META_BY_SKILL, SKILL_LABEL, type SkillMeta, type SkillScore } from './s
 /** The three families in Greg's order — getting ready → taking action → staying with it. */
 export const FAMILY_ORDER: SkillMeta[] = ['predisposing', 'enabling', 'reinforcing'];
 
-/** Member-facing family names. Greg's terms are the science; these are what a member reads. */
+/**
+ * HIS TERM, OUR GLOSS (Jay, 2026-08-26).
+ *
+ * These read "Getting ready / Taking action / Staying with it" and dropped Greg's names entirely. He asked for
+ * the opposite, in writing: *"I would prefer to retain the labels PreDisposing, Enabling and Reinforcing as they
+ * are more accurate and also more descriptive."*
+ *
+ * IT WAS NEVER EITHER/OR, WHICH IS WHY THE DISAGREEMENT LASTED. His own teaching copy uses both — "The
+ * Predisposing skills are about getting ready to change. Things like your confidence, your motivation, and how
+ * you think about barriers." He wants the construct named AND explained; we had kept only the explanation, which
+ * reads as plain language but quietly withholds the vocabulary a member needs to follow the science, join the
+ * Community conversation, or recognise the term anywhere else in the program.
+ *
+ * So the name is his and the gloss is ours, in that order, and neither is doing the other's job. This also
+ * unblocks his refinement to B2's "Why it Matters", which is identical to ours in every clause but this one.
+ */
 export const FAMILY_LABEL: Record<SkillMeta, { name: string; gloss: string }> = {
-  predisposing: { name: 'Getting ready', gloss: 'what gets you to the starting line' },
-  enabling: { name: 'Taking action', gloss: 'what turns intention into a week' },
-  reinforcing: { name: 'Staying with it', gloss: 'what keeps it going after the first miss' },
+  predisposing: { name: 'Predisposing', gloss: 'what gets you to the starting line' },
+  enabling: { name: 'Enabling', gloss: 'what turns intention into a week' },
+  reinforcing: { name: 'Reinforcing', gloss: 'what keeps it going after the first miss' },
 };
 
 // SKILL_LABEL lives in skills-instrument.ts now — one list, so the assessment, the close, the Companion and
@@ -132,8 +147,14 @@ export function mapLead(map: SkillsMap): string {
   if (!map.thinnest || !map.steadiest) {
     return `${best}Your three families read evenly. The skills below are the ones with the most room.`;
   }
-  const steady = FAMILY_LABEL[map.steadiest].name.toLowerCase();
+  // THE PROSE USES THE GLOSS; THE HEADINGS USE GREG'S TERM. Swapping the labels to his constructs produced "You
+  // are steadiest at predisposing", which is not a sentence anyone says — the construct is a noun phrase ("the
+  // Predisposing skills"), not something you can be steadiest AT. Greg's own teaching copy never does it either:
+  // he writes "The Predisposing skills are about getting ready to change." The b2-map walk caught this the minute
+  // the names changed, which is what that walk is for.
+  const steady = FAMILY_LABEL[map.steadiest].gloss;
+  const thin = FAMILY_LABEL[map.thinnest];
   // Name the thin family ONCE. The first version interpolated it twice and read "Staying with it is the thinnest
   // of the three — staying with it is where practice would pay most" — which no test caught and the screenshot did.
-  return `${best}You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.`;
+  return `${best}You are steadiest at ${steady}. The ${thin.name} skills — ${thin.gloss} — are the thinnest of the three, and where practice would pay most.`;
 }
