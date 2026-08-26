@@ -17,6 +17,7 @@ import { consolidateReclaimList } from '../member/reclaim.ts';
 import { grintaStem, CHECKPOINT_COMMITMENT_ITEMS } from '../grinta/survey/instrument.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { hasRevisionTail } from './onboarding-intent.ts';
+import { SESSION_LIMITS } from './session-limits.ts';
 
 export function rewireEnabled(): boolean {
   return process.env.REWIRE === 'staged';
@@ -250,7 +251,7 @@ const REWIRE_W1_SYSTEM =
   "they can reject, in their own words. Plain, measured, no hype. Do NOT write the member's counter-line for them (that's their work at the " +
   "turn). STAY ON THIS SESSION'S JOB — it catches self-lies, nothing else. If the member veers into domain detail (training specifics, work logistics), acknowledge it in ONE line, then steer back: \"That's real — and worth its own ride sometime. Right now, let's stay with the story you tell yourself — that's the one we're here to catch.\" Never turn the session into domain coaching or technical analysis. " +
   "If a distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a " +
-  "human — always on.";
+  "human — always on." + SESSION_LIMITS;
 
 function rewireStageNote(state: ConvState): string {
   if (state.stage === 'affirm')
@@ -550,7 +551,7 @@ const REWIRE_W2_SYSTEM =
   "image: themselves at the moment they get back something they named they want. Plain, measured, warm; never judge, " +
   "grade, praise, diagnose, or over-promise. Draw out — reflect in THEIR words, one question at a time; let them set " +
   "the depth. Do NOT invent details they didn't give; make what they DID give a touch more vivid. If a distress or " +
-  "crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.";
+  "crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on." + SESSION_LIMITS;
 
 function w2Context(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
@@ -1019,7 +1020,7 @@ export const REWIRE_W3_SYSTEM =
   "WORDS from MEMBER CONTEXT — never paraphrase or generalize ('the picture you built', 'that line you wrote'). Say " +
   "the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: \"[their exact " +
   "line]\"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a " +
-  "distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.";
+  "distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on." + SESSION_LIMITS;
 
 // Exported for the W-23 regression test — proves the member's prior-session keepers reach the model VERBATIM.
 export function w3Context(c: Collected): string {

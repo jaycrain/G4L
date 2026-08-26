@@ -21,6 +21,7 @@ import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrum
 import { confirmsProposal } from './onboarding-intent.ts';
 import { groundToMemberWords } from './member-words.ts';
 import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
+import { SESSION_LIMITS } from './session-limits.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM?.trim() === 'staged';
@@ -244,7 +245,7 @@ const REFINE_SYSTEM =
   "Only call it when the refinement is " +
   "settled; the app then shows them the result to confirm before anything is saved. 'No Longer Central' just means " +
   "lowest priority for this season — it does NOT delete the item. If a distress or crisis signal appears, drop the " +
-  "exercise and route to support (988 US / local) and a human — always on.";
+  "exercise and route to support (988 US / local) and a human — always on." + SESSION_LIMITS;
 
 const RECORD_REFINEMENT_TOOL = {
   name: 'record_refinement',
@@ -948,7 +949,7 @@ const C3_SYSTEM =
   "you would trim is the part that makes it theirs, and they are going to read this back as their own. Copy the span " +
   "they said and nothing else. Only call it when it's settled; the app then shows them " +
   "the profile to confirm before saving. If a distress or crisis signal appears, drop the exercise and route to support " +
-  "(988 US / local) and a human — always on.";
+  "(988 US / local) and a human — always on." + SESSION_LIMITS;
 
 const RECORD_QUALITY_DAY_TOOL = {
   name: 'record_quality_day',

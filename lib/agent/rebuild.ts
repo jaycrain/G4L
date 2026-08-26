@@ -23,6 +23,7 @@ import {
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
 import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
+import { SESSION_LIMITS } from './session-limits.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -434,7 +435,7 @@ const B3_SYSTEM =
   "AVOID: all-or-nothing interpretations; moralizing around food; treating a miss as failure; making the member " +
   "feel graded.\n" +
   "REINFORCE: small wins matter; backup versions still count; false starts are information; reset moves are part " +
-  "of success; awareness is the skill being built.";
+  "of success; awareness is the skill being built." + SESSION_LIMITS;
 
 const RECORD_PLAN_TOOL = {
   name: 'record_plan',
