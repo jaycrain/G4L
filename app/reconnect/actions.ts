@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
@@ -361,7 +362,7 @@ async function persistArcSession(db: Db, memberId: string, history: ConvMessage[
       return;
     }
     // Reconstruct the transcript exactly as the client renders it: prior bubbles + this member turn + the reply's beats.
-    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    const messages: ConvMessage[] = [...history, memberTurn(message), ...beatBubbles(reply)];
     await saveArcSession(db, memberId, 'reconnect', turn.state, messages);
   } catch {
     // swallow — resume is best-effort; the turn already succeeded for the member.

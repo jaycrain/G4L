@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { recordFurthestStep } from '../../lib/agent/session-step.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
@@ -159,7 +160,7 @@ async function persistRebuildArcSession(db: Db, memberId: string, session: Rebui
       await clearArcSession(db, memberId, 'rebuild', session);
       return;
     }
-    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    const messages: ConvMessage[] = [...history, memberTurn(message), ...beatBubbles(reply)];
     await saveArcSession(db, memberId, 'rebuild', turn.state, messages, session);
   } catch {
     // swallow — resume is best-effort; the turn already succeeded for the member.

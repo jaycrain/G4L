@@ -24,7 +24,15 @@ export async function loadPlaybookAction(memberId: string): Promise<PlaybookEntr
   if (!(await authorizeMember(memberId))) return [];
   try {
     return await listPlaybook(await db(), memberId);
-  } catch {
+  } catch (e) {
+    // LOGGED, because [] here is not "nothing to show" — it is "you have kept nothing", rendered on the one page
+    // that exists to prove otherwise. A read failure and an empty Playbook are indistinguishable to every caller,
+    // and the empty one is a confident false statement about the member. Same shape as the ceremony keepers,
+    // which would have silently deleted a whole beat.
+    //
+    // Still returns [] rather than throwing: the Playbook must open. The log is what makes the difference
+    // visible to us instead of only to them.
+    console.error(`loadPlaybook FAILED for member=${memberId} — the Playbook will render as empty:`, (e as Error).message);
     return [];
   }
 }

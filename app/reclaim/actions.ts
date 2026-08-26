@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { recordFurthestStep } from '../../lib/agent/session-step.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { harvestSignal } from '../../lib/agent/harvest.ts';
@@ -93,7 +94,7 @@ async function persistReclaimArcSession(db: Db, memberId: string, session: Recla
     // mid-Session resume redraws exactly what the member was looking at when they stopped.
     const bubbles = beatBubbles(reply);
     if (turn.visual && bubbles.length) bubbles[bubbles.length - 1] = { ...bubbles[bubbles.length - 1]!, visual: turn.visual };
-    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...bubbles];
+    const messages: ConvMessage[] = [...history, memberTurn(message), ...bubbles];
     await saveArcSession(db, memberId, 'reclaim', turn.state, messages, session);
   } catch {
     // swallow — resume is best-effort; the turn already succeeded for the member.

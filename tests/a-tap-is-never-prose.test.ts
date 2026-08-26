@@ -17,6 +17,7 @@ import assert from 'node:assert/strict';
 import { tidyGapProse } from '../lib/agent/onboarding-staged.ts';
 import { serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
 import { serializeBeatConfirm } from '../lib/agent/beat-confirm.ts';
+import { readFileSync } from 'node:fs';
 
 test('the exact string that reached Jay’s record is refused', () => {
   assert.equal(tidyGapProse('[gap-confirm] more keep:grind'), '');
@@ -50,4 +51,43 @@ test('a refused tap leaves an existing story untouched', () => {
   const story = tidyGapProse('I stopped riding.');
   const after = tidyGapProse([story, tidyGapProse('[gap-confirm] done')].filter(Boolean).join(' '));
   assert.equal(after, 'I stopped riding.');
+});
+
+// ── THE SECOND HALF OF THE BOUNDARY: THE STORED TRANSCRIPT ──────────────────────────────────────────────────
+//
+// memberDisplay has always run in the chat COMPONENTS, so a member watching the screen saw "There's more" where
+// they tapped. What got WRITTEN was the raw wire string, because every arc action built its member turn straight
+// from the message argument — a mapping that existed and did not run where it counted, for the third time.
+//
+// The stored copy is the one that matters more: it is what the Companion reads back, what a replay fixture
+// rebuilds a bug from, what an operator reviews, and what a member can be shown.
+
+test('memberTurn maps a tap to what the member actually saw', async () => {
+  const { memberTurn } = await import('../lib/agent/member-display.ts');
+  const turn = memberTurn(serializeGapConfirmChoice('more', ['grind']));
+  assert.equal(turn.role, 'member');
+  assert.ok(!/^\[/.test(turn.text), `a wire string reached the transcript: ${turn.text}`);
+  assert.ok(turn.text.trim().length > 0, 'a tap must still leave a turn behind — never an empty bubble');
+});
+
+test('and it leaves real prose byte-identical', async () => {
+  const { memberTurn } = await import('../lib/agent/member-display.ts');
+  const said = 'The film took over and I stopped riding with intention.';
+  assert.equal(memberTurn(said).text, said);
+});
+
+test('EVERY arc writes its member turn through the helper — no seventh site', () => {
+  // The failure this guards is not a bug in the helper; it is a new writer that skips it. Six actions build a
+  // stored transcript, and each one is a place someone could hand-roll { role: "member" } again.
+  const WRITERS = [
+    'app/rewire/actions.ts', 'app/reconnect/actions.ts', 'app/rebuild/actions.ts',
+    'app/reclaim/actions.ts', 'app/onboarding/actions.ts', 'app/dashboard/checkin-actions.ts',
+  ];
+  const offenders: string[] = [];
+  for (const f of WRITERS) {
+    const src = readFileSync(f, 'utf8');
+    if (/\{\s*role:\s*'member'\s*,\s*text:/.test(src)) offenders.push(f);
+    if (!src.includes('memberTurn(')) offenders.push(`${f} (no memberTurn)`);
+  }
+  assert.deepEqual(offenders, [], `a member turn is being stored raw:\n${offenders.join('\n')}`);
 });

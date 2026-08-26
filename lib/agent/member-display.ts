@@ -115,3 +115,23 @@ export function looksLikeMachineLine(text: string): boolean {
   const t = (text ?? '').trim();
   return /^\[[a-z][a-z0-9_-]*\]/i.test(t) || /^__[a-z0-9_]+__$/i.test(t);
 }
+
+/**
+ * THE MEMBER'S TURN, AS IT GOES INTO THE STORED TRANSCRIPT.
+ *
+ * `memberDisplay` has always been applied in the chat components, so a member watching the screen sees "There's
+ * more" where they tapped. What got WRITTEN was the raw wire string — `[gap-confirm] more keep:grind` — because
+ * every arc action built its member turn straight from the message argument.
+ *
+ * WHY THE STORED COPY IS THE ONE THAT MATTERS MORE. The live bubble is read once. The transcript is what the
+ * Companion reads back when it recalls a conversation, what a replay fixture reconstructs a bug from, what an
+ * operator reviews, and — since TRANSCRIPT_READABLE — what a member can be shown. A structured moment stored as
+ * machine syntax is invisible in all four, and the member's own decision reads as noise.
+ *
+ * Same shape as the tap boundary in tidyGapProse and the same lesson: the mapping existed and did not run where
+ * it counted. One helper for all six writers, so a seventh cannot quietly skip it — asserted by
+ * tests/a-tap-is-never-prose.test.ts.
+ */
+export function memberTurn(text: string): { role: 'member'; text: string } {
+  return { role: 'member', text: memberDisplay(text) };
+}

@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { recordFurthestStep } from '../../lib/agent/session-step.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
@@ -56,7 +57,11 @@ async function loadTrueLines(db: Db, memberId: string): Promise<string[]> {
         [memberId],
       )
     ).rows.map((r) => r.body);
-  } catch {
+  } catch (e) {
+    // LOGGED. These are the member's OWN true lines, pulled forward so W3's Reframe can hand them back at the
+    // moment they are most needed. [] silently turns that beat generic — the Companion stops quoting them to
+    // themselves and nobody can tell it ever meant to.
+    console.error(`loadTrueLines FAILED for member=${memberId} — the Reframe will lose their own words:`, (e as Error).message);
     return [];
   }
 }
@@ -199,7 +204,7 @@ async function persistRewireArcSession(db: Db, memberId: string, session: Rewire
       await clearArcSession(db, memberId, 'rewire', session); // completed — the keepers/scores persist on their own
       return;
     }
-    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    const messages: ConvMessage[] = [...history, memberTurn(message), ...beatBubbles(reply)];
     await saveArcSession(db, memberId, 'rewire', turn.state, messages, session);
   } catch {
     // swallow — resume is best-effort; the turn already succeeded for the member.

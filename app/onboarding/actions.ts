@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { getProvider } from '../../lib/agent/provider.ts';
 import { runOnboarding } from '../../lib/gateway/flow.ts';
@@ -118,7 +119,7 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   const messages: ConvMessage[] =
     input.memberMessage === null
       ? [{ role: 'agent', text: turn.reply }]
-      : [...input.history, { role: 'member', text: input.memberMessage }, { role: 'agent', text: turn.reply }];
+      : [...input.history, memberTurn(input.memberMessage), { role: 'agent', text: turn.reply }];
 
   // Save progress every turn — including the completed/ready turn — so a refresh resumes exactly
   // where they are, handoff and all. Best-effort; never fail a turn over a save.

@@ -18,7 +18,18 @@ export async function buildFounderContext(
   if (!dash) return null;
   const [prof, experience] = await Promise.all([
     db
-      .query<{ intake_right_now: string | null }>('select intake_right_now from member_profile where member_id = $1', [memberId])
+      // intake_gap, NOT intake_right_now (2026-08-26). The Founder Agent's drafts quote this as "Their intake
+      // words" — the one line of the member's own voice in a note written in Jay's name. It read
+      // `intake_right_now`, which signup writes as a LITERAL EMPTY STRING and the staged onboarding never fills:
+      // permanently blank, for every member who has ever signed up, so the draft silently dropped the clause.
+      //
+      // The gap IS their intake words, in their own first person, and it is what the whole product is built on
+      // top of. coalesce nullif so a legacy '' still reads as absent rather than as an empty quotation.
+      .query<{ intake_right_now: string | null }>(
+        `select coalesce(nullif(intake_gap, ''), nullif(intake_right_now, '')) as intake_right_now
+           from member_profile where member_id = $1`,
+        [memberId],
+      )
       .then((r) => r.rows[0]),
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
   ]);

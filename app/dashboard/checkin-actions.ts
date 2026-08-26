@@ -1,5 +1,6 @@
 'use server';
 
+import { memberTurn } from '../../lib/agent/member-display.ts';
 import { softRead } from '../../lib/db/degrade.ts';
 import { memberToday } from '../../lib/time/zone-store.ts';
 import { addDays, longDate, shortDate } from '../../lib/time/member-clock.ts';
@@ -538,7 +539,10 @@ export async function loadCheckin(memberId: string): Promise<CheckinMessage[]> {
   try {
     const db = (await getDb()) as unknown as Db;
     return await loadConversation(db, memberId);
-  } catch {
+  } catch (e) {
+    // LOGGED. [] here reads as "you have never spoken to your Companion" — to a member who has. The thread is
+    // the product's memory of them, and a read failure that renders as amnesia is the worst version of this bug.
+    console.error(`loadCheckin FAILED for member=${memberId} — the thread will render as empty:`, (e as Error).message);
     return [];
   }
 }
@@ -1056,7 +1060,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
     };
     const r = await checkinReply(ctx, history, memberMessage, executor);
     await appendMessages(db, memberId, [
-      { role: 'member', text: memberMessage },
+      memberTurn(memberMessage),
       { role: 'agent', text: r.reply },
     ]);
     // THE WEEK ENDS HERE. If this turn carried the close review, mark the week closed and keep it — so it is

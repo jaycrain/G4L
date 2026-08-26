@@ -53,7 +53,10 @@ export async function reclaimForReconcile(memberId: string): Promise<{ text: str
   try {
     const db = (await getDb()) as unknown as Db;
     return (await getReclaimItems(db, memberId)).map((i) => ({ text: i.text, state: i.state }));
-  } catch {
+  } catch (e) {
+    // LOGGED. [] here means "there is nothing on your Reclaim List" at the moment we ask them to reconcile it —
+    // the list is the spine of the whole programme, and an empty one is never a neutral degrade.
+    console.error(`reclaimForReconcile FAILED for member=${memberId} — the reconcile will see no items:`, (e as Error).message);
     return [];
   }
 }
