@@ -144,6 +144,23 @@ export function grintaChangePct(current: number, prior: number | null): number |
   return round2(((current - prior) / prior) * 100);
 }
 
+/**
+ * THE MOVE AS A MEMBER READS IT — whole percent, never two decimals.
+ *
+ * GREG OWNS THE FORMULA AND HAS RULED ON IT: V5 specifies the change as a percentage, and he confirmed the
+ * corrected form (his doc's `[(A1/A2)/A1]*100` reduces to `100/A2` — the baseline cancels) in August. None of
+ * that is ours to revisit, and the ratio-of-ordinals objection is answered by the measurement scientist whose
+ * instrument it is.
+ *
+ * WHAT HE HAS NEVER SPECIFIED IS PRECISION. The two decimals came from our own round2 helper, so a member
+ * finishing Rebuild met "+49.81%" — a hundredth of a percent claimed from six Likert items on a 1–5 scale. The
+ * stored value keeps its precision for research; only the number on the ceremony changes, because that is the
+ * one place a figure is being handed to a person rather than a dataset.
+ */
+export function changePctForDisplay(pct: number): number {
+  return Math.round(pct);
+}
+
 export function directionOf(delta: number): Direction {
   if (delta > 0) return 'up';
   if (delta < 0) return 'down';

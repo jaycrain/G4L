@@ -1,5 +1,6 @@
 'use client';
 
+import { changePctForDisplay } from '../../lib/grinta/survey/scoring.ts';
 import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
@@ -40,7 +41,7 @@ export default function RewireCeremony({ memberId, data }: { memberId: string; d
             <span className="cgn-scale">/ 5</span>
             {/* Delta rule (HH): down renders NEUTRAL (dir-down, never red); flat shows no arrow. */}
             {r.componentChangePct !== null && dir && dir !== 'flat' && (
-              <span className={`cgn-move dir-${dir}`}>{MOVE_ARROW[dir]} {r.componentChangePct > 0 ? '+' : ''}{r.componentChangePct}%</span>
+              <span className={`cgn-move dir-${dir}`}>{MOVE_ARROW[dir]} {r.componentChangePct > 0 ? '+' : ''}{changePctForDisplay(r.componentChangePct)}%</span>
             )}
             {/* W-16: the HERO is the Phase's own move — chip it "Rewire", not "Grinta Index" (the composite's name). */}
             <span className="cer-chip">Rewire</span>

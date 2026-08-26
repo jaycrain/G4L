@@ -1,5 +1,6 @@
 'use client';
 
+import { changePctForDisplay } from '../../lib/grinta/survey/scoring.ts';
 import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
@@ -53,7 +54,7 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
             <span className="cgn-val">{r.componentNow}</span>
             <span className="cgn-scale">/ 5</span>
             {r.componentChangePct !== null && dir && dir !== 'flat' && (
-              <span className={`cgn-move dir-${dir}`}>{MOVE_ARROW[dir]} {r.componentChangePct > 0 ? '+' : ''}{r.componentChangePct}%</span>
+              <span className={`cgn-move dir-${dir}`}>{MOVE_ARROW[dir]} {r.componentChangePct > 0 ? '+' : ''}{changePctForDisplay(r.componentChangePct)}%</span>
             )}
             <span className="cer-chip">Reclaim</span>
           </div>

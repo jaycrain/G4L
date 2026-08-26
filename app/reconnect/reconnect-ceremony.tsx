@@ -1,5 +1,6 @@
 'use client';
 
+import { changePctForDisplay } from '../../lib/grinta/survey/scoring.ts';
 import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
@@ -60,7 +61,7 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
             <span className="cgn-scale">/ 5</span>
             {/* Delta rule (§3): down renders NEUTRAL (never red); flat shows no arrow. */}
             {r.reconnectChangePct != null && rcnDir && rcnDir !== 'flat' && (
-              <span className={`cgn-move dir-${rcnDir}`}>{MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{r.reconnectChangePct}%</span>
+              <span className={`cgn-move dir-${rcnDir}`}>{MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{changePctForDisplay(r.reconnectChangePct)}%</span>
             )}
             <span className="cer-chip">Reconnect</span>
           </div>
@@ -73,7 +74,7 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
           <p className="cer-grinta-overall">
             Your overall Grinta Index reads {r.composite} / 5
             {r.changePct !== null && r.direction && r.direction !== 'flat'
-              ? ` (${r.direction === 'up' ? '+' : ''}${r.changePct}% — it keeps rising as the other Phases catch up).`
+              ? ` (${r.direction === 'up' ? '+' : ''}${changePctForDisplay(r.changePct)}% — it keeps rising as the other Phases catch up).`
               : ' — it keeps rising as the other Phases catch up.'}
           </p>
         </div>
