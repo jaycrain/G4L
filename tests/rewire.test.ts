@@ -9,6 +9,7 @@ import {
   memberPickedAnchor,
   rewireW3Opening,
   applyRewireW3Turn,
+  W1_TURN_ASK_FALLBACK,
 } from '../lib/agent/rewire.ts';
 import type { Collected, ConvState } from '../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
@@ -353,4 +354,49 @@ test('W3 · she names the offered line instead of writing one — that is accept
   // directive.
   assert.equal(walk('One bad day is not the story'), 'One bad day is not the story');
   assert.equal(walk('My true line is that I can start today'), 'My true line is that I can start today');
+});
+
+// ── W1 MUST NOT CLOSE ITSELF WHILE THE COMPANION IS STILL ASKING (Jay's walk, 2026-08-25) ─────────────────────
+//
+// He put down two true lines, and the model's next turn read:
+//
+//   "So what's the true line? The honest answer to 'I don't have the headspace for that right now' — in your
+//    words, not mine."
+//
+// The question is right there. It simply is not the LAST character, and `modelWrapped` tested `/\?\s*$/`. So the
+// engine read a live ask as a wrap: it fired W1_CLOSE, awarded the True Line badge, and set complete — ending the
+// Session mid-question, with a keeper he had never confirmed.
+//
+// THE ASYMMETRY IS THE RULE. A false wrap costs the rest of a Session. A false not-wrap costs one extra turn.
+
+test('W1 · a question ANYWHERE in the model turn keeps the beat open', () => {
+  let t: ReturnType<typeof applyRewireTurn> = { state: walkDomains(), reply: '', complete: false } as never;
+  t = applyRewireTurn(t.state, [], 'It is not too late, and I have proof', { text: 'Kept. Here is the next one — what is its true line?' });
+  t = applyRewireTurn(t.state, [], 'I do have the time, I choose where it goes', {
+    // Jay's shape: the ask is real, and it is mid-paragraph.
+    text: "So what's the true line? The honest answer to \"I don't have the headspace for that right now\" — in your words, not mine.",
+  });
+
+  assert.notEqual(t.state.stage, 'complete', 'the Session closed while the Companion was still asking');
+  assert.equal(t.complete, false);
+});
+
+test('W1 · a genuine wrap — no question at all — still closes the beat', () => {
+  // The other half: this rule exists so a member is not stranded sending "ok" to get their summary.
+  let t: ReturnType<typeof applyRewireTurn> = { state: walkDomains(), reply: '', complete: false } as never;
+  t = applyRewireTurn(t.state, [], 'It is not too late, and I have proof', { text: 'Kept. And another — what answers that one?' });
+  t = applyRewireTurn(t.state, [], 'I do have the time, I choose where it goes', {
+    text: 'That is your set. You have named the lies and written what answers them.',
+  });
+
+  assert.equal(t.complete, true, 'a declarative wrap past two lines should close');
+});
+
+test('W1 · the turn ask asks for ONE thing — the line, never which lie to pick', () => {
+  // A compound ask ("start with the one that hit you hardest. What's the honest line?") gets answered with the
+  // LIE, and the affirm stage files whatever arrives as the member's true line. Jay's own excuse — "I don't have
+  // the headspace for that right now" — was committed as the principle that answers it.
+  const ask = W1_TURN_ASK_FALLBACK;
+  assert.equal((ask.match(/\?/g) ?? []).length, 1, `the fallback asks more than one thing: ${ask}`);
+  assert.doesNotMatch(ask, /start with the one/i, 'do not invite a pick in the beat that harvests the answer');
 });

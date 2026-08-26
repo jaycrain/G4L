@@ -86,8 +86,13 @@ const W1_CAMPAIGN =
   `— and that's the first real move.`;
 // The turn is GUIDED and model-driven (picks the heaviest lie in the member's own words). This fallback runs only if
 // the model returns nothing — a clear single ask, still member-picked.
-const W1_TURN_ASK_FALLBACK =
-  "Let's answer them — start with the one that hit you hardest. What's the honest line you'd put in its place?";
+export const W1_TURN_ASK_FALLBACK =
+  // ONE ASK (Jay, 2026-08-25). This was two: "start with the one that hit you hardest" invites a PICK, and
+  // "what's the honest line" asks for the counter. He answered the first — reasonably — and the affirm stage
+  // harvests any substantive message as a true line, so his own excuse was filed as the principle that
+  // answers it. The model had understood him correctly and moved on to ask for the line; only the engine
+  // thought the beat was already done. Now the sentence asks for exactly one thing: the line.
+  "What's the honest line you'd put in place of the one that hit you hardest?";
 // Fallback ack — the model normally SERVES UP the next-heaviest lie here (guided, one at a time). This runs only if
 // the model returns nothing.
 const W1_AFFIRM_ACK = "Kept — that's yours. Here's another that stood out — what's the true line you'd put in its place? Or tell me that's your set.";
@@ -191,8 +196,17 @@ const affirmStage: StageDef = {
     // If the model WRAPPED instead of serving the next lie (a declarative ack — no question) once they've put down a
     // couple of lines, take that as the close: deliver the model's wrap + W1_CLOSE on THIS turn, rather than stranding
     // a dead "ok" the member has to send to get the summary. Mirrors the draw-out "declarative past the floor advances"
-    // rule. When the model ends on a question (offering the next lie), stay guided and keep going.
-    const modelWrapped = ack.length > 0 && !/\?\s*$/.test(ack);
+    // rule. When the model asks ANYTHING (offering the next lie), stay guided and keep going.
+    //
+    // ANY QUESTION, NOT A TRAILING ONE (Jay, 2026-08-25). This tested `/\?\s*$/` — the question mark had to be the last
+    // character. His model turn read "So what's the true line? The honest answer to '…' — in your words, not mine."
+    // The question is there; it simply is not last. So the engine read a live ask as a wrap, fired W1_CLOSE, awarded
+    // the badge and set complete — CLOSING THE SESSION WHILE THE COMPANION WAS STILL ASKING HIM SOMETHING.
+    //
+    // The asymmetry decides the rule. A false wrap costs the member the rest of a Session and commits a keeper they
+    // never confirmed. A false NOT-wrap costs one extra turn. So any '?' anywhere means keep going. This is also what
+    // the comment above always claimed the rule was; only the regex disagreed.
+    const modelWrapped = ack.length > 0 && !ack.includes('?');
     if (modelWrapped && linesSoFar >= 2) {
       b.reply = `${ack}${BEAT_SEP}${W1_CLOSE}`;
       b.stage = 'complete';
@@ -253,9 +267,11 @@ function rewireStageNote(state: ConvState): string {
       "never lead with analysis. (2) Make the campaign visible: all five sounded reasonable, and every one keeps them " +
       "where they are — not weakness, the campaign on autopilot; naming it is the first real move. (3) SEED the true " +
       "line (W-40): they've been speaking honest, first-person lines all session (their story, their Reclaim List — see " +
-      "MEMBER CONTEXT; echo a few of their OWN words), so it lands as 'you already do this.' (4) Ask for the true line " +
-      "to the ONE lie that costs the most. Warm; use only their real words; no identity verdicts (reflect what they " +
-      "said, don't declare who they are)."
+      "MEMBER CONTEXT; echo a few of their OWN words), so it lands as 'you already do this.' (4) NAME the one lie " +
+      "that costs them most, in their own words, and ask ONLY for its true line. Do NOT ask them which lie to " +
+      "start with — you pick it. A compound ask ('which one, and what's its counter?') gets answered with the " +
+      "LIE, and the next beat files that answer as their true line. Warm; use only their real words; no identity " +
+      "verdicts (reflect what they said, don't declare who they are)."
     );
   return "\n\nRIGHT NOW: the member just named a self-lie in one domain. Reflect it back in 1–2 sentences — heard, un-judged, the real story under it. No question, no next domain, no counter-line.";
 }
