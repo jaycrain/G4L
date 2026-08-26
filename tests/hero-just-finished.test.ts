@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { heroView } from '../lib/dashboard/hero-copy.ts';
+import type { HeroState } from '../lib/dashboard/hero-copy.ts';
 
 // Jay got lost in his own program TWICE — he told me he was in Reclaim while sitting in the Rebuild Checkpoint.
 // The card said "Nice work — Rebuild Checkpoint" as the headline AND "You finished Rebuild Checkpoint today" as the
@@ -54,4 +55,29 @@ test('with nothing next, the card still refuses to invent a step', () => {
   const v = heroView({ kind: 'just-finished', session: { label: 'C4' }, next: null } as never, ctx as never);
   assert.equal(v.ctaLabel, 'Back to your path');
   assert.doesNotMatch(v.copy, /Next up/);
+});
+
+// ── THE SUBHEAD SAYS WHAT YOU JUST DID (Jay, 2026-08-25 — "fix it system wide") ───────────────────────────────
+//
+// He hit the same subhead twice in one walk: "Really, that's the copy?" and then "the subhead is wrong again."
+// It read "If you want to keep going, click the button" — a sentence describing the control directly beneath it.
+//
+// The rule he set on 2026-08-08 is that this line names what the member last FINISHED, and lastAccomplishment
+// was built for it. A just-finished exception was carved out later on the reasoning that the HEADLINE already
+// said what they finished. That stopped being true when the headline moved to naming what is NEXT — so both
+// lines pointed forward and the subhead had nothing left to say but filler.
+
+test('no hero state describes the button instead of the member', () => {
+  const states: HeroState[] = [
+    { kind: 'just-finished', next: { label: 'Visualization Workshop', isCheckpoint: false } },
+    { kind: 'just-finished', next: { label: 'Rewire Checkpoint', isCheckpoint: true } },
+    { kind: 'just-finished', next: { label: 'Quality Days', isCheckpoint: false } },
+    { kind: 'just-finished', next: null },
+  ] as never;
+  for (const st of states) {
+    const v = heroView(st, { phaseLabel: 'Rewire', phaseOrdinal: 2 });
+    assert.doesNotMatch(v.copy, /click the button/i, `subhead describes the control: "${v.copy}"`);
+    // A subhead that narrates the affordance is the shape, not just that one phrase.
+    assert.doesNotMatch(v.copy, /\bpress\b|\btap the\b/i, `subhead narrates the affordance: "${v.copy}"`);
+  }
 });

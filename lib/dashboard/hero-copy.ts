@@ -39,12 +39,19 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
       return {
         eyebrow: `${ctx.phaseLabel} · You just finished`,
         title: state.next ? `Nice work — ${state.next.label} is next` : 'Nice work',
+        // THE FALLBACK ONLY, NOW. The subhead's real job is `accomplishment` — what the member just finished, in a
+        // true sentence about their own work (lastAccomplishment, Jay 2026-08-08). This runs when there is nothing
+        // to name yet, which for a just-finished member is close to never.
+        //
+        // "If you want to keep going, click the button" is gone from all three branches. It described the control
+        // sitting directly beneath it and said nothing else — on the one surface that had something real to say.
+        // Jay hit it twice in one walk: "Really, that's the copy?" and then "the subhead is wrong again."
         copy: state.next
           ? state.next.isCheckpoint
-            ? `You've walked the whole ${ctx.phaseLabel} phase. If you want to keep going, click the button.`
+            ? `You've walked the whole ${ctx.phaseLabel} phase. The Checkpoint is what closes it.`
             : state.next.label === 'Quality Days'
-              ? 'Quality Days is one of the most fulfilling exercises in the whole program. If you want to keep going, click the button.'
-              : 'If you want to keep going, click the button.'
+              ? 'Quality Days is one of the most fulfilling exercises in the whole program.'
+              : `That's ${ctx.phaseLabel} moving.`
           : `Take a breath — the next step will be here when you are.`,
         // "Start the Session", not "Start the next Session": the subhead directly above now NAMES it, so "next"
         // is the only word in the sentence doing no work (Jay, 2026-08-11).

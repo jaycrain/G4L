@@ -224,19 +224,27 @@ export default function TriptychCenter({
               )}
             </span>
             <h1 className="tri-hero-title">{hero.title}</h1>
-            {/* THE SUBHEAD SAYS THE OTHER THING FROM THE HEADLINE.
-                Normally the headline is forward ("Your week is running", the Session's name) and the subhead is
-                what they last FINISHED — Jay's earlier call, because the generic forward line ("Here's your next
-                step, ready whenever you are") is filler beside a true sentence about their own week.
-                But when they JUST finished something the headline already says so ("Nice work — Rebuild
-                Checkpoint"), and repeating it in the subhead spent the whole card on the past: two lines about
-                what is behind you and nothing naming what is next. Jay got lost twice in his own program that
-                way — he believed he was in Reclaim while sitting in the Rebuild Checkpoint, and he built this.
-                So in that one state the subhead carries the FORWARD line, which there is specific ("Next up:
-                Looking Forward, whenever you're ready") rather than filler. Headline = what you finished,
-                subhead = what's next, button = start it. */}
+            {/* THE SUBHEAD SAYS THE OTHER THING FROM THE HEADLINE. That principle is unchanged; which side it
+                lands on has flipped, because the headline moved.
+
+                The rule Jay set on 2026-08-08 is that the subhead names what the member last FINISHED — a true
+                sentence about their own work beats the generic forward line, which is filler. lastAccomplishment
+                exists for exactly that, and its own header quotes him: "a hero that only ever points FORWARD
+                makes a member who has been working feel like the program has no memory of it."
+
+                A just-finished exception was then carved out, on the reasoning that the headline ALREADY said
+                what they had finished ("Nice work — Rebuild Checkpoint"), so the subhead should carry the
+                forward line instead. That was right at the time. IT IS NO LONGER TRUE: the headline now names
+                what is NEXT ("Nice work — False Start Protocol is next"), so both lines were pointing forward
+                and the subhead degraded to "If you want to keep going, click the button" — a sentence about the
+                button, on the one surface with something real to say.
+
+                Jay, 2026-08-25, seeing it twice in one walk: "the subhead is wrong again, fix it system wide."
+                So the exception is gone and every state resolves the same way. Headline = what's next,
+                subhead = what you just did. If the two ever swap again, swap this — do not re-add a special
+                case, which is what let this drift for eight days without anyone reading it as broken. */}
             <p className="tri-hero-copy">
-              {hero.kind === 'just-finished' ? hero.copy : (hero.accomplishment ?? hero.copy)}
+              {hero.accomplishment ?? hero.copy}
             </p>
             <div className="tri-hero-ctarow">
               {hero.ctaHref ? (
