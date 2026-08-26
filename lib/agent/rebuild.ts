@@ -588,7 +588,15 @@ const B4_CHECKPOINT_OPEN =
   "So this checkpoint asks whether Rebuild went past the numbers. The move into Reclaim isn't hitting a target " +
   "weight or finishing an event; it's the point where you notice your world got bigger because you changed." +
   BEAT_SEP +
-  "A dozen of these, one to five. They set your Rebuild read, and you'll see how it moved your Grinta Index at the " +
+  // SIX, NOT "A DOZEN" (Jay, 2026-08-26: "I believe it skipped some dietary questions at the end of the session,
+  // there was only one before it closed me out"). He was right to distrust it, and the fault was this sentence.
+  // Greg's V5 cut B4 from twelve activity/diet halves to six single items on 2026-08-14 — the items changed, the
+  // scoring changed, and this line did not. So the Companion promised twelve, delivered six, and closed. A member
+  // who is told a number and gets half of it does not conclude the copy is stale; they conclude the product lost
+  // their answers, and at a CHECKPOINT that doubt lands on the measurement itself.
+  //
+  // Rewire and Reclaim have always said "Six of these", so this also stops Rebuild being the odd one of the three.
+  "Six of these, one to five. They set your Rebuild read, and you'll see how it moved your Grinta Index at the " +
   "close.";
 const B4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function rebuildCheckpointDeliver(index: number): string {
@@ -607,8 +615,12 @@ const rebuildCheckpointStage: StageDef = administeredStage({
   deliverItem: (n) => rebuildCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rebuildCheckpointDeliver(n)}`,
   onComplete: (b) => {
-    // The 12 control responses are in b.administeredResponses. Hand into the ceremony; the ACTION averages 12→6,
-    // scores the Control component (Ave1→Ave2), persists the Checkpoint reading, and sets the phase gate.
+    // The six control responses are in b.administeredResponses. Hand into the ceremony; the ACTION scores the
+    // Control component (Ave1→Ave2), persists the Checkpoint reading, and sets the phase gate.
+    //
+    // IT NO LONGER AVERAGES 12→6, and this comment said it did until 2026-08-26. The scoring itself was already
+    // correct — it slices to CHECKPOINT_CONTROL_ITEMS.length and pairwiseAverage was deleted with V5 — so this
+    // was a comment describing a step that no longer exists, sitting next to the one that does.
     b.stage = 'ceremony';
     b.reply = B4_CHECKPOINT_CLOSE;
   },
