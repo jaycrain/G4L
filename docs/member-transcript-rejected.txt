@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ a83d438 · 2026-08-24)
+# Strings EXCLUDED from the member transcript (app @ 41b3bed · 2026-08-26)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -145,6 +145,7 @@
 [app/reconnect/reconnect-chat.tsx] [teaching] reconnect keep failed
 [app/reconnect/reconnect-chat.tsx] 0.75rem
 [app/reconnect/reconnect-chat.tsx] 0.85rem
+[app/reconnect/reconnect-chat.tsx] c-${t.toSlug}
 [app/reconnect/reconnect-chat.tsx] 0.5rem
 [app/reconnect/reconnect-chat.tsx] 0.5rem
 [app/reconnect/reconnect-chat.tsx] bubble ${m.role}
@@ -266,6 +267,8 @@
 [app/reconnect/doors-board.tsx] scale-chip${value === c.slug ? ' on' : ''}
 [app/reconnect/doors-board.tsx] 0.85rem
 [app/reconnect/doors-board.tsx] 0.35rem 0.7rem
+[lib/agent/beat-confirm.ts] set:
+[lib/agent/beat-confirm.ts] set:
 [lib/agent/rewire.ts] with it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers.
 [lib/agent/rewire.ts] and avoidance contribute to the Fade and allow it to keep its hold.
 [lib/agent/rewire.ts] your body, your habits, your time, who you are, and what's still possible. You'll get honest about these
@@ -300,7 +303,6 @@
 [lib/agent/rewire.ts] ?m| am)? not sure|not sure|i don
 [lib/agent/rewire.ts] ${receipt ?
 [lib/agent/rewire.ts] ${reflected ?
-[lib/agent/rewire.ts] You are the G4L Companion running W2, the Visualization Workshop, in Rewire (Phase 2). You already know this member (see MEMBER CONTEXT) — never say you don't. You are helping them build ONE vivid, aspirational mental image: themselves at the moment they get back something they named they want. Plain, measured, warm; never judge, grade, praise, diagnose, or over-promise. Draw out — reflect in THEIR words, one question at a time; let them set the depth. Do NOT invent details they didn't give; make what they DID give a touch more vivid. If a distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.
 [lib/agent/rewire.ts] Their Reclaim List (what they want back — pull the anchor goal from HERE): ${list.map((x) =>
 [lib/agent/rewire.ts] ).join(', ')}
 [lib/agent/rewire.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
@@ -317,7 +319,7 @@
 [lib/agent/rewire.ts] bored, celebrating); the excuse the brain makes ("just one day", "I'll start Monday", "I earned this" — the
 [lib/agent/rewire.ts] reasonable-sounding lies they audited before); the risky time or place (the 3pm slump, the evening collapse).
 [lib/agent/rewire.ts] and if you still want to quit after five, quit. (Usually you won't.) When it's food, name the specific swap — walk
-[lib/agent/rewire.ts] Now Reframe — the true line for a bad day. You've written lines that answer your lies before; here's one for a
+[lib/agent/rewire.ts] Now **Reframe —** the true line for a bad day. You've written lines that answer your lies before; here's one for a
 [lib/agent/rewire.ts] slip: "A false start is the cost of changing, not proof I can't." Say it your way.
 [lib/agent/rewire.ts] in the goal you named. The campaign can't compete with a picture that real.
 [lib/agent/rewire.ts] every day and log your good calls, your false starts and the on-track days where not much happened.
@@ -413,6 +415,7 @@
 [lib/rebuild/skills-instrument.ts] scoreSkills expects ${SKILLS_ITEM_COUNT} responses, got ${responses.length}
 [lib/rebuild/skills-instrument.ts] B2-PA${s.no}
 [lib/rebuild/skills-instrument.ts] B2-DI${s.no}
+[lib/rebuild/skills-instrument.ts] perSkill
 [lib/agent/reclaim.ts] revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:  ${shown}${BEAT_SEP}Before changing anything,
 [lib/agent/reclaim.ts] just notice it. What still feels true, what feels different, and what feels newly important?
 [lib/agent/reclaim.ts] pendingRefinement
@@ -870,7 +873,6 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running.
-[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile
