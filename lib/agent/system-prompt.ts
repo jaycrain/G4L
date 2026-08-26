@@ -173,3 +173,29 @@ INDEPENDENCE GUARANTEE
 
 AI DISCLOSURE (first line of a member's first conversation, verbatim)
 "${AI_DISCLOSURE}"`;
+
+
+/**
+ * THE GOVERNANCE BLOCK A SESSION CAN INHERIT — everything above except the AI-disclosure trailer.
+ *
+ * WHY THIS EXISTS. Reconnect prepends MEMBER_AGENT_SYSTEM_PROMPT. Rewire, Rebuild and Reclaim did not: their
+ * six *_SYSTEM constants are standalone strings, so in three of four phases the Companion ran with none of the
+ * rules above. Measured on 2026-08-26, all NINE were absent from the Session prompts — privacy, never-name-a-real
+ * -person, never-infer-gender, the AI-tell word list, the locked vocabulary, identity-is-not-an-address,
+ * what-you-are, reflect-and-route, and never-narrate-the-machinery.
+ *
+ * Each of those was written because it had already happened once. The costliest is privacy: a member was assured
+ * "this is between us" by something with no knowledge of how her data is held. That is a false statement about
+ * data handling, made to someone in the act of disclosing what they have told no one, on a product whose whole
+ * premise is that it is safe to be honest — and it is the promise a member most wants to hear, so it is exactly
+ * what an ungoverned model reaches for.
+ *
+ * WHY THE DISCLOSURE TRAILER IS EXCLUDED, AND IT IS THE ONE SECTION THAT WOULD DO HARM. It reads "first line of a
+ * member's first conversation, verbatim" — dropped into a Session prompt it instructs the Companion to open a
+ * Rewire turn by disclosing it is an AI, to a member forty minutes into a conversation who has been told already.
+ * The disclosure still ships where it belongs: onboarding, via MEMBER_AGENT_SYSTEM_PROMPT.
+ */
+export const MEMBER_AGENT_GOVERNED_CORE = MEMBER_AGENT_SYSTEM_PROMPT.slice(
+  0,
+  MEMBER_AGENT_SYSTEM_PROMPT.indexOf('\nAI DISCLOSURE'),
+).trimEnd();

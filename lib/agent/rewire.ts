@@ -18,6 +18,7 @@ import { grintaStem, CHECKPOINT_COMMITMENT_ITEMS } from '../grinta/survey/instru
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { hasRevisionTail } from './onboarding-intent.ts';
 import { SESSION_LIMITS } from './session-limits.ts';
+import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 
 export function rewireEnabled(): boolean {
   return process.env.REWIRE === 'staged';
@@ -242,7 +243,20 @@ export function rewireOpening(committed?: Collected | null): Turn {
 }
 
 // ── the live surface — the model REFLECTS each lie, NAMES the heaviest at the turn, and ACKS true lines (tool-free) ──
+// GOVERNED (2026-08-26). Reconnect has always prepended the shared block; Rewire never did, so all NINE of its
+// rules were absent here — privacy, never-name-a-real-person, never-infer-gender, the AI-tell word list, the
+// locked vocabulary, identity-is-not-an-address, what-you-are, reflect-and-route, never-narrate-the-machinery.
+// Each was written because it had already happened once to a real member. The costliest is privacy: this Session
+// could be asked "is this private?" and had no authorised answer.
+//
+// The CORE, not the whole block: the AI-disclosure trailer is excluded because it instructs the Companion to open
+// with the disclosure, which is right on a member's first turn and wrong forty minutes into Rewire.
+//
+// ORDER IS LOAD-BEARING FOR CACHING. The governed core leads and the Session's own text follows, so the whole
+// prefix is byte-identical on every turn of a Session and caches as one unit. Anything that varies per turn
+// (context, stage note, carry-forward) is a SEPARATE system block after the breakpoint — see the call sites.
 const REWIRE_W1_SYSTEM =
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running W1, the Disinformation Audit, in Rewire (Phase 2). The member is naming the " +
   "comfortable LIES they tell themselves across five life domains (body, habits, time, who they are, what's still " +
   "possible). Never judge, grade, praise, or diagnose; a self-lie is a hundred reasonable decisions, not a failing — " +
@@ -310,7 +324,20 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: REWIRE_W1_SYSTEM + w1Context(state.collected) + rewireStageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own instructions are byte-identical
+    // on every turn, so they go in the FIRST system block with the breakpoint on it; the member's context, the
+    // stage note and any carry-forward change per turn and go in a SECOND block after it. Caching is a prefix
+    // match — a single varying byte inside the cached block would invalidate it on every turn and we would pay
+    // the 1.25x write premium for nothing.
+    //
+    // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
+    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
+    // to write, every turn after reads at 0.1x.
+    system: [
+      { type: 'text' as const, text: REWIRE_W1_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: w1Context(state.collected) + rewireStageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -546,6 +573,7 @@ export function rewireW2Opening(committed: Collected | null): Turn {
 
 // ── the live surface — the model OFFERS the anchor from the Reclaim List, REFLECTS each image piece, then the whole ──
 const REWIRE_W2_SYSTEM =
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running W2, the Visualization Workshop, in Rewire (Phase 2). You already know this " +
   "member (see MEMBER CONTEXT) — never say you don't. You are helping them build ONE vivid, aspirational mental " +
   "image: themselves at the moment they get back something they named they want. Plain, measured, warm; never judge, " +
@@ -607,7 +635,20 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: REWIRE_W2_SYSTEM + w2Context(state.collected) + rewireW2StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own instructions are byte-identical
+    // on every turn, so they go in the FIRST system block with the breakpoint on it; the member's context, the
+    // stage note and any carry-forward change per turn and go in a SECOND block after it. Caching is a prefix
+    // match — a single varying byte inside the cached block would invalidate it on every turn and we would pay
+    // the 1.25x write premium for nothing.
+    //
+    // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
+    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
+    // to write, every turn after reads at 0.1x.
+    system: [
+      { type: 'text' as const, text: REWIRE_W2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: w2Context(state.collected) + rewireW2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -1006,6 +1047,7 @@ export function rewireW3Opening(cb: W3Callback | null): Turn {
 
 // ── the live surface — the model draws out (its OWN one question per turn); the engine sequences + never appends ──
 export const REWIRE_W3_SYSTEM =
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running the False Start Protocol, in Rewire (Phase 2). You already know this member (see " +
   "MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a false " +
   "start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, warm, " +
@@ -1097,7 +1139,20 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: REWIRE_W3_SYSTEM + w3Context(state.collected) + rewireW3StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own instructions are byte-identical
+    // on every turn, so they go in the FIRST system block with the breakpoint on it; the member's context, the
+    // stage note and any carry-forward change per turn and go in a SECOND block after it. Caching is a prefix
+    // match — a single varying byte inside the cached block would invalidate it on every turn and we would pay
+    // the 1.25x write premium for nothing.
+    //
+    // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
+    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
+    // to write, every turn after reads at 0.1x.
+    system: [
+      { type: 'text' as const, text: REWIRE_W3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: w3Context(state.collected) + rewireW3StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
