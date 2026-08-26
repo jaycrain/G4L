@@ -219,10 +219,39 @@ test('B2\'s week tracks THEIR growing edges, not one generic line', async () => 
   const grid = (await weekGrids(db, memberId)).find((g) => g.kind === 'b2_noticing');
 
   assert.ok(grid, 'the week renders');
-  assert.ok(grid.rows.length >= 2 && grid.rows.length <= 3, 'their thinnest few, not all twelve — a dozen rows is a chore');
   assert.ok(!grid.rows.some((r) => /noticed a skill/i.test(r.label)), 'no generic row when a reading exists');
-  // The rows must be the LOW scorers (7, 8, 9), in our plain-language labels — never the raw instrument names.
+  // The rows must be in our plain-language labels — never the raw instrument names.
   assert.ok(grid.rows.every((r) => r.label.length > 6), 'named in plain language');
+
+  // THREE EDGES PLUS ONE STRENGTH (Jay, 2026-08-26). This asserted 2–3 rows until B2's close was reconciled with
+  // its own tracker: the close names a strength and says to notice "when a strong skill carries you", and the
+  // grid rendered only edges, so half the instruction had nowhere to land. It also meant a member spent a week
+  // looking at a list of nothing but their weakest skills, which is the all-or-nothing framing Greg's tone spec
+  // forbids. Four rows still clears his "usable in under a minute" bar.
+  assert.equal(grid.rows.length, 4, 'their thinnest three plus one strength — not all twelve, and not edges only');
+
+  const strengths = grid.rows.filter((r) => r.strength);
+  assert.equal(strengths.length, 1, 'exactly one strength row');
+  assert.equal(grid.rows[0]!.strength, true, 'the strength LEADS — opening on three deficits frames everything under it');
+
+  // AND IT IS THE SAME SKILL THE CLOSE NAMES. Two selectors for one fact is what produced the original mismatch,
+  // so this asserts the grid against skillHighlights rather than against a hand-written expectation.
+  const { skillHighlights } = await import('../lib/rebuild/skills-instrument.ts');
+  const reading = (await db.query<{ scores: unknown }>(
+    'select scores from self_management_reading where member_id = $1', [memberId],
+  )).rows[0]!.scores as Parameters<typeof skillHighlights>[0];
+  assert.equal(
+    strengths[0]!.label,
+    skillHighlights(reading).strongest,
+    'the strength row and the close must name the same skill',
+  );
+
+  // THE THREE THINNEST, which is not the same as the first three below the midpoint. This fixture has SIX
+  // non-steady skills (7, 8, 9 at ~2.0 and 10, 11, 12 at ~4.2), and the old code walked Greg's family order and
+  // took whichever three came first — tracking skill 12 at 4.1 while leaving skill 9 at 1.9 off the member's
+  // week entirely. The doc comment had always claimed "the three thinnest"; the code did not do it.
+  const edges = grid.rows.filter((r) => !r.strength).map((r) => r.slot);
+  assert.deepEqual([...edges].sort(), ['skill-7', 'skill-8', 'skill-9'], 'the other three are her actual lowest');
 });
 
 test('...and it falls back to a plain row when there is no B2 reading yet', async () => {

@@ -47,5 +47,12 @@ export async function POST(): Promise<NextResponse> {
   await db.query(`delete from self_management_reading where member_id = $1 and source = 'b2'`, [memberId]);
   await persistSkillsReading(db, memberId, RESPONSES);
 
-  return NextResponse.json({ ok: true, seeded: 'b2 self-management reading' });
+  // ...AND OPEN THE WEEK THE READING FEEDS. Seeding only the reading meant this route set up the Playbook's
+  // development map and nothing else, so the b2_noticing GRID — the surface the reading actually drives — still
+  // could not be reached without sitting through twenty-four Likert items. A harness that stops one step short of
+  // the thing you are trying to look at sends you back to the runbook (2026-08-26).
+  const { startPracticeWeek } = await import('../../../lib/practice/store.ts');
+  await startPracticeWeek(db, memberId, 'b2_noticing');
+
+  return NextResponse.json({ ok: true, seeded: 'b2 self-management reading + the noticing week' });
 }

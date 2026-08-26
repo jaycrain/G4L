@@ -50,6 +50,18 @@ export type GridRow = {
    * optional field they all carried as null would invite a UI that renders a dead column for them.
    */
   states?: (HabitStatus | null)[];
+  /**
+   * B2 ONLY — this row is the member's STRONGEST skill rather than a growing edge.
+   *
+   * The grid used to be edges only, while B2's close told the member to notice "when a strong skill carries you,
+   * and when a weaker one trips you" — so half the instruction had nowhere to land, and the surface read as a
+   * list of deficits (2026-08-26). Carried as a flag rather than by position so the UI can say WHICH it is: an
+   * unlabelled fourth row next to three weaknesses just reads as a fourth weakness.
+   *
+   * Undefined everywhere else, like `states` and `scores` — no other week has a strength/edge distinction, and a
+   * field they all carried as false would invite a UI that renders a dead marker for them.
+   */
+  strength?: boolean;
 };
 
 export type WeekGrid = {
@@ -313,6 +325,19 @@ async function noteRows(db: Db, memberId: string, kind: PracticeKind, window: Me
  * THREE, NOT TWELVE. A week with a dozen rows is a chore, and Greg is explicit that the tracker must stay usable
  * in under a minute. The three thinnest are where practice pays.
  *
+ * PLUS ONE STRENGTH, AND IT IS NOT A COURTESY (Jay, 2026-08-26). Two reasons, and the second is the bigger one:
+ *
+ *   1. The close already promised it. B2 ends by naming a strength and saying to notice "when a strong skill
+ *      carries you, and when a weaker one trips you" — and the grid rendered only edges, so half of what the
+ *      member was told to watch had nowhere to be recorded. Jay hit this on his own walk.
+ *   2. A tracker listing only your three weakest skills for a week IS the all-or-nothing framing Greg's own tone
+ *      spec forbids. That spec is why a miss renders as a dash and never a cross, and why "backup versions still
+ *      count" is in the phase's language. We had built a grid that quietly said: here is what is wrong with you,
+ *      watch it for five days. Four rows still clears "usable in under a minute".
+ *
+ * The strength comes from strongestSkill(), the SAME selector the close reads. Two pieces of code deciding
+ * "strongest" independently is what produced the mismatch in the first place.
+ *
  * FALLS BACK to the generic row when there is no reading yet — a member can reach this week without a scored B2
  * (a drifted register, a legacy account), and an empty grid would be worse than a plain one.
  */
@@ -320,23 +345,48 @@ async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
   try {
     const { latestSkillsReading } = await import('../rebuild/store.ts');
     const { buildSkillsMap } = await import('../rebuild/skills-map.ts');
+    const { strongestSkill, skillLabel } = await import('../rebuild/skills-instrument.ts');
     const reading = await latestSkillsReading(db, memberId);
     if (!reading) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
-    const edges = buildSkillsMap(reading.scores)
-      .families.flatMap((f) => f.rows)
-      .filter((r) => !r.steady)
-      .slice(0, 3);
+    // PICK BY THINNEST, THEN DISPLAY IN GREG'S ORDER — two different jobs that were doing one.
+    //
+    // This used to filter to non-steady and `.slice(0, 3)` straight off the family walk, so it took the first
+    // three in Greg's family order rather than the three lowest. With six skills below the member's midpoint that
+    // silently drops her actual weakest: a fixture here scores skill 9 at 1.9 and skill 12 at 4.1, and the old
+    // code tracked 12 and left 9 off the week. The doc comment above has always said "the three thinnest are
+    // where practice pays" AND "in his order" — both are right, they are just not the same step. Rank by mean to
+    // CHOOSE, keep the family walk to ORDER.
+    const byNo = new Map(reading.scores.perSkill.map((s) => [s.no, s.mean]));
+    const mapRows = buildSkillsMap(reading.scores).families.flatMap((f) => f.rows).filter((r) => !r.steady);
+    const thinnest = new Set(
+      [...mapRows].sort((a, b) => (byNo.get(a.no) ?? 0) - (byNo.get(b.no) ?? 0) || a.no - b.no)
+        .slice(0, 3).map((r) => r.no),
+    );
+    const edges = mapRows.filter((r) => thinnest.has(r.no));
     if (!edges.length) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
+    const top = strongestSkill(reading.scores);
     const { rows } = await db.query<{ marked_on: string; commitment_id: string | null }>(
       `select marked_on::text as marked_on, commitment_id from practice_mark
         where member_id = $1 and kind = 'b2_noticing'`,
       [memberId],
     );
-    return edges.map((e) => {
-      const slot = `skill-${e.no}`;
+    const rowFor = (no: number, label: string, strength: boolean): GridRow => {
+      const slot = `skill-${no}`;
       const marks = rows.filter((r) => (r.commitment_id ?? 'noticed') === slot).map((r) => r.marked_on);
-      return buildRow(slot, e.label, null, window, marks);
-    });
+      return { ...buildRow(slot, label, null, window, marks), strength };
+    };
+    // THE STRENGTH LEADS. A member reads a grid top-down, and opening on three deficits sets the frame for
+    // everything under it — which is the reading Greg's tone spec exists to prevent. It is also the order the
+    // close speaks in: "a strength of yours… the skill with the most room to grow".
+    //
+    // Guarded against a collision: if the strongest skill somehow also came back as a growing edge, one row would
+    // silently swallow the other's marks (same slot). It cannot happen while `steady` splits the profile at its
+    // own median, but "cannot happen" is how the last three of these started.
+    const strengthRow = rowFor(top.no, skillLabel(top.no, top.skill), true);
+    return [
+      ...(edges.some((e) => e.no === top.no) ? [] : [strengthRow]),
+      ...edges.map((e) => rowFor(e.no, e.label, false)),
+    ];
   } catch (err) {
     // Same degrade posture as the rest of this file: one bad read costs the personalisation, never the grid.
     console.error(`b2Rows failed for member=${memberId}:`, err);

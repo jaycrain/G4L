@@ -139,11 +139,25 @@ export function skillLabel(no: number, fallback: string): string {
   return SKILL_LABEL[no] ?? fallback;
 }
 
+/**
+ * THE ONE PLACE THAT DECIDES WHICH SKILL IS THE STRONGEST. Returns the row, not just its label.
+ *
+ * Extracted 2026-08-26 for a reason worth keeping. B2's close named a strength and told the member to "notice
+ * when a strong skill carries you"; the practice grid then rendered only growth edges, so half of what she was
+ * told to watch had nowhere to be recorded. Adding a strength row to the grid meant a SECOND piece of code
+ * deciding "strongest" — and two selectors for one fact is precisely the shape that produced the mismatch. The
+ * close and the grid now read the same function, so they cannot disagree about the member.
+ */
+export function strongestSkill(score: SkillScore): SkillScore['perSkill'][number] {
+  // Highest mean wins; ties break by item number so the answer is stable across re-scores of identical data.
+  return [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no)[0]!;
+}
+
 export function skillHighlights(score: SkillScore): { strongest: string; growthEdge: string } {
   const ranked = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no);
   // THE MEMBER'S WORDS, not the construct. This feeds the B2 close ("... is a strength of yours") and the
   // Companion's MEMBER CONTEXT, both of which were saying "consumer skills" to a person.
-  const top = ranked[0]!, bottom = ranked[ranked.length - 1]!;
+  const top = strongestSkill(score), bottom = ranked[ranked.length - 1]!;
   return { strongest: skillLabel(top.no, top.skill), growthEdge: skillLabel(bottom.no, bottom.skill) };
 }
 

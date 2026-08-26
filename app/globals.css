@@ -1534,6 +1534,14 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-table th { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); padding: 0 0 5px; text-align: center; }
 .wk-table th.wk-today { color: var(--teal-text); }
 .wk-table th.wk-lab, .wk-table td.wk-lab { width: 38%; text-align: left; }
+/* B2's STRENGTH row, named in the vocabulary the member already met on the Playbook's development map, so it
+   needs no explaining here. Never the word "strength" as a badge: this grid does not grade, and a gold star on
+   one row implies a mark against the other three — which is the all-or-nothing reading Greg's tone spec forbids.
+   COLOUR: --teal-text (#2a6d6e), not brand --teal — the ground is white and #3b9495 measures 3.59:1, under 4.5. */
+.wk-lab-steady {
+  margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--teal-text); white-space: nowrap;
+}
 .wk-table th.wk-aim, .wk-table td.wk-aim { width: 13%; text-align: right; }
 .wk-table td { padding: 3px 0; text-align: center; }
 /* Row labels are the MEMBER's own words — B3's commitments, C3's Quality-Day elements, and (since 2026-08-08)

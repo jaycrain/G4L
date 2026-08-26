@@ -219,7 +219,14 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
             const done = marks.filter(Boolean).length;
             return (
               <tr key={r.slot}>
-                <td className="wk-lab" title={r.label}>{r.label}</td>
+                {/* B2 marks its STRENGTH row, because an unlabelled row next to three growing edges just reads as
+                    a fourth growing edge. The word is "steady" — the same one the member already met on the
+                    Playbook's development map, so it needs no explaining here. Never "strength" as a badge: this
+                    grid does not grade, and a gold star on one row implies a mark against the others. */}
+                <td className="wk-lab" title={r.label}>
+                  {r.label}
+                  {r.strength && <span className="wk-lab-steady">steady</span>}
+                </td>
                 {marks.map((on, i) => {
                   // B3 ONLY — Greg's three-state habit answer, when the Companion captured one (migration 0088).
                   //
