@@ -3101,9 +3101,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-r.r-rebuild { color: #919536; }
 .onbwel-r.r-reclaim { color: #EC6233; }
 
-/* SLIDE 4 — the worked ID Score example. Set apart so it reads as a SPECIMEN and not as a promise, and
-   deliberately carrying no timeframe: the IDQ moves every 60 days, never weekly. */
-.onbwel-score { margin: 22px 0 0; display: block; width: fit-content; font-weight: 700; font-size: 16px; color: var(--navy); background: var(--grey); border-radius: 10px; padding: 12px 18px; }
+/* SLIDE 4's grey ID Score specimen (.onbwel-score) was REMOVED 2026-08-27 — Donna replaced it with a member
+   exchange, which uses .onbwel-qb above. The rule it carried is still true and belongs somewhere: never put a
+   timeframe on the ID Score, which moves every 60 days and never weekly. */
 /* Full-bleed welcome (Jay 7/29): no header/footer/page-padding — the intro is a true one-screen image + message.
 
    THE BRAND BAR IS HIDDEN, NOT MOVED (Donna item 1; Jay, 2026-08-23: "the branded footer, not the copyright

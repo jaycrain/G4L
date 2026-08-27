@@ -29,8 +29,6 @@ type Beat = {
   quotes?: string[];
   /** Slide 3 — the four Rs as their own row, not a comma list buried in a sentence. */
   rs?: string[];
-  /** Slide 4 — the worked ID Score example, set apart so it reads as a specimen and not as a claim. */
-  score?: string;
   tail?: Seg[];
   cta: string;
 };
@@ -66,16 +64,18 @@ function Art({ k }: { k?: ArtKey }) {
 //     does its work rather than four screens early.
 //   · "You show up. We keep track." — the Dashboard is now defined in the glossary beat below, alongside the rest
 //     of the vocabulary, instead of spending a whole screen on one noun.
-// DONNA'S FIVE SCREENS, white ground (2026-08-27). Copy is Cowork's final spec, built verbatim so Donna does not
-// have to touch it again — with two changes Jay ruled on before the build:
+// DONNA'S FIVE SCREENS, white ground (2026-08-27), then her design pass on them the same evening.
 //
-//   · SLIDE 4 drops "this week" from the ID Score example. The IDQ is retaken every 60 DAYS (frozen data
-//     contract), so a score cannot move weekly. Same fault as the old "about 20 minutes" over a 65-minute
-//     Reconnect: a number in the intro the product contradicts later, except this one is the headline metric and
-//     it is on the screen selling it.
-//   · SLIDE 5 keeps "you can stop between any of them" from the screen it replaces. That is the Independence
-//     Guarantee at the moment it does the most work — a prospect deciding whether to begin a half-hour
-//     conversation — and it was the one thing the new copy dropped.
+// PRECEDENCE, because two sources shipped a "final" for slide 5 within hours of each other: Cowork's spec landed
+// that morning and Donna's designed screens landed that evening. Jay: "Take Donna's." Cowork is told its version
+// was superseded; that is the protocol working, not a mistake by either of them.
+//
+//   · SLIDE 4's worked ID Score example is GONE, replaced by two members talking. The old note here explained why
+//     it carried no timeframe (the IDQ moves every 60 days, never weekly) — worth keeping as a rule even though
+//     the specimen it governed no longer exists: never put a cadence on this instrument that it cannot deliver.
+//   · SLIDE 5's "you can stop between any of them" survives in Donna's own words — "designed for you to stop and
+//     go at your own pace". That is the Independence Guarantee at the moment it does the most work, and it is the
+//     one line that has now been written three different ways and never lost.
 //
 // "Clip in →" is deliberately NOT the final CTA any more. The word was defined in the glossary beat these screens
 // replace; keeping the button while losing its definition would put an unexplained term on the last thing a
@@ -103,14 +103,25 @@ const BEATS: Beat[] = [
     tail: ['You’ll build Grinta — Italian for grit — along the way.'],
     cta: 'Next →',
   },
+  // SLIDE 4 — the grey ID Score specimen is replaced by an exchange between two MEMBERS (Donna, 2026-08-27).
+  //
+  // Her copy verbatim. Note what it changes: every other proof on these screens is something the product shows
+  // you, and this one is someone else having just felt it. It is the first time the intro says other people are
+  // in here — and the only screen that names a Session by name before you have done one.
+  //
+  // Still owed on this screen: her replacement progress illustration (a .png, to sit 20% larger than the current
+  // mark and left-aligned). Until that file is in the repo the existing art stays, because a missing image on the
+  // front door is worse than a mark she wants swapped.
   {
     art: 'progress',
     head: ['Track your', 'progress.'],
     body: [
       'Your Companion helps you build a Reclaim List — setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come.',
     ],
-    // No timeframe. See the note above: the instrument moves every 60 days, not weekly.
-    score: 'Your ID (Identity Distance) Score: 34 → 41',
+    quotes: [
+      'Who just completed Disinformation Audit? Did it completely stun you like it did me?',
+      'Dude, I’m reeling.',
+    ],
     cta: 'Next →',
   },
   // SLIDE 5 — DONNA'S COPY, 2026-08-27, superseding Cowork's "final" version from the same morning (Jay: "Take
@@ -166,7 +177,9 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
           {beat.body.map((seg, x) => (
             <p key={x} className="onbwel-body">{renderBody([seg])}</p>
           ))}
-          {/* SLIDE 2 — the exchange, as REAL CHAT BUBBLES (Donna, 2026-08-27): Companion left, member right.
+          {/* THE EXCHANGE, AS REAL CHAT BUBBLES (Donna, 2026-08-27): first speaker left, reply right. Slide 2 is
+              the Companion and the member; slide 4 is two MEMBERS talking to each other. Same shape, and the
+              shape is the point — it reads as a conversation either way.
               It used to be two indented block quotes sharing a left rule, which reads as one person quoting
               themselves. Bubbles say "these are two turns" without a word of explanation.
 
@@ -193,10 +206,6 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
               ))}
             </div>
           )}
-          {/* SLIDE 4 — a worked example, set apart so it reads as a specimen rather than a promise. NO timeframe:
-              the IDQ is retaken every 60 days, so "this week" (Donna's draft) would have been a cadence the
-              instrument cannot deliver. */}
-          {beat.score && <p className="onbwel-score">{beat.score}</p>}
           {beat.tail && <p className="onbwel-body">{renderBody(beat.tail)}</p>}
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
           {/* The forecast beat now states the 20 minutes itself, in context, so the old blanket reassurance under
