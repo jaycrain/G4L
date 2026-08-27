@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 2b7b674 · 2026-08-26)
+# Strings EXCLUDED from the member transcript (app @ 36f26a9 · 2026-08-27)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -491,8 +491,6 @@
 [lib/rewire/w3-moves.ts] saveW3Moves: ${m.slot} failed for member=${memberId}:
 [lib/practice/mark.ts] select id from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = $2
 [lib/practice/mark.ts] delete from practice_mark where id = $1
-[lib/practice/mark.ts] delete from practice_mark where member_id=$1 and kind=$2 and commitment_id is null and marked_on=$3 returning id
-[lib/practice/mark.ts] insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing
 [lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
 [lib/practice/mark.ts] delete from practice_mark where member_id=$1 and commitment_id=$2 and marked_on=$3 returning id
 [lib/practice/mark.ts] select slot from practice_commitment where member_id = $1 and kind = 'reclaim_item'
@@ -526,6 +524,11 @@
 [app/quality-day/quality-day-log.tsx] What was most missing ${when}?
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
+[lib/practice/grid.ts] activityStatus
+[lib/practice/grid.ts] dietStatus
+[lib/practice/grid.ts] select label from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = 'logged'
+[lib/practice/grid.ts] Checked in
+[lib/practice/grid.ts] select closed_at from practice_week where member_id = $1 and kind = $2
 [lib/content/teaching.ts] the IDQ
 [lib/content/teaching.ts] the Doors
 [lib/content/teaching.ts] the Drift Quiz

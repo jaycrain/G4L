@@ -109,15 +109,36 @@ mkdirSync(CANON, { recursive: true });
 // ── CHANGES.md — the diff, which is the part Cowork actually works from ──────────────────────────────────────
 // Compare the authored transcript against the previous version. Prefer the last published canon version; fall
 // back to an explicit --since ref for the first run, when there is no previous canon dir to compare against.
+//
+// --since IS HONOURED WHEN GIVEN, AND SAYS SO (2026-08-27). It used to be a fallback only: passing
+// `--since v3.4.41` while a newer canon dir existed silently diffed against the newer one instead, printed the
+// real baseline in a header nobody re-reads, and produced a correct-but-not-what-you-asked-for CHANGES.md.
+//
+// That is a flag that does nothing, which is the worst kind — the ONE time you would reach for it is to heal a
+// reconciliation gap by re-diffing from an older baseline, and it would quietly refuse exactly then. Cowork has
+// already had to repair one such gap by hand (v3.4.25 sat unreconciled for four days). Explicit now wins, and
+// the choice is announced either way.
 function previousTranscript() {
   const canonRoot = join('docs', 'canon');
+  if (sinceRef) {
+    try {
+      const text = git('show', `${sinceRef}:docs/member-transcript.md`);
+      console.log(`  baseline: ${sinceRef} (explicit --since)`);
+      return { label: sinceRef, text };
+    } catch {
+      console.warn(`  ! --since ${sinceRef} is unreadable — falling back to the last published canon`);
+    }
+  }
   if (existsSync(canonRoot)) {
     const versions = readdirSync(canonRoot)
       .filter((d) => /^v\d/.test(d) && d !== `v${version}`)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
     const prev = versions.at(-1);
     const p = prev && join(canonRoot, prev, 'member-transcript.md');
-    if (p && existsSync(p)) return { label: prev, text: readFileSync(p, 'utf8') };
+    if (p && existsSync(p)) {
+      console.log(`  baseline: ${prev} (last published canon)`);
+      return { label: prev, text: readFileSync(p, 'utf8') };
+    }
   }
   if (sinceRef) {
     try {
