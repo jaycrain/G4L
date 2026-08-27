@@ -83,10 +83,11 @@ export const AUDIT_DOMAIN_INTRO: Record<AuditDomain, string> = {
 
 /** The named sub-issues Greg lists under each domain's Q3. Chips; the member may also write their own, or skip. */
 export const AUDIT_SUB_ISSUES: Record<AuditDomain, readonly string[]> = {
-  // "Weight", not Greg's "Weight status" (Donna, 2026-08-27). Every other chip in this row is the bare thing —
-  // Strength, Endurance, Balance — and "status" is public-health register for the BMI category, not a word a member
-  // taps. It names the same issue either way; nothing measured changes. FLAG TO GREG: his wording, our edit.
-  physical: ['Weight', 'Strength', 'Endurance', 'Balance', 'Nutrition', 'Sleep'],
+  // "WEIGHT STATUS" STAYS — Greg's word (Jay, 2026-08-27). Donna asked for the bare "Weight", on the reasonable
+  // reading that every other chip in this row is the bare thing. Shipped for one release, then reverted: this is
+  // Greg's instrument, "weight status" is the term of art for where someone sits rather than what they weigh, and
+  // the difference is not ours to smooth. A tester's copy note does not outrank the author of the assessment.
+  physical: ['Weight status', 'Strength', 'Endurance', 'Balance', 'Nutrition', 'Sleep'],
   self: ['Discipline', 'Focus'], // V4: "Discipline", "Inability to Focus" — stated as the thing, not the lack
   social: ['Spouse', 'Children', 'Friend', 'Coworker'],
   outlook: ['Visioning', 'Finding purpose', 'Mindfulness'],
