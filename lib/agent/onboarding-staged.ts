@@ -890,6 +890,10 @@ function appendReclaim(c: Collected, item: string, category = ''): boolean {
   // path (gather backstop, forceProgress, confirm late-add). isProcessMetaOrAssent catches bare assent; affirmsReflection
   // catches the confirm-the-shape family ("those feel right") that slipped through and landed as Blair's goal.
   if (isProcessMetaOrAssent(trimmed) || affirmsReflection(trimmed)) return false;
+  // AND the same test the builder uses to decide what it can SHOW. Storing something unshowable is how a member
+  // ends up with a list she never wrote — see canBeReclaimItem. Nothing reaches the record that could not reach
+  // her eyes first.
+  if (!canBeReclaimItem(trimmed)) return false;
   const key = reclaimKey(trimmed);
   if (!key) return false;
   const list = c.reclaimList ?? [];
@@ -2103,8 +2107,33 @@ const RECLAIM_DRAWOUT_MAX = 6;
  * FILTERED HERE RATHER THAN AT COMMIT, deliberately. At commit we cannot tell her words from our guesses; here we
  * can, because everything in this function is a guess by definition.
  */
+/**
+ * CAN THIS STRING BE A RECLAIM ITEM AT ALL? — the one predicate, used by the RECORD and the VIEW.
+ *
+ * IT USED TO LIVE ONLY HERE, INSIDE THE VIEW, AND THAT WAS THE BUG (Donna's walk, 2026-08-27). The builder
+ * filtered what it SHOWED her; appendReclaim did not filter what it STORED. So her list came back holding three
+ * sentences she had said TO US, none of which she was ever shown:
+ *
+ *     "Uhmmm, we just did that"
+ *     "This remains confusing and fucked up."
+ *     "We need to make a change here to how the Reclaim List is populated"
+ *
+ * The last one is a bug report about this exact defect, filed by the product as a thing she wants back from her
+ * life. And `isAboutTheApp` was written FOR her second sentence on 2026-08-22 — the predicate existed, was
+ * authored from her own words, and never ran on the write path.
+ *
+ * THE INVARIANT, which is what makes this foolproof rather than another guard: WHAT IS STORED IS EXACTLY WHAT
+ * COULD BE SHOWN. One function decides both, so the record and the builder cannot disagree — and a member can
+ * always see, and remove, everything that will be kept. That is stronger than any classifier, because the
+ * classifier will always miss something (it misses "20 lbs, and I can just show lbs lost", also on her list) —
+ * but a miss that reaches the builder is a miss she can delete, not a silent write.
+ */
+export function canBeReclaimItem(s: string): boolean {
+  return !!s && !isConversationalMeta(s) && !isAboutTheApp(s);
+}
+
 function reclaimSeedList(c: Collected): string[] {
-  const usable = (s: string): boolean => !!s && !isConversationalMeta(s) && !isAboutTheApp(s);
+  const usable = canBeReclaimItem;
   const items = (c.reclaimList ?? []).filter(usable);
   const seen = new Set(items.map((s) => s.toLowerCase()));
   for (const s of c.reclaimSeeds ?? []) {
