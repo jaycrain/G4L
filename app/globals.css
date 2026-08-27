@@ -3068,6 +3068,12 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* Slide 5's rings: 40%, not 50%, and explicitly left-aligned — it is the one near-square mark in the set, so the
    same cap reads smaller on it than on the wide ones. */
 .onbwel-art-rings { max-height: 90px; margin-right: auto; }
+/* Slide 4's progress mark: 20% back up from the halved default, left-aligned. Her two instructions for this
+   screen read as contradictory in isolation — "reduce 50%" and "20% larger than how it is rendered currently" —
+   and 90px is the reading that satisfies both AND matches the proportion in her comp, where the donut sits
+   noticeably larger than the headline's line-height. Taking "currently" as the pre-reduction 150px would give
+   180px, which is nearly twice what the mockup shows. */
+.onbwel-art-progress { max-height: 90px; margin-right: auto; }
 .onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; }
 .onbwel-d-sub-lead { font-weight: 700; color: var(--navy); }
 

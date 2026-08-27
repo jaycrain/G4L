@@ -51,9 +51,11 @@ const ART: Partial<Record<ArtKey, string>> = {
 function Art({ k }: { k?: ArtKey }) {
   const src = k && ART[k];
   if (!src) return null;
-  // The rings take their own size (40% down, not 50%) — see .onbwel-art-rings.
+  // Two marks take their own size — the rings (40% down, not 50%) and progress (back up 20% from the halved
+  // default). See .onbwel-art-rings / .onbwel-art-progress.
+  const extra = k === 'rings' ? ' onbwel-art-rings' : k === 'progress' ? ' onbwel-art-progress' : '';
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className={`onbwel-art${k === 'rings' ? ' onbwel-art-rings' : ''}`} src={src} alt="" aria-hidden="true" />;
+  return <img className={`onbwel-art${extra}`} src={src} alt="" aria-hidden="true" />;
 }
 
 // PART 1 OF 4 · GETTING READY — Jay + Cowork's messaging pass (2026-08-13).
@@ -109,14 +111,19 @@ const BEATS: Beat[] = [
   // you, and this one is someone else having just felt it. It is the first time the intro says other people are
   // in here — and the only screen that names a Session by name before you have done one.
   //
-  // Still owed on this screen: her replacement progress illustration (a .png, to sit 20% larger than the current
-  // mark and left-aligned). Until that file is in the repo the existing art stays, because a missing image on the
-  // front door is worse than a mark she wants swapped.
+  // THE THIRD SENTENCE IS WHAT MAKES THE SCREEN COHERE, and it only appears in her mockup — not in the written
+  // instructions. Without "All alongside a community of midlifers who get you", the body promised the ID Score
+  // and then illustrated it with two strangers discussing a Session, which is a non-sequitur. With it, the copy
+  // names the community and the exchange is the evidence for it. Built this screen once without the mockup and
+  // shipped exactly that mismatch; it came off the comp, not off the instruction list.
+  //
+  // Her em-dash becomes a comma in the first sentence — also only visible in the comp. Kept, because three
+  // sentences each carrying a dash would read as a list of asides.
   {
     art: 'progress',
     head: ['Track your', 'progress.'],
     body: [
-      'Your Companion helps you build a Reclaim List — setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come.',
+      'Your Companion helps you build a Reclaim List, setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come. All alongside a community of midlifers who get you.',
     ],
     quotes: [
       'Who just completed Disinformation Audit? Did it completely stun you like it did me?',
