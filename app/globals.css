@@ -2992,7 +2992,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-kick { color: #8fd0d1; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 16px; }
 /* MIXED CASE, not all caps (Donna, 2026-08-17): the billboard headings were uppercased in CSS while the source
    strings were sentence case, so every screen shouted. */
-.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: var(--navy); font-size: clamp(38px, 7vw, 60px); line-height: 0.96; letter-spacing: 0.4px; margin: 0; }
+.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 600; color: var(--navy); font-size: clamp(38px, 7vw, 60px); line-height: 0.96; letter-spacing: 0.4px; margin: 0; }
 .onbwel-head-line { display: block; }
 .onbwel-road { margin: 28px 0 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
 .onbwel-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
@@ -3026,7 +3026,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-heart-list .onbwel-list { font-size: 15.5px; line-height: 1.45; margin-top: 14px; }
 .onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
 .onbwel-heart-list .onbwel-cta { margin-top: 20px; }
-.onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
+.onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
 .onbwel-reassure { margin-top: 18px; color: var(--muted-grey); font-size: 14px; }
 
 /* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
@@ -3047,34 +3047,59 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   background: var(--white); }
 .onbwel-d-heart { max-width: 640px; }
 .onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
-.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: var(--navy); font-size: clamp(38px, 4.2vw, 56px); line-height: 0.98; letter-spacing: 0.3px; margin: 0; }
+.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 600; color: var(--navy); font-size: clamp(38px, 4.2vw, 56px); line-height: 0.98; letter-spacing: 0.3px; margin: 0; }
 .onbwel-d-sub { color: var(--charcoal); font-size: 18px; line-height: 1.55; margin-top: 18px; max-width: 560px; }
 /* Front-door sign-in affordance — "/" lands on the welcome hero now, so a RETURNING member needs a visible way
    through it. Quiet on purpose: the primary action is still Sign up. (Jay 7/29, entry narrowing) */
 .onbwel-d-signin { margin-top: 16px; color: var(--muted-grey); font-size: 14px; }
 .onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
-.onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
+.onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
 /* THE ART, on every slide that has one. Donna's illustrations run wide (wake-up 2:1, companion 3:1, walk 2.7:1)
    except progress, which is nearly square — so this caps by HEIGHT rather than width, or the square one would
    tower over the four beside it and the set would stop reading as a set. */
 /* Capped by HEIGHT so the wide illustrations (companion is 3:1) and the near-square one (progress, rings) read as
    one set rather than four banners and a dot. */
-.onbwel-art { display: block; width: auto; max-width: min(100%, 420px); max-height: 150px; margin: 0 0 24px; }
+/* HALF THE HEIGHT (Donna, 2026-08-27): "reduce size of the image 50%" on every screen. At 150px the illustration
+   was the loudest thing above the fold and pushed the headline down; at 75px it reads as a mark introducing the
+   words rather than competing with them. Per-screen overrides below where she asked for a different number. */
+.onbwel-art { display: block; width: auto; max-width: min(100%, 420px); max-height: 75px; margin: 0 0 24px; }
+/* Slide 5's rings: 40%, not 50%, and explicitly left-aligned — it is the one near-square mark in the set, so the
+   same cap reads smaller on it than on the wide ones. */
+.onbwel-art-rings { max-height: 90px; margin-right: auto; }
 .onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; }
 .onbwel-d-sub-lead { font-weight: 700; color: var(--navy); }
 
-/* SLIDE 2 — the exchange. Two turns, not a block quote: the Companion's line sits left with a teal edge, the
-   member's answer sits inset and italic, so the shape itself shows someone being heard and answering back. */
-.onbwel-quotes { margin: 22px 0 0; }
-.onbwel-quote { margin: 0; padding: 10px 0 10px 16px; border-left: 3px solid var(--teal); color: var(--navy); font-size: 17px; line-height: 1.5; }
-.onbwel-quote.is-member { margin-top: 10px; margin-left: 28px; border-left-color: var(--grey); color: var(--muted-grey); font-style: italic; }
+/* SLIDE 2 — the exchange, as REAL CHAT BUBBLES (Donna, 2026-08-27): Companion left, member right. Two indented
+   block quotes sharing a left rule read as one person quoting themselves; bubbles say "two turns" with no words.
+   Values mirror .bubble / .bubble.agent / .bubble.member so the intro previews the actual product. */
+.onbwel-quotes { display: flex; flex-direction: column; gap: 10px; margin: 22px 0 0; }
+.onbwel-qb {
+  margin: 0; align-self: flex-start; max-width: 85%;
+  padding: 12px 16px; border-radius: 14px; border-bottom-left-radius: 4px;
+  background: var(--grey); color: var(--charcoal); font-size: 17px; line-height: 1.5;
+}
+.onbwel-qb.is-member {
+  align-self: flex-end; background: var(--navy); color: var(--white);
+  border-bottom-left-radius: 14px; border-bottom-right-radius: 4px;
+}
 
 /* SLIDE 3 — the four Rs on their own row. Buried in a sentence they read as prose; they are the spine of the
-   program and the only four words a member has to carry out of this screen. */
-.onbwel-rs { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
-.onbwel-r { font-weight: 700; font-size: 14px; color: var(--navy); background: var(--grey); border-radius: 100px; padding: 7px 16px; }
+   program and the only four words a member has to carry out of this screen.
+   NO PILL (Donna, 2026-08-27): a grey pill made four brand phases look like metadata tags. All caps, spaced, each
+   in its own canonical phase colour — the same four the dashboard ring and the badges use.
+
+   SIZED BY CONTRAST, NOT BY EYE. Measured on white: navy 8.53:1, teal 3.59, olive 3.20, orange 3.30. Three of the
+   four clear AA only as LARGE text (3:1 at >=18.66px bold), so 19px bold is the floor this treatment can legally
+   use — at Donna's more natural-looking 15px, three quarters of the row would be inaccessible. Do not shrink it;
+   the alternative is going off-palette, which is worse. */
+.onbwel-rs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 22px 0 0; }
+.onbwel-r { font-weight: 700; font-size: 19px; letter-spacing: 0.8px; text-transform: uppercase; }
+.onbwel-r.r-reconnect { color: #374F63; }
+.onbwel-r.r-rewire { color: #3B9495; }
+.onbwel-r.r-rebuild { color: #919536; }
+.onbwel-r.r-reclaim { color: #EC6233; }
 
 /* SLIDE 4 — the worked ID Score example. Set apart so it reads as a SPECIMEN and not as a promise, and
    deliberately carrying no timeframe: the IDQ moves every 60 days, never weekly. */
@@ -3110,15 +3135,21 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The invert() is GONE. It existed to lift the wordmark off a dark photo; on white ground it rendered a white
    logo on a white page — invisible, and only visible as a bug if you looked for something that was not there. */
 .onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 52px; width: auto; z-index: 2; }
-/* The hero on mobile (Jay: fold the hero into mobile). A full-width dark scrim over the centered photo keeps the copy
-   legible on a narrow screen; top-aligned with scroll room for the three intro paragraphs, tighter type. */
+/* The hero on mobile (Jay: fold the hero into mobile). Top-aligned with scroll room for the three intro
+   paragraphs, tighter type.
+
+   WHITE ON MOBILE TOO — FIXED 2026-08-27. Donna's white Slide 1 shipped in v3.4.53 by changing .onbwel-d-hero at
+   the top level. This media query held a SECOND copy of the background, and nothing changed it, so every viewport
+   at or under 1000px kept the old photo-and-dark-scrim hero — while the headline, the body and the sub-lead had
+   all been recoloured to navy for a white ground. Navy copy over a dark scrim is close to unreadable, and it was
+   the FRONT DOOR: the first screen a prospect on a phone ever saw.
+
+   Nobody caught it because the redesign was reviewed on a desktop, where the top-level rule wins. Same shape as
+   every other "one fact, two sites" defect in this file — the fix is not a third copy, it is that the mobile rule
+   now only says what is genuinely different on a phone (padding, alignment) and inherits the colour. */
 @media (max-width: 1000px) {
   .onbwel-d-hero { min-height: 100dvh; justify-content: flex-start;
-    padding: calc(env(safe-area-inset-top, 0px) + 116px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px);
-    background:
-      linear-gradient(180deg, rgba(19, 27, 35, 0.88) 0%, rgba(22, 31, 40, 0.74) 52%, rgba(28, 38, 46, 0.66) 100%),
-      url('/brand/onboarding-hero.jpg') center 22% / cover no-repeat,
-      linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+    padding: calc(env(safe-area-inset-top, 0px) + 116px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px); }
   .onbwel-d-head { font-size: clamp(38px, 11vw, 56px); }
   .onbwel-d-sub { font-size: 16px; line-height: 1.5; margin-top: 16px; }
   .onbwel-d-cta { margin-top: 26px; }

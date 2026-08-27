@@ -53,8 +53,9 @@ const ART: Partial<Record<ArtKey, string>> = {
 function Art({ k }: { k?: ArtKey }) {
   const src = k && ART[k];
   if (!src) return null;
+  // The rings take their own size (40% down, not 50%) — see .onbwel-art-rings.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className="onbwel-art" src={src} alt="" aria-hidden="true" />;
+  return <img className={`onbwel-art${k === 'rings' ? ' onbwel-art-rings' : ''}`} src={src} alt="" aria-hidden="true" />;
 }
 
 // PART 1 OF 4 · GETTING READY — Jay + Cowork's messaging pass (2026-08-13).
@@ -112,12 +113,19 @@ const BEATS: Beat[] = [
     score: 'Your ID (Identity Distance) Score: 34 → 41',
     cta: 'Next →',
   },
+  // SLIDE 5 — DONNA'S COPY, 2026-08-27, superseding Cowork's "final" version from the same morning (Jay: "Take
+  // Donna's"). Same two facts — about half an hour today, about six weeks for a first cycle — in her voice, and it
+  // adds the one thing the other version left out: that a member is meant to stop and start. That is the
+  // Independence Guarantee said plainly, on the screen where a prospect is deciding whether to begin at all.
+  //
+  // "Maybe even today" is hers and it is doing real work: it answers "when does this start paying" before the
+  // question forms. Cowork gets a note that its final was superseded within the day.
   {
     art: 'rings',
     head: ['What you’ll', 'see next.'],
     body: [
-      'Here’s what today looks like. Give it a good half hour with your Companion — a friendly first conversation and a quick program tour, so it can get to know you and you can find your way.',
-      'You can stop between any of it — nothing’s lost. After today it opens out: a first cycle runs about six weeks, at whatever pace your life allows.',
+      'Plan about 30 minutes for a friendly initial conversation so your Companion can get to know you. And you’ll get a feel for the Program with a quick tour.',
+      'G4L is designed for you to stop and go at your own pace. You’ll begin reconnecting with yourself immediately, maybe even today, and will complete a first cycle in about 6 weeks.',
     ],
     cta: 'Keep looking →',
   },
@@ -158,12 +166,17 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
           {beat.body.map((seg, x) => (
             <p key={x} className="onbwel-body">{renderBody([seg])}</p>
           ))}
-          {/* SLIDE 2 — the exchange. Rendered as two turns rather than one block quote so the second line reads as
-              the MEMBER answering, which is the whole point of the example: what it feels like to be heard. */}
+          {/* SLIDE 2 — the exchange, as REAL CHAT BUBBLES (Donna, 2026-08-27): Companion left, member right.
+              It used to be two indented block quotes sharing a left rule, which reads as one person quoting
+              themselves. Bubbles say "these are two turns" without a word of explanation.
+
+              Deliberately the same grey-left / navy-right the product actually uses (.bubble.agent / .bubble.member)
+              rather than a look invented for the intro — this screen is a promise about what the thing looks like,
+              so it should look like the thing. */}
           {beat.quotes && (
             <div className="onbwel-quotes">
               {beat.quotes.map((q, x) => (
-                <p key={x} className={`onbwel-quote${x === 1 ? ' is-member' : ''}`}>{q}</p>
+                <p key={x} className={`onbwel-qb${x % 2 === 1 ? ' is-member' : ''}`}>{q}</p>
               ))}
             </div>
           )}
@@ -171,7 +184,13 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
               are the spine of the program and the only four words a member has to carry out of here. */}
           {beat.rs && (
             <div className="onbwel-rs">
-              {beat.rs.map((r) => <span key={r} className="onbwel-r">{r}</span>)}
+              {/* NO PILLS, ALL CAPS, EACH IN ITS OWN COLOUR (Donna, 2026-08-27). The grey pill made four brand
+                  phases look like metadata tags. The colours are the canonical 4R palette — the same four used by
+                  the dashboard ring, the Program page and the badges — read from the class, so a phase colour
+                  cannot drift here without drifting everywhere. */}
+              {beat.rs.map((r) => (
+                <span key={r} className={`onbwel-r r-${r.toLowerCase()}`}>{r}</span>
+              ))}
             </div>
           )}
           {/* SLIDE 4 — a worked example, set apart so it reads as a specimen rather than a promise. NO timeframe:
