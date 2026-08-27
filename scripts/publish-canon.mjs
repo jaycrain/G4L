@@ -184,8 +184,18 @@ if (existsSync('dist/cowork-bundle/screenshots')) {
 }
 
 // ── MANIFEST with checksums ──────────────────────────────────────────────────────────────────────────────────
+// EVERY IMAGE, NOT JUST .jpg (2026-08-27). This filter was `.endsWith('.jpg')`, so the sixteen PNGs in the
+// v3.4.62 bundle — including all ten captures of Donna's redesigned intro screens, the thing that release was
+// about — were copied into canon and then counted as not existing. The MANIFEST under-reported, and the
+// no-images check below measured the wrong set: a bundle of one jpg and twenty-seven pngs would have passed
+// while reporting "1 file".
+//
+// This is the exact failure this script was written to stop, one layer in. The header note says an empty
+// screenshots folder still lists and the MANIFEST still promises; the loud check that replaced that trust was
+// itself blind to the format we have been saving in since August. Verified against the real folder, both ways.
+const IMAGE_RE = /\.(jpe?g|png|webp|gif|svg)$/i;
 const shots = existsSync(join(CANON, 'screenshots'))
-  ? readdirSync(join(CANON, 'screenshots')).filter((f) => f.endsWith('.jpg')).sort()
+  ? readdirSync(join(CANON, 'screenshots')).filter((f) => IMAGE_RE.test(f)).sort()
   : [];
 const rows = PARTS.map((p) => {
   const path = join(CANON, p.name);
@@ -204,7 +214,9 @@ const manifest =
   rows.map((r) => r.missing
     ? `| \`${r.name}\` | — | **MISSING** | ${r.note} |`
     : `| \`${r.name}\` | ${r.bytes.toLocaleString()} | \`${r.hash}\` | ${r.note} |`).join('\n') +
-  `\n| \`screenshots/\` | ${shots.length} files | — | key member surfaces at 1440px |\n\n` +
+  // No width claimed. It used to say "at 1440px", which stopped being true the day captures started coming from
+  // the preview tools at desktop and phone widths — a promise about the artifact that the artifact contradicted.
+  `\n| \`screenshots/\` | ${shots.length} files | — | key member surfaces (desktop + phone) |\n\n` +
   `## Read in this order\n\n` +
   `1. \`sync-note.md\` — what changed and why.\n` +
   `2. \`CHANGES.md\` — the exact authored lines added and removed. This is the reconciliation list.\n` +
