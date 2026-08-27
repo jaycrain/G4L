@@ -7,6 +7,7 @@
 // confirm commits it back to the live list (propose→confirm→commit, Decision L — never silent mutation). Flag-gated by
 // RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
+import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
@@ -222,7 +223,18 @@ export function reclaimC1Opening(listTexts: string[] = []): Turn {
 }
 
 // ── The live surface — the model COACHES the refinement and records the result via record_refinement ──
-const REFINE_SYSTEM =
+export const REFINE_SYSTEM =
+  // GOVERNED (2026-08-27). This prompt was a standalone string, so the Companion ran this Session with none of the
+  // shared rules — privacy, never-name-a-real-person, never-infer-gender, the AI-tell word list, the locked
+  // vocabulary, identity-is-not-an-address, what-you-are, reflect-and-route, never-narrate-the-machinery. Each was
+  // written because it had already reached a real member once, and the costliest is privacy: the block's own
+  // header records a member being assured "this is between us" by something with no knowledge of how her data is
+  // held. Rewire was governed on 8/26 and verified live — asked the privacy question, it refused the between-us
+  // promise, named the Founders and offered to escalate.
+  //
+  // The AI-disclosure trailer is excluded by MEMBER_AGENT_GOVERNED_CORE, deliberately: it reads "first line of a
+  // member's first conversation, verbatim", and dropped here it would re-disclose forty minutes into a Session.
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running C1 Step 2 — revisiting the member's Reclaim List in Reclaim (Phase 4). The list " +
   "was built at the very start; now, after Reconnect/Rewire/Rebuild, you help them re-read it THROUGH A CHANGED SELF " +
   "and refine it. This is coaching, warm and member-owned — not a survey, not therapy. Walk them, one question at a " +
@@ -335,7 +347,15 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 700,
-    system: REFINE_SYSTEM + refineStageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own text is byte-identical every
+    // turn and carries the breakpoint; context, stage note and carry-forward move AFTER it, because a single
+    // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
+    // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 2048-token cache minimum, so it could
+    // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
+    system: [
+      { type: 'text' as const, text: REFINE_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: refineStageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
     tools: [RECORD_REFINEMENT_TOOL],
     messages,
   });
@@ -935,7 +955,18 @@ export function reclaimC3Opening(): Turn {
   return { reply: c3Opening(), state: { stage: 'quality', collected: {} }, complete: false };
 }
 
-const C3_SYSTEM =
+export const C3_SYSTEM =
+  // GOVERNED (2026-08-27). This prompt was a standalone string, so the Companion ran this Session with none of the
+  // shared rules — privacy, never-name-a-real-person, never-infer-gender, the AI-tell word list, the locked
+  // vocabulary, identity-is-not-an-address, what-you-are, reflect-and-route, never-narrate-the-machinery. Each was
+  // written because it had already reached a real member once, and the costliest is privacy: the block's own
+  // header records a member being assured "this is between us" by something with no knowledge of how her data is
+  // held. Rewire was governed on 8/26 and verified live — asked the privacy question, it refused the between-us
+  // promise, named the Founders and offered to escalate.
+  //
+  // The AI-disclosure trailer is excluded by MEMBER_AGENT_GOVERNED_CORE, deliberately: it reads "first line of a
+  // member's first conversation, verbatim", and dropped here it would re-disclose forty minutes into a Session.
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running C3, Quality Days, in Reclaim (Phase 4). You help the member DEFINE what makes a " +
   "day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit " +
   "what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're " +
@@ -996,7 +1027,15 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 600,
-    system: C3_SYSTEM + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own text is byte-identical every
+    // turn and carries the breakpoint; context, stage note and carry-forward move AFTER it, because a single
+    // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
+    // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 2048-token cache minimum, so it could
+    // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
+    system: [
+      { type: 'text' as const, text: C3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: carryForward ? `\n\n${carryForward}` : '' },
+    ],
     tools: [RECORD_QUALITY_DAY_TOOL],
     messages,
   });

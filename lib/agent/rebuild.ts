@@ -6,6 +6,7 @@
 // This is a parallel motivation register — NEVER folded into Grinta (that's B4's Control component, a later slice).
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
+import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
@@ -404,7 +405,18 @@ export function rebuildB3Opening(): Turn {
 }
 
 // ── the live surface — the model COACHES to a plan and LOCKS each change via record_plan (specific + right-sized) ──
-const B3_SYSTEM =
+export const B3_SYSTEM =
+  // GOVERNED (2026-08-27). This prompt was a standalone string, so the Companion ran this Session with none of the
+  // shared rules — privacy, never-name-a-real-person, never-infer-gender, the AI-tell word list, the locked
+  // vocabulary, identity-is-not-an-address, what-you-are, reflect-and-route, never-narrate-the-machinery. Each was
+  // written because it had already reached a real member once, and the costliest is privacy: the block's own
+  // header records a member being assured "this is between us" by something with no knowledge of how her data is
+  // held. Rewire was governed on 8/26 and verified live — asked the privacy question, it refused the between-us
+  // promise, named the Founders and offered to escalate.
+  //
+  // The AI-disclosure trailer is excluded by MEMBER_AGENT_GOVERNED_CORE, deliberately: it reads "first line of a
+  // member's first conversation, verbatim", and dropped here it would re-disclose forty minutes into a Session.
+  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running B3, the Lifestyle Pilot, in Rebuild (Phase 3). Your job is to COACH the member to " +
   "a small, doable, member-owned plan: ONE small new physical-activity change and ONE small new dietary change for the " +
   "coming week. This is coaching, not therapy and not a survey — help them make a plan; don't excavate feelings or " +
@@ -552,7 +564,15 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: B3_SYSTEM + b3Context(state.collected) + b3StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
+    // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own text is byte-identical every
+    // turn and carries the breakpoint; context, stage note and carry-forward move AFTER it, because a single
+    // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
+    // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 2048-token cache minimum, so it could
+    // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
+    system: [
+      { type: 'text' as const, text: B3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: b3Context(state.collected) + b3StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
     tools: [RECORD_PLAN_TOOL],
     messages,
   });
