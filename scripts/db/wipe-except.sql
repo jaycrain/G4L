@@ -19,7 +19,13 @@ with keep as (
                                         -- appears in wipe-test-accounts.sql as a DELETION TARGET, and I had it
                                         -- in this keep-list from that example. Left unchecked it would have
                                         -- deleted the one account named to keep, and kept a test account.
-    'donnacrain19@gmail.com',           -- Donna. Her walk is the source of D2–D16, still open.
+    -- DONNA IS DELIBERATELY NOT KEPT (Jay, 2026-08-27). I first argued to keep her because "several open items
+    -- need her state to reproduce" — an assertion I had not checked. Checked: every one of D2–D16 still open is
+    -- copy, CSS or engine behaviour. D4's evidence is a screenshot in her email, not a row. D3 and D13 are
+    -- capture-loop bugs, and the documented way to reproduce those is a replay fixture, not a live run.
+    -- purge-member.ts already lists her as purgeable precisely BECAUSE she re-walks from the front door on every
+    -- intake change — preserving her account works against the job she does.
+    --
     -- ── demo accounts the TOOLING depends on. Losing these breaks things you use daily. ──────────────────────
     'demo-tom@grintaforlife.test',      -- SMOKE_EMAIL. `npm run smoke` logs in as this after every deploy and
                                         -- refuses non-.test accounts. Wipe it and the post-deploy gate dies.
@@ -46,7 +52,6 @@ do $$
 declare
   keep text[] := array[
     'gjwg4l1@gmail.com',
-    'donnacrain19@gmail.com',
     'demo-tom@grintaforlife.test',
     'demo-maria@grintaforlife.test',
     'demo-reshma@grintaforlife.test',

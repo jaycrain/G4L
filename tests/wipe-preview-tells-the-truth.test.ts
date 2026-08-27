@@ -50,3 +50,13 @@ test('gdc@gdc.com is not treated as Greg — it is a deletion target in the sibl
   assert.ok(!keep.includes('gdc@gdc.com'), 'gdc@gdc.com is a test account, not Greg');
   assert.ok(keep.includes('gjwg4l1@gmail.com'), "Greg's real address must be on the keep-list");
 });
+
+// Greg is the ONLY real person kept. Everything else is a demo account our tooling drives. Pinned because the
+// list grew a person once already on an unchecked assumption ("her open findings need her state" — they do not),
+// and a keep-list is the one place where a plausible-sounding addition costs nothing to add and everything to be
+// wrong about: it silently preserves member data a wipe was meant to clear.
+test('exactly one real address survives, and it is Greg', () => {
+  const keep = addressesIn(/keep text\[\] := array\[/, /\];/);
+  const real = keep.filter((e) => !e.endsWith('.test'));
+  assert.deepEqual(real, ['gjwg4l1@gmail.com'], `expected only Greg; got ${real.join(', ') || '(none)'}`);
+});
