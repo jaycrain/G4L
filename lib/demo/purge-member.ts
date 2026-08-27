@@ -44,7 +44,18 @@ export const ORPHAN_TABLES = ['member_access_log'] as const;
  * should read like one: a name, and why the account exists.
  */
 export const PURGEABLE = [
-  'donnacrain19@gmail.com', // Donna — walks onboarding end-to-end from the front door on every intake change.
+  // Donna — walks onboarding end-to-end from the front door on every intake change.
+  //
+  // BOTH ADDRESSES, because the gmail one went stale and nothing noticed. She moved to cranedonna@mac.com on
+  // 2026-08-27 and this list still named only the old one — so the SAFE purge path (/admin/fresh, which gates on
+  // isPurgeable) would have refused the account she actually uses, while appearing to cover her. A guard that
+  // reads as protection and protects nothing is worse than no guard, because you stop checking. Found by reading
+  // the prod roster during the 8/27 wipe, not by anything here.
+  //
+  // The gmail row was deleted in that wipe. The entry stays: an allowlist describes what we PERMIT, not what
+  // currently exists, and a tester who returns to an old address should not be a surprise.
+  'cranedonna@mac.com',
+  'donnacrain19@gmail.com',
 ] as const;
 
 /** Is this address one we are allowed to destroy? `.test` fixtures always are; real addresses only by name. */

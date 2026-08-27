@@ -29,10 +29,17 @@ with keep as (
     -- ── demo accounts the TOOLING depends on. Losing these breaks things you use daily. ──────────────────────
     'demo-tom@grintaforlife.test',      -- SMOKE_EMAIL. `npm run smoke` logs in as this after every deploy and
                                         -- refuses non-.test accounts. Wipe it and the post-deploy gate dies.
-    'demo-maria@grintaforlife.test',    -- seeded persona WITH history — the far-along fixture. Every
-    'demo-reshma@grintaforlife.test',   -- history-conditional surface renders as nothing without one of these.
-    'fresh@grintaforlife.test'          -- /admin/fresh — the only way to see the Threshold ceremony, the
+    'fresh@grintaforlife.test',         -- /admin/fresh — the only way to see the Threshold ceremony, the
                                         -- Opening Tour and the empty states.
+    -- ── AND THE ONE THAT IS NOT A PERSON AT ALL ─────────────────────────────────────────────────────────────
+    'founders@system.grintaforlife.internal'
+                                        -- "The Founders" — the authoring identity for Community posts, because
+                                        -- connect_post.author_id is NOT NULL and references member_profile. It
+                                        -- was in the DELETE list on the 8/27 run and caught with one paste to
+                                        -- spare. That FK is ON DELETE CASCADE, so removing it takes every post
+                                        -- signed "The Founders" with it, including the seeded Session topics.
+                                        -- A roster read as "people" hides it: it has a display name, a member
+                                        -- row, and no way to look like infrastructure.
   ])) as email
 )
 select
@@ -45,6 +52,26 @@ from member_profile p
 full outer join onboarding_session o on lower(o.email) = lower(p.email)
 order by verdict, kind, email;
 
+-- ═══ STEP 1b · DOES EVERY KEEP-LIST ENTRY ACTUALLY MATCH SOMEBODY? ═══════════════════════════════════════════
+-- The failure this catches: a typo in the keep-list does not announce itself. The intended survivor simply shows
+-- up in Step 1 under DELETE, one row among fifteen, and reads as just another account you did not recognise.
+-- Nothing is highlighted and nothing errors — you find out afterwards.
+--
+-- So ask the question directly. EVERY row this returns is a keep-list entry that protects nobody. Expect zero.
+-- Real: it is how gdc@gdc.com sat in this list as "Greg" until the roster was checked.
+with keep as (
+  select lower(unnest(array[
+    'gjwg4l1@gmail.com',
+    'demo-tom@grintaforlife.test',
+    'fresh@grintaforlife.test',
+    'founders@system.grintaforlife.internal'
+  ])) as email
+)
+select k.email as keep_list_entry_matching_nothing
+from keep k
+where not exists (select 1 from member_profile     p where lower(p.email) = k.email)
+  and not exists (select 1 from onboarding_session o where lower(o.email) = k.email);
+
 -- ═══ STEP 2 · THE WIPE. Only after Step 1 reads the way you intend. ══════════════════════════════════════════
 -- Single DO block = one atomic statement. The editor runs statements separately, so a BEGIN..COMMIT script
 -- would NOT stay atomic here; this does.
@@ -53,9 +80,8 @@ declare
   keep text[] := array[
     'gjwg4l1@gmail.com',
     'demo-tom@grintaforlife.test',
-    'demo-maria@grintaforlife.test',
-    'demo-reshma@grintaforlife.test',
-    'fresh@grintaforlife.test'
+    'fresh@grintaforlife.test',
+    'founders@system.grintaforlife.internal'
   ];
   ids uuid[];
   n_sessions int;
