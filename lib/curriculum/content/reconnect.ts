@@ -22,7 +22,7 @@ export const RECONNECT_SESSIONS: Asset[] = [
         title: 'How the gap opened',
         prompt: 'When we first talked, you told me how the gap opened. Does that still feel right — or is there more to it now?',
         input_type: 'writing',
-        companion_frame: 'You already gave this a name once, when we first met. You know yourself better a few steps in, so let\'s look at it together — keep what fits, sharpen the wording, and we can add one if another\'s been quietly in the room.',
+        companion_frame: 'You already gave this a name once, when we first met. You know yourself better a few steps in, so let\'s look at it together — keep what fits, sharpen the wording, and we can add one if another\'s been in the room the whole time.',
         probe: 'The Door is the category; what it actually was for you is the part that matters. Tell me your version.',
         contributes: 'your_doors',
       },
@@ -69,7 +69,7 @@ export const RECONNECT_SESSIONS: Asset[] = [
         prompt: 'Name three things the Fade cost you — be specific.',
         input_type: 'writing',
         companion_frame: 'Every life you build costs something. Be specific about what you traded away to get here: morning rides, deep friendships, the feeling of being in your body instead of trapped in your head. This isn\'t regret — it\'s inventory.',
-        probe: 'Past the obvious. What\'s the quiet one you don\'t usually let yourself miss?',
+        probe: 'Past the obvious. What\'s the one you don\'t usually let yourself miss?',
         contributes: 'playbook',
       },
       {

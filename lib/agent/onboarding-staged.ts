@@ -351,7 +351,7 @@ function gapToReclaimBridge(c: Collected): string {
   // the member the OBJECT of a sentence about their own experience. The Identity may still be named as the thing
   // they are reclaiming (the product's actual promise); it may not stand in for them as the one who lived it.
   return (
-    `That's a lot to have been carrying${identity ? ` — no wonder that part of you got quiet under all of it` : ''}. ` +
+    `That's a lot to have been carrying${identity ? ` — no wonder that part of you went silent under all of it` : ''}. ` +
     `Here's the turn, though: none of it is gone. It's been waiting for you.`
   );
 }
@@ -433,7 +433,7 @@ const CARD_LIST_SET =
 // way — it lowers the bar (small things count) to unlock one more, then the engine stops nudging.
 const RECLAIM_NUDGE =
   "Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've " +
-  'lost touch with, ten quiet minutes that are yours. What comes to mind?';
+  'lost touch with, ten unhurried minutes that are yours. What comes to mind?';
 
 // §6 — the whole-picture commit gate: the handoff into the confirmation card (the card itself is rendered
 // client-side from `collected`; nothing saves until the member confirms).

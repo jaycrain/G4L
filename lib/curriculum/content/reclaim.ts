@@ -92,7 +92,7 @@ export const RECLAIM_SESSIONS: Asset[] = [
         title: 'Back-plan the build',
         prompt: 'Work backward — what does the first build week look like?',
         input_type: 'writing',
-        companion_frame: 'Work backward from the date. What does your body need to handle that day, and what\'s the base you build in the quiet weeks before? You prepare so the day is a celebration, not a survival.',
+        companion_frame: 'Work backward from the date. What does your body need to handle that day, and what\'s the base you build in the weeks before? You prepare so the day is a celebration, not a survival.',
         probe: 'Start with this week. What\'s the very first session toward it?',
         contributes: 'playbook',
       },

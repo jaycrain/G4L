@@ -172,13 +172,24 @@ test('reconnect doors · GRACEFUL DEGRADATION — no material to synthesize → 
   const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 4 } }, collected: { identityNoun: 'Racer', doors: ['marriage'] } };
   const turn = applyReconnectTurn(atDoors, [], 'idk', { text: '' }); // cap hit, but the model returned nothing
   assert.equal(turn.state.awaitingConfirm, true);
-  assert.match(turn.reply, /still finding it|before it's earned/i, 'degrades honestly — does not fabricate an insight');
+  // The fallback copy changed on 2026-08-27: it used to say "I don't want to put a shape on this before it's
+  // earned", which our own system prompt forbids the Companion from saying. The BEHAVIOUR under test is
+  // unchanged — degrade honestly, never fabricate — so the assertion moves to the new words rather than going.
+  assert.match(turn.reply, /tell me more about how it actually went/i, 'degrades honestly — does not fabricate an insight');
+  assert.doesNotMatch(turn.reply, /shape of it|put a shape on/i, 'and does it without a phrase we ban the model from using');
 });
 
+// UPDATED 2026-08-27: the Doors beat now has one more turn before the IDQ — Greg's fourth reflection question
+// ("what does recognizing these Doors change about how you see your own Fade"), which his R1 spec always asked
+// for and we had never built. So `done` no longer lands on measurement; it asks, and the ANSWER lands there.
+// The handoff contract these tests exist to protect is unchanged — it just happens one beat later.
 test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the correction humbly', () => {
   const base: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['marriage'] } };
   const done = applyReconnectTurn(base, [], "yeah, that's exactly it", { text: 'Good.', replyIntent: 'done' });
-  assert.equal(done.state.stage, 'measurement', 'a landed insight hands into the measurement block (§2c stub)');
+  assert.equal(done.state.stage, 'doors', 'a landed insight asks the meaning question before leaving the Doors beat');
+  assert.match(done.reply, /change about how you see your own Fade/i, "Greg's fourth reflection question");
+  const after = applyReconnectTurn(done.state, [], 'It means I stopped blaming myself for all of it.', { text: '' });
+  assert.equal(after.state.stage, 'measurement', 'and her answer hands into the measurement block (§2c stub)');
   const dispute = applyReconnectTurn(base, [], "no, that's not it at all", { text: '', replyIntent: 'dispute' });
   assert.equal(dispute.state.awaitingConfirm, false, 'a dispute reopens');
   assert.equal(dispute.state.stage, 'doors', 'stays in the Doors beat');
@@ -298,7 +309,8 @@ test('reconnect revision · a disputed add is dropped, humbly — the named set 
 
 test('reconnect measurement · Doors done hands into the administered check-in (warm open + scale, not a survey wall)', () => {
   const atDoors: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['grind'] } };
-  const turn = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
+  const asked = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
+  const turn = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
   assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement');
   assert.match(turn.reply, /Identity Distance/i, 'framed warmly (the ID Score), not a survey wall');
   assert.match(turn.reply, /1 to 5|not at all/i, 'gives the 1–5 scale');
@@ -544,7 +556,7 @@ test('BOARD · the doors stage opens with the board, pre-lit with the Doors she 
   const e = turn.expects as { cards: { slug: string }[]; held: string[] };
   assert.equal(e.cards.length, 12, 'every Door is shown, not just hers');
   assert.equal(e.cards[0]!.slug, 'body', 'board order is the instrument, applied here and nowhere else');
-  assert.deepEqual(e.held, ['career_cliff', 'load_bearer'], 'the board recognises her rather than starting blank');
+  assert.deepEqual(e.held, ['career_cliff', 'load_bearer'], 'the board recognizes her rather than starting blank');
   // Autopilot is the twelfth Door as of 2026-08-22, not a separate quietDrift card — Greg's R2 asset names it a
   // required minimum and rates it like the rest. It sits last because the prevalence ranking does not contain it.
   assert.equal(e.cards[e.cards.length - 1]!.slug, 'autopilot', "Greg's quiet Door is on the board, as a Door");
@@ -612,7 +624,10 @@ test('the entrance echo opens every Reconnect path, before the forecast', () => 
   for (const [label, collected] of cases) {
     const beats = reconnectCallback(collected).split(BEAT_SEP);
     const echo = beats.findIndex((b) => b.includes("you can't change what you haven't seen"));
-    const forecast = beats.findIndex((b) => b.includes("Here's the shape of it"));
+    // The forecast opened "Here's the shape of it" until 2026-08-27, when that phrase came out of all member
+    // copy — our own system prompt forbids the Companion from using it. What this test protects is the ORDER
+    // (the echo is the reason for the shape the forecast describes), so it follows the copy rather than pinning it.
+    const forecast = beats.findIndex((b) => b.includes("Here's how it goes"));
 
     assert.ok(echo >= 0, `${label}: the entrance echo is missing`);
     assert.ok(forecast >= 0, `${label}: the forecast is missing`);

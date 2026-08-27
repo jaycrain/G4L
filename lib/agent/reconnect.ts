@@ -111,8 +111,8 @@ const ENTRANCE_ECHO =
 // without it, the drawing-out feels pointless and endless. Maps honestly to the arc: Doors → a fresh measure (IDQ) →
 // the cost + the future you're reclaiming (Drift/Window) → the Checkpoint that opens the next phase. Plain, no hype.
 const RECONNECT_FORECAST =
-  "Here's the shape of it: we'll walk back through the Door — or Doors — the distance came in through, take a fresh " +
-  'measure of where you are now, then look at what it quietly cost and the life you\'re reclaiming. It ends where your ' +
+  "Here's how it goes: we'll walk back through the Door — or Doors — the distance came in through, take a fresh " +
+  'measure of where you are now, then look at what it cost and the life you\'re reclaiming. It ends where your ' +
   'next phase begins. One thing at a time, at your pace — you set the depth, and you can stop whenever you want.';
 
 // The Reconnect opening turn (parallels stagedOpening): the callback message + the arc's initial state, with the
@@ -239,16 +239,16 @@ function doorOpen(c: Collected): string {
     const held = others > 0 ? ` We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.` : '';
     return (
       `Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the name — the real thing: take me ` +
-      `back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.`
+      `back to how it actually happened, and what it cost you. Start wherever it's most vivid.`
     );
   }
-  return `Let's go into how the distance opened — the real thing, not a summary. Take me back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.`;
+  return `Let's go into how the distance opened — the real thing, not a summary. Take me back to how it actually happened, and what it cost you. Start wherever it's most vivid.`;
 }
 
 // Invite the next layer — rotated so it never repeats verbatim as the door is drawn out.
 const DOOR_MORE_VARIANTS = [
   'Stay with that a moment — what did it actually cost you, the part you maybe stopped counting?',
-  'What was underneath that — when did you first feel it, and what did it quietly take?',
+  'What was underneath that — when did you first feel it, and what did it take?',
   'Go a little deeper — how did that change what an ordinary day felt like?',
 ];
 // Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
@@ -261,13 +261,29 @@ function doorMore(history: ConvMessage[]): string | null {
 // The INSIGHT reflect: trust the model's synthesis (the prompt makes it offer a connection, in their words, as a
 // check). If it left only a question, use it whole. GRACEFUL DEGRADATION (hard rule): if it returned nothing, a
 // smaller honest reflection — NEVER a manufactured pattern.
-const DOOR_INSIGHT_CONFIRM = 'Does that land the way I put it — or is it not quite the shape of it?';
+const DOOR_INSIGHT_CONFIRM = 'Does that land the way it happened — or is it not quite right?';
 function reflectDoor(modelText: string): string {
   const t = (modelText ?? '').trim();
   if (t && /\?\s*$/.test(t)) return t;
   if (t) return `${t}\n\n${DOOR_INSIGHT_CONFIRM}`;
-  return `I don't want to put a shape on this before it's earned — we're still finding it. Tell me more about how it actually went.`;
+  return `Tell me more about how it actually went.`;
 }
+// GREG'S FOURTH REFLECTION QUESTION, finally built (2026-08-27).
+//
+// His R1 spec asks for FOUR responses after the Doors board: which came first, which weighs most, which is still
+// open — and then this one. We shipped the first three as chip-pickers and never built the fourth, so a member
+// tapped three answers and nothing came back. Donna, on her walk: "this info is taken down but you don't know
+// where it goes. For me, there's no personal value in identifying which one happened first."
+//
+// She was right, and the missing question is why. The first three COLLECT; this one is where it means something.
+//
+// A WRITTEN ANSWER, NOT A CHIP, because that is what he asked for ("write a brief response to each of these") and
+// because a tap cannot answer it. It sits here, after the Door has been drawn out and confirmed — the last beat
+// of the Doors work — so it lands on everything she has just said rather than on a board she has half forgotten.
+const DOORS_MEANING_Q =
+  `Last thing on this, and it's the one that matters most: what does recognizing these Doors change about how ` +
+  `you see your own Fade?`;
+
 const REOPEN_DOOR = "My mistake — I'd rather get this right than sound clever. Help me see it the way you do — what did I miss?";
 
 // --- §2b RE-SEEING (Decision L, slice 1: the primary CORRECT) --------------------------------------------------
@@ -324,7 +340,7 @@ function keepIfMaterial(b: { memberMessage: string; driftPayload?: string }): vo
 
 function reseeingLanded(toSlug: DoorSlug, kind: DoorRevision['kind']): string {
   const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
-  if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me take in what it means, and we'll keep going from there.`;
+  if (kind === 'correct') return `${name}, then — that's the one. That changes it. Let me take in what it means, and we'll keep going from there.`;
   // widen / name ADD a Door rather than replace — acknowledge it as also true, not a correction of the first.
   return `${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.`;
 }
@@ -501,6 +517,15 @@ const doorsStage: StageDef = {
         return;
       }
     }
+    // HER ANSWER TO THE MEANING QUESTION ENDS THE DOOR WORK. Without this the reply would fall into the draw-out
+    // below, doorDepth would tick, and the Companion would ask for more about a Door she has already closed —
+    // which is the "didn't take yes for an answer" shape, rebuilt by hand one beat later.
+    if ((sc as { meaningAsked?: boolean }).meaningAsked) {
+      b.stage = 'measurement';
+      b.awaitingConfirm = false;
+      b.reply = receiveThen(b.modelText, b.arc.stages.measurement!.opener(b.collected));
+      return;
+    }
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
@@ -570,10 +595,17 @@ const doorsStage: StageDef = {
     } else if (intent === 'addition') {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, doorMore(b.history)); // there's more — keep drawing out
+    } else if (!(b.scratch as { meaningAsked?: boolean }).meaningAsked) {
+      // done → ask Greg's fourth question BEFORE handing to the IDQ, once per excavation. The Door work is
+      // finished and confirmed; this is the beat that turns three recorded taps into something she has actually
+      // thought about. Her answer lands in the transcript like any other turn, so no new storage and no migration.
+      (b.scratch as { meaningAsked?: boolean }).meaningAsked = true;
+      b.awaitingConfirm = false;
+      b.reply = receiveThen(b.modelText, DOORS_MEANING_Q);
     } else {
-      // done → hand into the measurement block. W-35 (receive-before-you-move): lead with the model's in-voice
-      // acknowledgment of the member's final answer BEFORE the scripted IDQ frame — the deterministic opener must not
-      // clobber what they just said (the founder answered a weighty question and got the cold "let's shift" frame).
+      // done, and the meaning question is already answered → hand into the measurement block. W-35
+      // (receive-before-you-move): lead with the model's in-voice acknowledgment of the member's final answer
+      // BEFORE the scripted IDQ frame — the deterministic opener must not clobber what they just said.
       b.stage = 'measurement';
       const idqOpener = b.arc.stages.measurement!.opener(b.collected);
       // Contract 1: receive (keep the reflection, drop the model's trailing question), then the single IDQ opener (#4).
@@ -615,12 +647,12 @@ export function driftOpen(c: Collected): string {
   }
   // Graceful degrade — nothing to recall: a grounded take-stock that STILL never invents a specific loss (W-36).
   return (
-    "So let's take stock — what has the Fade quietly cost you? Not a checklist — the ones you actually feel. " +
+    "So let's take stock — what has the Fade cost you? Not a checklist — the ones you actually feel. " +
     "Start wherever it's heaviest."
   );
 }
 const DRIFT_MORE_VARIANTS = [
-  "Past the obvious — what's the quiet one you don't usually let yourself miss?",
+  "Past the obvious — what's the one you don't usually let yourself miss?",
   'And how far are you from that version of you right now — a little dusty, or a stranger? Don\'t soften it to feel better.',
   // "the Fade", not "the drift" (Cowork, 2026-08-14). The Fade is the protected term for exactly this thing, and
   // the take-stock opener four lines up already says "what has the Fade quietly cost you" — so a member met both
@@ -634,7 +666,7 @@ const DRIFT_MORE_VARIANTS = [
 function driftMore(history: ConvMessage[]): string | null {
   return nextFollowUp(DRIFT_MORE_VARIANTS, history);
 }
-const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
+const DRIFT_CONFIRM = 'Does that name it — or is it different?';
 // NULL means "the model gave us nothing to reflect". Returning a fixed sentence here instead was the bug: the caller
 // then had a constant to emit, and a constant re-emits VERBATIM for as long as the model keeps coming back empty.
 function reflectDrift(modelText: string): string | null {
@@ -758,7 +790,7 @@ const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
  * THE ENGINE NO LONGER MANUFACTURES THE QUESTION (Jay, 2026-08-25 — Decision B).
  *
  * This used to staple WINDOW_CONFIRM onto any model turn that did not end in "?". It fired on the one thing it
- * most needed to recognise: a CLOSE is a complete turn precisely BECAUSE it has no question. Jay's model wrote
+ * most needed to recognize: a CLOSE is a complete turn precisely BECAUSE it has no question. Jay's model wrote
  * "We'll leave it there for today. When you're ready, the next phase starts turning that morning into a plan."
  * — and the engine appended "Is that the one worth chasing?", which he had answered two turns earlier with
  * "Absolutely". `drawoutShouldReflect` had advanced BECAUSE it read the model as wrapped up; appending a question

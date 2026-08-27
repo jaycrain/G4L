@@ -84,7 +84,7 @@ export const DOOR_RECOGNITION: readonly DoorRecognition[] = [
     slug: 'diagnosis',
     source: 'cc',
     recognition:
-      'A doctor gave it a name. What your body had been doing quietly got a word, and the word came with rules — ' +
+      'A doctor gave it a name. What your body had been doing got a word, and the word came with rules — ' +
       'what to stop, what to watch for, what to take every morning now. You learned to say it out loud in waiting ' +
       'rooms. The person you were before that appointment is someone you describe in the past tense.',
   },

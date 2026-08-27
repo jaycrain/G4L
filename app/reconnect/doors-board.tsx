@@ -176,11 +176,23 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
           pill — "we've had you change every pill you started with to our" squared standard, and the same note is
           already written above .pb-tabs. The plain global button IS the standard: 8px, teal, white text. Only the
           width is set here, so nothing bespoke exists to drift. */}
+      {/* THE REFLECTION QUESTIONS NOW GATE (Donna, 2026-08-27: "it didn't require me to click these before it just
+          moved on"). She marked her Doors, skipped all three questions, and the ones she did not excavate led
+          nowhere — the questions ARE the mechanism that gives the other Doors their due, and they were optional.
+          Greg's own spec asks for "a brief response to EACH of these", so requiring them is his design, not a
+          new constraint on top of it.
+          Only when the section is actually shown (two or more Doors), and "still open" stays optional because
+          the honest answer can be none. */}
+      {showReflections && !(first && biggest) && (
+        <p className="muted" style={{ margin: '0.9rem 0 0', fontSize: '0.85rem' }}>
+          Answer the two above and we&rsquo;ll go on.
+        </p>
+      )}
       <button
         type="button"
         onClick={submit}
-        disabled={disabled}
-        style={{ width: '100%', marginTop: '1.25rem' }}
+        disabled={disabled || (showReflections && !(first && biggest))}
+        style={{ width: '100%', marginTop: showReflections && !(first && biggest) ? '0.6rem' : '1.25rem' }}
       >
         {marked.size ? 'Continue →' : 'None of these — continue →'}
       </button>

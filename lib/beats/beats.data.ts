@@ -371,7 +371,7 @@ export const BEATS_DATA = {
       },
       "source": "asset_beat",
       "title": "The comfortable lies",
-      "content": "Your mind runs a quiet disinformation campaign to keep you comfortable: 'too late for me,' 'I don't have time,' 'this is just what fifty looks like.' Write down the one it tells you most. Naming the lie is how you stop obeying it.",
+      "content": "Your mind runs a disinformation campaign to keep you comfortable: 'too late for me,' 'I don't have time,' 'this is just what fifty looks like.' Write down the one it tells you most. Naming the lie is how you stop obeying it.",
       "dose": "medium",
       "rhythm": "once",
       "channel": "in_app",

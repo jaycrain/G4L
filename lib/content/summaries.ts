@@ -78,7 +78,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   c2: {
     short: 'Check in on how your world has expanded from where you started.',
-    full: 'Struggle isn’t always loud — often it looks like a life quietly shrinking: pulling back, exploring less, imagining less. This is a look at the opposite. Is your world getting wider — more open, more willing, more connected to what matters? A bigger world doesn’t have to mean a busier one. Research suggests people do better when they stay engaged with what matters and keep moving toward a wider life. You come away with a clearer read on whether you’re reclaiming range and participation, not only progress.',
+    full: 'Struggle isn’t always loud — often it looks like a life shrinking: pulling back, exploring less, imagining less. This is a look at the opposite. Is your world getting wider — more open, more willing, more connected to what matters? A bigger world doesn’t have to mean a busier one. Research suggests people do better when they stay engaged with what matters and keep moving toward a wider life. You come away with a clearer read on whether you’re reclaiming range and participation, not only progress.',
   },
   c3: {
     short: 'Track the days that feel like the life you’re building.',
@@ -93,7 +93,7 @@ export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   },
   rewire: {
     short: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and effect change.',
-    full: 'Your mind has a script for staying stuck, and it sounds reasonable every time. Rewire is where you take that script apart. You catch the excuses and the quiet lies, write truer lines to stand in their place, build a vivid picture of who you’re becoming, and learn to recover fast when you slip. This is mindfulness with teeth — seeing what’s really running the show, so your effort stops arguing with an inside voice and starts working with one.',
+    full: 'Your mind has a script for staying stuck, and it sounds reasonable every time. Rewire is where you take that script apart. You catch the excuses and the lies, write truer lines to stand in their place, build a vivid picture of who you’re becoming, and learn to recover fast when you slip. This is mindfulness with teeth — seeing what’s really running the show, so your effort stops arguing with an inside voice and starts working with one.',
   },
   rebuild: {
     short: 'A focus on your physical body and eating habits is an important part of increasing healthspan. Explore where you are right now, practice small, real, repeatable exercises that can get you there.',

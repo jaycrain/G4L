@@ -18,7 +18,7 @@ export const REWIRE_SESSIONS: Asset[] = [
         title: 'The comfortable lie',
         prompt: 'Write the lie you tell yourself most — in its own words, the way your head actually says it.',
         input_type: 'writing_short',
-        companion_frame: 'Your mind runs a quiet campaign to keep you comfortable — and comfortable, right now, means stuck. It tells you things that sound like facts: \'too late for me,\' \'I don\'t have the time,\' \'this is just what fifty looks like.\' Let\'s catch the loudest one.',
+        companion_frame: 'Your mind runs a campaign to keep you comfortable — and comfortable, right now, means stuck. It tells you things that sound like facts: \'too late for me,\' \'I don\'t have the time,\' \'this is just what fifty looks like.\' Let\'s catch the loudest one.',
         probe: 'That\'s the cleaned-up version. What does it sound like at 6am when the alarm goes off? Say it rawer.',
         contributes: 'none',
       },

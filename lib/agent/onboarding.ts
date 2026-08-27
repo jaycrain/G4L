@@ -344,7 +344,7 @@ const FIRST_QUESTION =
   "Before we get to any numbers or plans, I want to understand who I'm helping you reclaim — the fullest version of you. Everything we build here points at that person.\n\n" +
   "Let's start by taking a minute to think about who you were back when you felt most like yourself.\n\n" +
   'Not the job title. Not the role everyone knows you for. The version underneath all that — ' +
-  'the one who showed up before life got busy and quietly talked you out of it.\n\n' +
+  'the one who showed up before life got busy and talked you out of it.\n\n' +
   'Maybe you never thought twice about the stairs. The one who played until your fingers hurt, the ' +
   'early riser, the friend who always called, the one who said yes to the trip. The builder, the ' +
   'writer, the runner, the parent down on the floor with the kids.\n\n' +
@@ -366,11 +366,11 @@ const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 const doorPrompt = () =>
   'One more thing before we start the work — and it might matter most. Somewhere, the gap began to open.\n\n' +
   'Sometimes it’s one clear thing — a loss, a diagnosis, a move, a job that swallowed you. More often it’s ' +
-  'slower: a season that quietly took more than it gave. There’s no wrong story here. Tell me how it went ' +
+  'slower: a season that took more than it gave. There’s no wrong story here. Tell me how it went ' +
   // "the drift" as a NOUN was the Fade under a second name. The Fade is the main character (Jay, 2026-08-15);
   // drifting is what it DOES to you, which is why the verb stays fine and the noun does not. An AUTHORED string
   // — printed, never generated — so this changes what a member reads and nothing about how the model behaves.
-  'for you — when you first felt the Fade, and what it quietly cost you.';
+  'for you — when you first felt the Fade, and what it cost you.';
 
 // Shared Reclaim ask — the picture + the forecast (what the list IS and that the program points at it) +
 // the ask. Prepended by the identity-lock connecting line (or the skip line) so it reads as one beat.
