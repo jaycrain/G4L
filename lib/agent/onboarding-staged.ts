@@ -383,9 +383,27 @@ function reclaimOpen(c: Collected): string {
   // Jay's framing survives the constraint intact, because it was never about the word. "What did you DO, back
   // when you were most yourself" is the same memory question — she recalls rather than invents — and it asks it
   // of HER, which is stronger anyway.
+  // ASK THE QUESTION, AND NAME THE THING (Donna's walk, 2026-08-27 — restored from v3.4.29).
+  //
+  // She said: "This isn't explaining your reclaim list now. If I was brand new to this app, I wouldn't know how to
+  // answer this and have it be the things I want back. I'd rather it ask me, what do you want back? I believe
+  // that's what it did previously." She was right on every count, including the wording — until v3.4.30 this read
+  // "Let's write down what you want back — your Reclaim List, the thing the whole program works toward."
+  //
+  // WHAT THE WIDGET-FIRST REWORK DID, AND WHY IT WAS HALF RIGHT. It replaced the direct ask with a MEMORY question
+  // ("what did you DO, back when you were most yourself"), on Jay's sound reasoning that she should recall rather
+  // than invent. But recall and want are not the same question — a member can remember plenty she does not want
+  // back — and the swap also took the list's own NAME out with it. So a brand-new member built the artifact the
+  // whole program works toward without being told what it was.
+  //
+  // The two were never in conflict. The ask leads, the memory route follows as a way IN rather than as the
+  // question itself, and the beat that invites her to start is untouched.
   beats.push(
-    `So here's the other direction. What did you DO, back when you were most yourself? The things you were good `
-      + `at, the ones that came easily, the ones that feel out of reach now. Those are what you want back.`,
+    `Let's write down what you want back — your Reclaim List, the thing the whole program works toward.`,
+  );
+  beats.push(
+    `A good place to start is what you did back when you were most yourself: the things you were good at, the `
+      + `ones that came easily, the ones that feel out of reach now.`,
   );
   beats.push(
     `Put them down as they come. Big or small, three to start is plenty, and you can add as many as you want.`,
