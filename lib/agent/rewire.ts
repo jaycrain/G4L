@@ -28,10 +28,14 @@ export function rewireEnabled(): boolean {
 // already asked its own question, appending ours double-bubbles (both asking). Suppress the scripted beat when the
 // model's reflection already ends its last paragraph with a question — the same "model reflects, engine asks, never
 // both" discipline as onboarding's withQuestion, BEAT_SEP-aware. Pure + testable.
+// BEAT_SEP-AWARE FOR REAL (2026-08-27). The comment above has claimed this since W-18; the code only ever split on
+// blank lines, so a model turn whose question sat in an earlier BEAT_SEP bubble read as "no question" and got ours
+// appended anyway. Splitting on both is what the rule always said.
 export function withScriptedBeat(reflected: string, scripted: string): string {
   const t = (reflected ?? '').trim();
   if (!t) return scripted;
-  const lastPara = t.split(/\n\s*\n/).pop() ?? t;
+  const parts = t.split(BEAT_SEP).flatMap((p) => p.split(/\n\s*\n/)).map((s) => s.trim()).filter(Boolean);
+  const lastPara = parts[parts.length - 1] ?? t;
   return lastPara.includes('?') ? t : `${t}${BEAT_SEP}${scripted}`;
 }
 
@@ -154,8 +158,17 @@ const domainsStage: StageDef = {
       // → seed the true line from their own prior honest lines → ask), so it never leads with analysis AND never
       // double-beats a scripted reveal onto a full model turn (the persona walk caught exactly that). The scripted
       // reveal + ask remain only as the fallback when the model returns nothing.
+      //
+      // THE HANDOFF MUST ASK (Donna's walk, 2026-08-27). This branch took the model's turn VERBATIM. Hers reflected,
+      // named the campaign, seeded the line, named the costliest lie — and then stopped, with no question. The stage
+      // advanced to 'affirm', which waits for a true line she had not been asked for: "What am I supposed to do here?"
+      //
+      // The guard already existed ONE LINE ABOVE, on the other four domains. This is the same rule and it simply was
+      // not applied to the fifth — the beat that hands into a stage that WAITS. Any beat that advances the member into
+      // a stage expecting their answer has to end asking for it.
       b.stage = 'affirm';
-      b.reply = (reflected || '').trim() || `${W1_CAMPAIGN}${BEAT_SEP}${W1_TURN_ASK_FALLBACK}`;
+      const handoff = (reflected || '').trim();
+      b.reply = handoff ? withScriptedBeat(handoff, W1_TURN_ASK_FALLBACK) : `${W1_CAMPAIGN}${BEAT_SEP}${W1_TURN_ASK_FALLBACK}`;
     }
   },
   confirm(b) {

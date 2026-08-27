@@ -86,8 +86,15 @@ function proposeRefinement(ref: NonNullable<Collected['pendingRefinement']>): st
     if (!all.length) return '';
     return `${TIER_LABEL[tier]}:\n${all.join('\n')}`;
   }).filter(Boolean).join('\n\n');
+  // A TOP-3 THAT IS THE WHOLE LIST NARROWS NOTHING (Donna, 2026-08-27). The program tells a member to start with
+  // three items, so plenty of lists have exactly three — and this line then re-printed all three, immediately under
+  // the three we had just printed, as though it were a selection. Only show it when it actually picks a subset.
+  //
+  // The trailing '.' also doubled: these items are the member's own sentences and most already end in one.
   const top3 = ref.top3.filter(Boolean);
-  const top3Line = top3.length ? `\n\nThe three you'd move on next: ${top3.join(' · ')}.` : '';
+  const totalItems = ref.items.length + added.length;
+  const narrows = top3.length > 0 && top3.length < totalItems;
+  const top3Line = narrows ? `\n\nThe three you'd move on next: ${top3.join(' · ').replace(/\.\s*$/, '')}.` : '';
   return `Here's your list, refined:\n\n${byTier}${top3Line}${BEAT_SEP}Want me to save this as your Reclaim List, or tweak something first?`;
 }
 
@@ -244,6 +251,18 @@ export const REFINE_SYSTEM =
   "tiers — Top Priorities Now, Important but Not First, Emerging Priorities, No Longer Central — then name the three " +
   "they'd move on next. Play their own words back; never impose. Do NOT rewrite their list yourself — you propose, " +
   "they decide.\n\n" +
+  // ENGINE OWNS THE LIST, MODEL OWNS THE CONVERSATION (Donna's walk, 2026-08-27: "crazy repetition on priorities").
+  // She read her own three items FOUR times in a row — the model printed them grouped by tier, then printed them
+  // again as a numbered order, then the app's card printed them a third time by tier and a fourth as the top three.
+  // And she was asked to confirm twice: the model's "does that feel right before I save it?", answered, then the
+  // card's "want me to save this?". The card is the propose→confirm gate and cannot move; the model's copy of it
+  // is what has to go.
+  "NEVER PRINT THE LIST. Do not write out their items, the tiers, or a numbered ordering in your reply, and never " +
+  "ask them to confirm saving it — the app shows the finished list back in a card and asks that question itself. " +
+  "Talk about the list in conversation ('the leadership role first, then the physical work') and let the card do " +
+  "the showing. If you print it too, they read the same list twice and answer the same question twice.\n\n" +
+  "IF THEIR LIST HAS THREE OR FEWER ITEMS, do not ask which three they'd move on next — that is the entire list, " +
+  "and the question reads as busywork. Ask what ORDER they'd take them in instead, or just record it.\n\n" +
   "RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE " +
   "refined list — every item as {original (their current wording, to match), text (the refined wording, or the same " +
   "if unchanged), tier} — plus top3 (the three refined texts they'd move on next). " +
