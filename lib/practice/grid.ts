@@ -385,7 +385,7 @@ async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
   try {
     const { latestSkillsReading } = await import('../rebuild/store.ts');
     const { buildSkillsMap } = await import('../rebuild/skills-map.ts');
-    const { strongestSkill, skillLabel } = await import('../rebuild/skills-instrument.ts');
+    const { strongestSkill, growingEdges, skillLabel } = await import('../rebuild/skills-instrument.ts');
     const reading = await latestSkillsReading(db, memberId);
     if (!reading) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
     // PICK BY THINNEST, THEN DISPLAY IN GREG'S ORDER — two different jobs that were doing one.
@@ -396,13 +396,14 @@ async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     // code tracked 12 and left 9 off the week. The doc comment above has always said "the three thinnest are
     // where practice pays" AND "in his order" — both are right, they are just not the same step. Rank by mean to
     // CHOOSE, keep the family walk to ORDER.
-    const byNo = new Map(reading.scores.perSkill.map((s) => [s.no, s.mean]));
-    const mapRows = buildSkillsMap(reading.scores).families.flatMap((f) => f.rows).filter((r) => !r.steady);
-    const thinnest = new Set(
-      [...mapRows].sort((a, b) => (byNo.get(a.no) ?? 0) - (byNo.get(b.no) ?? 0) || a.no - b.no)
-        .slice(0, 3).map((r) => r.no),
-    );
-    const edges = mapRows.filter((r) => thinnest.has(r.no));
+    //
+    // THE CHOOSING NOW COMES FROM growingEdges (2026-08-27) — the same function the B2 close names its edge from.
+    // The ranking was written out a second time here, and the two copies broke TIES in opposite directions: the
+    // close sorted descending and took the last, this sorted ascending and took the first three. On a 1–4 scale
+    // with two items per skill, bottom ties are the norm, so 5.6% of members were told to watch a skill this grid
+    // gave them no row for. Q23; found by a property test over 5,000 profiles, invisible to every fixture.
+    const thinnest = new Set(growingEdges(reading.scores).map((s) => s.no));
+    const edges = buildSkillsMap(reading.scores).families.flatMap((f) => f.rows).filter((r) => thinnest.has(r.no));
     if (!edges.length) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
     const top = strongestSkill(reading.scores);
     const { rows } = await db.query<{ marked_on: string; commitment_id: string | null }>(

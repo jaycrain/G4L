@@ -184,11 +184,50 @@ export function strongestSkill(score: SkillScore): SkillScore['perSkill'][number
   return [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no)[0]!;
 }
 
+/**
+ * THE MEMBER'S OWN MIDPOINT — the median of THEIR twelve means, which is what divides steady from growing.
+ *
+ * Hoisted here 2026-08-27 so the skills map and the growing-edge ranking cannot drift apart on the definition of
+ * "below your own middle". A fixed cutoff would import an external standard, which is the one thing this read must
+ * not do; see the fuller note in skills-map.ts, which now reads this.
+ */
+export function steadyMidpoint(score: SkillScore): number {
+  const means = score.perSkill.map((s) => s.mean).sort((a, b) => a - b);
+  return (means[5]! + means[6]!) / 2;
+}
+
+/**
+ * THE ONE GROWING-EDGE RANKING — thinnest first. The B2 close names `growingEdges(score)[0]`; the practice grid
+ * tracks the whole set. Same function, so they cannot disagree about the member.
+ *
+ * WHY IT EXISTS (Q23, found 2026-08-27 by a property test over 5,000 profiles). The close and the grid each ranked
+ * the skills themselves, and they broke TIES in opposite directions: the close sorted DESCENDING and took the last
+ * element, the grid sorted ASCENDING and took the first three. Identical data, opposite answers.
+ *
+ * On a 1–4 scale with two items per skill there are only seven possible means, so ties at the bottom are the norm
+ * rather than an edge case — four skills tied at 2.00 in the first failing profile. The member was told "the skill
+ * with the most room to grow is asking people for support" and handed a week tracking the other three. It hit
+ * **5.6% of profiles**, silently, and no fixture caught it because a fixture picks numbers that do not tie.
+ *
+ * The lesson is the one this file already records one function up: two selectors for one fact is the shape.
+ * `strongestSkill` was hoisted for exactly this reason in August and the growth edge was left behind.
+ */
+export function growingEdges(score: SkillScore, limit = 3): SkillScore['perSkill'] {
+  const mid = steadyMidpoint(score);
+  return [...score.perSkill]
+    .filter((s) => s.mean < mid)
+    .sort((a, b) => a.mean - b.mean || a.no - b.no)
+    .slice(0, limit);
+}
+
 export function skillHighlights(score: SkillScore): { strongest: string; growthEdge: string } {
-  const ranked = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no);
   // THE MEMBER'S WORDS, not the construct. This feeds the B2 close ("... is a strength of yours") and the
   // Companion's MEMBER CONTEXT, both of which were saying "consumer skills" to a person.
-  const top = strongestSkill(score), bottom = ranked[ranked.length - 1]!;
+  const top = strongestSkill(score);
+  // A uniformly flat profile has nothing below its own middle, so there is no edge to name and the grid degrades
+  // to its generic row. Fall back to the plain lowest so the close still says something true.
+  const ranked = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no);
+  const bottom = growingEdges(score, 1)[0] ?? ranked[ranked.length - 1]!;
   return { strongest: skillLabel(top.no, top.skill), growthEdge: skillLabel(bottom.no, bottom.skill) };
 }
 

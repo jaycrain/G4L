@@ -20,7 +20,7 @@
 // distinctive strength of B2 ("good at planning movement but poor at managing eating cues"), but printing it on all
 // twelve rows would bury the one or two places it means something.
 
-import { META_BY_SKILL, SKILL_LABEL, type SkillMeta, type SkillScore } from './skills-instrument.ts';
+import { META_BY_SKILL, SKILL_LABEL, steadyMidpoint, type SkillMeta, type SkillScore } from './skills-instrument.ts';
 
 /** The three families in Greg's order — getting ready → taking action → staying with it. */
 export const FAMILY_ORDER: SkillMeta[] = ['predisposing', 'enabling', 'reinforcing'];
@@ -118,8 +118,9 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
   // The median of THEIR twelve means is the divide. A fixed cutoff (say 3.5) would import an external standard,
   // which is the one thing this read must not do — and would also render a uniformly modest profile as twelve
   // failures, or a uniformly confident one as nothing to work on. Split relative, always.
-  const means = score.perSkill.map((s) => s.mean).sort((a, b) => a - b);
-  const mid = (means[5]! + means[6]!) / 2;
+  // Read from ONE definition rather than recomputed here — the growing-edge ranking needs the same divide, and two
+  // copies of "the member's own middle" is the shape that let the close and the grid disagree (Q23, 2026-08-27).
+  const mid = steadyMidpoint(score);
 
   const families = FAMILY_ORDER.map((key) => {
     const rows: MapRow[] = score.perSkill
