@@ -2976,22 +2976,30 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rhythm-confirm:disabled { opacity: 0.5; cursor: default; }
 
 /* ============ Onboarding welcome (Slice B) — the meet-the-Companion billboard (desktop + mobile) ============ */
-.onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: radial-gradient(120% 55% at 82% 6%, rgba(59, 148, 149, 0.24), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
+/* ── DONNA'S WHITE INTRO (2026-08-27) ────────────────────────────────────────────────────────────────────────
+   Jay: "we needed to literally lighten them up". The five intro screens were navy-on-gradient; they are now white
+   ground with navy type.
+
+   CONTRAST, MEASURED, because inverting a ground is exactly where a palette gets it wrong: navy on white is
+   8.53:1 and charcoal 14.35:1 — both clear AA comfortably. Brand teal (#3B9495) is only 3.59:1 on white and is
+   therefore NEVER type here; it appears as a FILL behind white text on the CTA (5.98:1 via --teal-text) and as
+   the active dot. The same trap as the collapsed hero bar, one surface over. */
+.onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: var(--white); }
 .onbwel-wrap { width: 100%; max-width: 640px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px calc(env(safe-area-inset-bottom, 0px) + 34px); }
 .onbwel-dots { display: flex; gap: 8px; margin-bottom: 30px; }
-.onbwel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: 0.3s; }
-.onbwel-dot.on { background: var(--teal); width: 24px; border-radius: 4px; }
+.onbwel-dot { width: 8px; height: 8px; border-radius: 50%; background: #d8dbdd; transition: 0.3s; }
+.onbwel-dot.on { background: var(--teal-text); width: 24px; border-radius: 4px; }
 .onbwel-kick { color: #8fd0d1; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 16px; }
 /* MIXED CASE, not all caps (Donna, 2026-08-17): the billboard headings were uppercased in CSS while the source
    strings were sentence case, so every screen shouted. */
-.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: #fff; font-size: clamp(46px, 8.5vw, 76px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.22); }
+.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: var(--navy); font-size: clamp(38px, 7vw, 60px); line-height: 0.96; letter-spacing: 0.4px; margin: 0; }
 .onbwel-head-line { display: block; }
 .onbwel-road { margin: 28px 0 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
 .onbwel-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
 .onbwel-road-steps { display: flex; flex-wrap: wrap; gap: 8px; }
 .onbwel-road-step { color: #fff; font-weight: 700; font-size: 13px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 100px; padding: 6px 14px; }
-.onbwel-body { color: rgba(255, 255, 255, 0.86); font-size: 18px; line-height: 1.55; margin-top: 24px; max-width: 540px; }
-.onbwel-body strong { color: #fff; font-weight: 700; }
+.onbwel-body { color: var(--charcoal); font-size: 18px; line-height: 1.6; margin-top: 18px; max-width: 540px; }
+.onbwel-body strong { color: var(--navy); font-weight: 700; }
 
 /* The glossary and the four-part forecast are genuinely LISTS. Rendering them as a paragraph is what turned the
    old "Four phases" beat into a run-on of four dashes. On the navy billboard, so the colours mirror .onbwel-body. */
@@ -3019,7 +3027,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
 .onbwel-heart-list .onbwel-cta { margin-top: 20px; }
 .onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
-.onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
+.onbwel-reassure { margin-top: 18px; color: var(--muted-grey); font-size: 14px; }
 
 /* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
    (Jay 2026-07-26: fold the hero into mobile). Full-bleed at every width so the hero photo + navy billboards break out
@@ -3032,28 +3040,45 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   .onbwel-track-d { display: block; }
   .onbwel-track-m { display: none; }
 }
-.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 128px 8vw 44px; overflow-y: auto; /* auto, NOT hidden: this is the FRONT DOOR — on a short laptop the copy exceeds one screen and a hard clip made
-    the 'Sign up' CTA physically unreachable. Still one screen whenever it fits; scrolls only when it can't. */
-  /* Layers, top→bottom: the dark-left→clear-right OVERLAY (keeps the headline legible over the photo) · a warm radial
-     lift on the subject side · the HERO PHOTO (public/brand/onboarding-hero.jpg — person holding the app) · a fallback
-     gradient that stands in if the file isn't present. Photo positioned right so the phone stays on the subject side. */
-  background:
-    linear-gradient(100deg, rgba(22, 31, 40, 0.9) 0%, rgba(40, 54, 66, 0.52) 44%, rgba(120, 124, 92, 0.16) 72%, transparent 100%),
-    radial-gradient(130% 120% at 94% 34%, rgba(176, 180, 132, 0.34) 0%, transparent 55%),
-    url('/brand/onboarding-hero.jpg') right center / cover no-repeat,
-    linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 96px 8vw 44px; overflow-y: auto;
+  /* WHITE, not the photo-over-navy stack (Donna, 2026-08-27). overflow-y stays `auto` and that is load-bearing:
+     this is the FRONT DOOR, and on a short laptop the copy exceeds one screen — a hard clip once made the CTA
+     physically unreachable. One screen whenever it fits; scrolls only when it cannot. */
+  background: var(--white); }
 .onbwel-d-heart { max-width: 640px; }
 .onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
-.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: #fff; text-transform: uppercase; font-size: clamp(42px, 4.6vw, 62px); line-height: 0.92; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }
-.onbwel-d-sub { color: rgba(255, 255, 255, 0.9); font-size: 18px; line-height: 1.45; margin-top: 18px; max-width: 560px; }
+.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: var(--navy); font-size: clamp(38px, 4.2vw, 56px); line-height: 0.98; letter-spacing: 0.3px; margin: 0; }
+.onbwel-d-sub { color: var(--charcoal); font-size: 18px; line-height: 1.55; margin-top: 18px; max-width: 560px; }
 /* Front-door sign-in affordance — "/" lands on the welcome hero now, so a RETURNING member needs a visible way
    through it. Quiet on purpose: the primary action is still Sign up. (Jay 7/29, entry narrowing) */
-.onbwel-d-signin { margin-top: 16px; color: rgba(255,255,255,0.82); font-size: 14px; }
-.onbwel-d-signin a { color: #fff; font-weight: 700; text-decoration: underline; }
+.onbwel-d-signin { margin-top: 16px; color: var(--muted-grey); font-size: 14px; }
+.onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
 .onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
-.onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; } /* the hero now carries three intro paragraphs — tighten the gap between them */
+/* THE ART, on every slide that has one. Donna's illustrations run wide (wake-up 2:1, companion 3:1, walk 2.7:1)
+   except progress, which is nearly square — so this caps by HEIGHT rather than width, or the square one would
+   tower over the four beside it and the set would stop reading as a set. */
+/* Capped by HEIGHT so the wide illustrations (companion is 3:1) and the near-square one (progress, rings) read as
+   one set rather than four banners and a dot. */
+.onbwel-art { display: block; width: auto; max-width: min(100%, 420px); max-height: 150px; margin: 0 0 24px; }
+.onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; }
+.onbwel-d-sub-lead { font-weight: 700; color: var(--navy); }
+
+/* SLIDE 2 — the exchange. Two turns, not a block quote: the Companion's line sits left with a teal edge, the
+   member's answer sits inset and italic, so the shape itself shows someone being heard and answering back. */
+.onbwel-quotes { margin: 22px 0 0; }
+.onbwel-quote { margin: 0; padding: 10px 0 10px 16px; border-left: 3px solid var(--teal); color: var(--navy); font-size: 17px; line-height: 1.5; }
+.onbwel-quote.is-member { margin-top: 10px; margin-left: 28px; border-left-color: var(--grey); color: var(--muted-grey); font-style: italic; }
+
+/* SLIDE 3 — the four Rs on their own row. Buried in a sentence they read as prose; they are the spine of the
+   program and the only four words a member has to carry out of this screen. */
+.onbwel-rs { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 0; }
+.onbwel-r { font-weight: 700; font-size: 14px; color: var(--navy); background: var(--grey); border-radius: 100px; padding: 7px 16px; }
+
+/* SLIDE 4 — the worked ID Score example. Set apart so it reads as a SPECIMEN and not as a promise, and
+   deliberately carrying no timeframe: the IDQ moves every 60 days, never weekly. */
+.onbwel-score { margin: 22px 0 0; display: block; width: fit-content; font-weight: 700; font-size: 16px; color: var(--navy); background: var(--grey); border-radius: 10px; padding: 12px 18px; }
 /* Full-bleed welcome (Jay 7/29): no header/footer/page-padding — the intro is a true one-screen image + message.
 
    THE BRAND BAR IS HIDDEN, NOT MOVED (Donna item 1; Jay, 2026-08-23: "the branded footer, not the copyright
@@ -3082,7 +3107,9 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* 2.5x (Donna item 1): 24px -> 60px. IT IS position:absolute, so it reserves NO space — the hero's top padding
    is what clears it, and those two numbers are coupled. At 24px the old 84px/52px padding was enough; at 60px the
    mark landed on top of "YOUR COMEBACK" on the top-aligned narrow layout. Change one, check the other. */
-.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 60px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; z-index: 2; }
+/* The invert() is GONE. It existed to lift the wordmark off a dark photo; on white ground it rendered a white
+   logo on a white page — invisible, and only visible as a bug if you looked for something that was not there. */
+.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 52px; width: auto; z-index: 2; }
 /* The hero on mobile (Jay: fold the hero into mobile). A full-width dark scrim over the centered photo keeps the copy
    legible on a narrow screen; top-aligned with scroll room for the three intro paragraphs, tighter type. */
 @media (max-width: 1000px) {

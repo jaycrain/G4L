@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 476.61 420.14">
+  <!-- Generator: Adobe Illustrator 30.7.0, SVG Export Plug-In . SVG Version: 2.1.4 Build 114)  -->
+  <defs>
+    <style>
+      .st0, .st1, .st2, .st3, .st4 {
+        fill: none;
+      }
+
+      .st1 {
+        stroke: #f6c1ac;
+      }
+
+      .st1, .st2, .st3, .st4 {
+        stroke-width: 32px;
+      }
+
+      .st2 {
+        stroke: #ec6430;
+      }
+
+      .st5 {
+        clip-path: url(#clippath-1);
+      }
+
+      .st3, .st4 {
+        stroke: #eb642e;
+      }
+
+      .st4 {
+        opacity: .43;
+      }
+
+      .st6 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <polygon class="st0" points="-44.89 4.52 426.63 0 431.72 420.14 -37.55 393.6 -44.89 4.52"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <polygon class="st0" points="22.06 3 231.17 3 234.15 212.07 29.29 176.09 22.06 3"/>
+    </clipPath>
+  </defs>
+  <g class="st6">
+    <circle class="st2" cx="233.67" cy="207.55" r="72.66"/>
+  </g>
+  <g class="st5">
+    <g>
+      <path class="st3" d="M233.8,28.73c99.03,0,179.31,80.28,179.31,179.31s-80.28,179.31-179.31,179.31S54.49,307.07,54.49,208.04"/>
+      <path class="st3" d="M233.8,64.42c79.32,0,143.62,64.3,143.62,143.62s-64.3,143.62-143.62,143.62-143.62-64.3-143.62-143.62"/>
+      <path class="st4" d="M233.8,100.11c59.61,0,107.93,48.32,107.93,107.93s-48.32,107.93-107.93,107.93-107.93-48.32-107.93-107.93"/>
+      <path class="st1" d="M233.8,135.38c40.13,0,72.66,32.53,72.66,72.66s-32.53,72.66-72.66,72.66-72.66-32.53-72.66-72.66c0-42.8,32.53-72.66,72.66-72.66Z"/>
+    </g>
+  </g>
+</svg>

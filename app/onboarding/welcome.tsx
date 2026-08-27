@@ -21,14 +21,41 @@ type Seg = string | { b: string };
  * `ordered` picks <ol> over <ul>; `term` bolds the leading phrase for the glossary's term — gloss shape.
  */
 type Beat = {
-  kick: string;
+  /** Which of Donna's illustrations sits above the copy. Absent art renders nothing — never a broken image. */
+  art?: ArtKey;
   head: string[];
   body: Seg[];
-  list?: { term?: string; text: string }[];
-  ordered?: boolean;
-  tail?: Seg[]; // copy that sits AFTER the list (the forecast's "this first sitting is the biggest one")
+  /** Slide 2 — the two-line exchange, shown as a Companion line and the member's answer back. */
+  quotes?: string[];
+  /** Slide 3 — the four Rs as their own row, not a comma list buried in a sentence. */
+  rs?: string[];
+  /** Slide 4 — the worked ID Score example, set apart so it reads as a specimen and not as a claim. */
+  score?: string;
+  tail?: Seg[];
   cta: string;
 };
+
+/**
+ * DONNA'S SVGs, and why a missing one renders NOTHING rather than a broken image.
+ *
+ * The art arrives by email and lands in public/brand/onboarding/ by hand. Wiring `<img src>` straight to a path
+ * that may not exist yet would put four broken-image icons on the front door — the first thing a prospect sees —
+ * for however long the gap lasts. This map is the switch: a key present means the file is in the repo.
+ */
+type ArtKey = 'wake-up' | 'companion' | 'walk' | 'progress' | 'rings';
+const ART: Partial<Record<ArtKey, string>> = {
+  'wake-up': '/brand/onboarding/wake-up.svg',
+  companion: '/brand/onboarding/companion.svg',
+  walk: '/brand/onboarding/walk.svg',
+  progress: '/brand/onboarding/progress.svg',
+  rings: '/brand/onboarding/rings.svg',
+};
+function Art({ k }: { k?: ArtKey }) {
+  const src = k && ART[k];
+  if (!src) return null;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="onbwel-art" src={src} alt="" aria-hidden="true" />;
+}
 
 // PART 1 OF 4 · GETTING READY — Jay + Cowork's messaging pass (2026-08-13).
 //
@@ -38,98 +65,61 @@ type Beat = {
 //     does its work rather than four screens early.
 //   · "You show up. We keep track." — the Dashboard is now defined in the glossary beat below, alongside the rest
 //     of the vocabulary, instead of spending a whole screen on one noun.
+// DONNA'S FIVE SCREENS, white ground (2026-08-27). Copy is Cowork's final spec, built verbatim so Donna does not
+// have to touch it again — with two changes Jay ruled on before the build:
+//
+//   · SLIDE 4 drops "this week" from the ID Score example. The IDQ is retaken every 60 DAYS (frozen data
+//     contract), so a score cannot move weekly. Same fault as the old "about 20 minutes" over a 65-minute
+//     Reconnect: a number in the intro the product contradicts later, except this one is the headline metric and
+//     it is on the screen selling it.
+//   · SLIDE 5 keeps "you can stop between any of them" from the screen it replaces. That is the Independence
+//     Guarantee at the moment it does the most work — a prospect deciding whether to begin a half-hour
+//     conversation — and it was the one thing the new copy dropped.
+//
+// "Clip in →" is deliberately NOT the final CTA any more. The word was defined in the glossary beat these screens
+// replace; keeping the button while losing its definition would put an unexplained term on the last thing a
+// member taps.
 const BEATS: Beat[] = [
   {
-    kick: 'Part 1 of 4 · Getting ready',
-    head: ['Meet your', 'Companion'],
+    art: 'companion',
+    head: ['Your AI Companion', 'by your side.'],
     body: [
-      'There’s probably no one else in your life like this. It’s AI, so it is always listening, always here, remembering everything you tell it. It might catch what you’ve stopped seeing in yourself.',
-      ' Ask anything, anytime.',
+      'They’re always available, never judging, and remember everything you say — with the voice of a wise friend.',
+    ],
+    quotes: [
+      'You lost your job, your dad got sick, and you don’t feel like yourself physically. That’s a lot.',
+      '…no wonder I’ve been struggling.',
     ],
     cta: 'Next →',
   },
   {
-    kick: 'Part 1 of 4 · Getting ready',
-    head: ['Four phases.', 'Your pace.'],
-    body: ['The G4L Program runs in four phases:'],
-    list: [
-      { term: 'Reconnect', text: 'start looking at who you are.' },
-      { term: 'Rewire', text: 'get your head right.' },
-      { term: 'Rebuild', text: 'get your body back.' },
-      { term: 'Reclaim', text: 'complete your comeback.' },
+    art: 'walk',
+    head: ['Find your way back.', 'Walk your own pace.'],
+    body: [
+      'Rediscover who you were before life told you who you had to be. Backed by the science that actually changes behavior.',
     ],
-    tail: [
-      'You move through them one at a time, as fast or slow as your life allows. ',
-      { b: 'Grinta' },
-      ' is Italian for grit — it’s what you build along the way.',
-    ],
-    cta: 'Next →',
-  },
-  // SCREENS 4 AND 5 ARE ONE SCREEN (Donna, 2026-08-17 "Opening screens"). The vocabulary list and the Playbook
-  // pact were separate beats; she merged them, and the merge is the point rather than a trim: what a member needs
-  // before signing up is what they will BUILD and how they will SEE it move, not a glossary. The four terms that
-  // dropped (Your Companion, Your Comeback, The Program, Your Dashboard) are all defined by the product itself
-  // within minutes of arriving — these three are not.
-  //
-  // The series is 5 screens now, not 6.
-  {
-    kick: 'Part 1 of 4 · Getting ready',
-    // TWO LINES, NOTHING STRANDED (Donna, 2026-08-22, item 2). The break used to fall after "Playbook", which
-    // combined with the natural wrap to render THREE lines with "Playbook" alone on the middle one:
-    //     Along the way you'll build a
-    //     Playbook
-    //     & track your progress
-    // She reported the symptom as "& track your progress wrapping onto its own line"; the orphan was the worse
-    // half. Splitting before "Playbook" keeps it with what it belongs to and fits each line as written.
-    // The FONT was not the problem: .onbwel-head resolves to Barlow Condensed 900 and document.fonts confirms
-    // that face loads. Her note said these "aren't rendering in Barlow Condensed Bold" -- they are Condensed,
-    // just Black rather than Bold, and Bold (700) is not among the weights layout.tsx requests.
-    head: ['Along the way you’ll build a', 'Playbook & track your progress'],
-    body: [],
-    list: [
-      // "everything you do is recorded here" stopped being TRUE on 2026-08-20, when keepers became opt-in: nothing
-      // reaches the Playbook unless she taps Keep. A promise the product no longer honours is worst on THIS screen
-      // — it is made before she has signed up, and it is about what we do with her words.
-      //
-      // The replacement is a stronger claim, not a hedge: the Playbook is now the one place in the product that
-      // can only contain what she chose to put there. ("uniquely yours" goes with it — a retired possessive.)
-      { term: 'Your Playbook', text: 'the things you decide are worth keeping. Nothing lands here unless you say so — in your words.' },
-      { term: 'ID Score & Grinta Index', text: 'you’ll see how far you’ve got to go and the grit you’re growing as you do it.' },
-      // CLIP IN — the LATER wording wins. Donna's draft of this screen carried a short version; Jay rewrote it at
-      // 12:50 and she tweaked it at 12:55, and this is that resolved text. The word is defined HERE and nowhere
-      // else: it is core vocabulary (the daily clip-in, the clip-back-in move, the closer), and the Threshold
-      // ceremony deliberately stopped explaining it so the moment of stepping through is not a footnote.
-      { term: 'Clip in', text: 'our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.' },
-    ],
+    rs: ['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'],
+    tail: ['You’ll build Grinta — Italian for grit — along the way.'],
     cta: 'Next →',
   },
   {
-    kick: 'Part 1 of 4 · Getting ready',
-    head: ['Here’s how', 'today goes.'],
-    body: ['Four short parts, and you can stop between any of them — nothing’s lost.'],
-    ordered: true,
-    list: [
-      { term: 'Getting ready', text: 'you’re in it.' },
-      { term: 'Getting to know you', text: 'chat with your Companion and take an initial assessment. Give it a good half hour.' },
-      { term: 'What you found', text: 'see what surfaced.' },
-      { term: 'A look around', text: 'a quick tour to show you where it all lives.' },
+    art: 'progress',
+    head: ['Track your', 'progress.'],
+    body: [
+      'Your Companion helps you build a Reclaim List — setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come.',
     ],
-    // NO DAILY-TIME FORECAST, ANYWHERE. The old close promised "after today, it's a few minutes a day" — which is
-    // false (Sessions run 20-30 minutes) and contradicts the upstream "as fast or slow as your life allows". Item 2
-    // in the list above already sizes today honestly, so nothing here needs to forecast tomorrow.
-    // THE SHAPE OF THE WHOLE THING, NOT JUST TODAY (Greg, 8/07: "I think the durations are about right. We can
-    // fine-tune and explain on the front end that it is about a 6 week experience for Cycle 1"). Jay's own walk
-    // is the other half of the case: Reconnect ran 65 minutes against a single "about 20 minutes" said once
-    // about Part 2 of 4, and his ruling was that none of the content comes out — so the fix is the expectation,
-    // not the length. A member who is told the shape can pace themselves; one who isn't measures every session
-    // against a number we never meant to be the whole story.
-    tail: [
-      'We go deep out of the gate, so make yourself comfortable and give yourself the time here.',
-      'After today it opens out: a first cycle runs about six weeks, at whatever pace your life allows. Congratulations on getting started on your comeback.',
+    // No timeframe. See the note above: the instrument moves every 60 days, not weekly.
+    score: 'Your ID (Identity Distance) Score: 34 → 41',
+    cta: 'Next →',
+  },
+  {
+    art: 'rings',
+    head: ['What you’ll', 'see next.'],
+    body: [
+      'Here’s what today looks like. Give it a good half hour with your Companion — a friendly first conversation and a quick program tour, so it can get to know you and you can find your way.',
+      'You can stop between any of it — nothing’s lost. After today it opens out: a first cycle runs about six weeks, at whatever pace your life allows.',
     ],
-    // "Clip in →" rather than "Let's go →": the language screen defined the word a moment ago, and this is the
-    // button where they do it. The word is never explained again after this.
-    cta: 'Clip in →',
+    cta: 'Keep looking →',
   },
 ];
 
@@ -158,28 +148,36 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
             <span key={x} className={`onbwel-dot${x === i ? ' on' : ''}`} />
           ))}
         </div>
-        <div className={`onbwel-heart${beat.list ? ' onbwel-heart-list' : ''}`}>
-          {beat.kick && <div className="onbwel-kick">{beat.kick}</div>}
+        <div className="onbwel-heart">
+          <Art k={beat.art} />
           <h1 className="onbwel-head">
             {beat.head.map((line, x) => (
               <span key={x} className="onbwel-head-line">{line}</span>
             ))}
           </h1>
-          {beat.body.length > 0 && <p className="onbwel-body">{renderBody(beat.body)}</p>}
-          {beat.list &&
-            (beat.ordered ? (
-              <ol className="onbwel-list onbwel-list-num">
-                {beat.list.map((it, x) => (
-                  <li key={x}>{it.term && <strong>{it.term}</strong>}{it.term ? ' — ' : ''}{it.text}</li>
-                ))}
-              </ol>
-            ) : (
-              <ul className="onbwel-list">
-                {beat.list.map((it, x) => (
-                  <li key={x}>{it.term && <strong>{it.term}</strong>}{it.term ? ' — ' : ''}{it.text}</li>
-                ))}
-              </ul>
-            ))}
+          {beat.body.map((seg, x) => (
+            <p key={x} className="onbwel-body">{renderBody([seg])}</p>
+          ))}
+          {/* SLIDE 2 — the exchange. Rendered as two turns rather than one block quote so the second line reads as
+              the MEMBER answering, which is the whole point of the example: what it feels like to be heard. */}
+          {beat.quotes && (
+            <div className="onbwel-quotes">
+              {beat.quotes.map((q, x) => (
+                <p key={x} className={`onbwel-quote${x === 1 ? ' is-member' : ''}`}>{q}</p>
+              ))}
+            </div>
+          )}
+          {/* SLIDE 3 — the four Rs on their own row. A comma list inside a sentence made them read as prose; they
+              are the spine of the program and the only four words a member has to carry out of here. */}
+          {beat.rs && (
+            <div className="onbwel-rs">
+              {beat.rs.map((r) => <span key={r} className="onbwel-r">{r}</span>)}
+            </div>
+          )}
+          {/* SLIDE 4 — a worked example, set apart so it reads as a specimen rather than a promise. NO timeframe:
+              the IDQ is retaken every 60 days, so "this week" (Donna's draft) would have been a cadence the
+              instrument cannot deliver. */}
+          {beat.score && <p className="onbwel-score">{beat.score}</p>}
           {beat.tail && <p className="onbwel-body">{renderBody(beat.tail)}</p>}
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
           {/* The forecast beat now states the 20 minutes itself, in context, so the old blanket reassurance under
@@ -192,25 +190,29 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
 
 // The opening HERO — the landing-page photo billboard, continuous with grintaforlife.com. Shows on desktop AND mobile
 // now; the photo (public/brand/onboarding-hero.jpg) sits behind a dark scrim so the copy stays legible at any width.
+// SLIDE 1 — the front door, on white (Donna, 2026-08-27). Was navy-over-photo with "Your comeback starts here."
+//
+// Jay's ruling when the two collided: Donna's slide wins for this surface. The held 8/24 line ("By the time you hit
+// midlife, something had to give") stays held with the rest of the on-ramp work.
+//
+// THE LOG-IN LINE SURVIVES THE REDESIGN and is not decoration. "/" lands here, so this is the door a RETURNING
+// member arrives at too; a front door with no way through it for someone who already has an account is a bug that
+// looks like a design.
 function WelcomeHero({ onNext }: { onNext: () => void }) {
   return (
     <div className="onbwel-d-hero">
-      {/* Logo sits tonally ON the image (Jay 7/29 — no header bar; the wordmark does the branding). */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="onbwel-d-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       <div className="onbwel-d-heart">
-        <h1 className="onbwel-d-head">Your comeback<br />starts here.</h1>
+        <Art k="wake-up" />
+        <h1 className="onbwel-d-head">This could be your<br />wake-up call.</h1>
         <p className="onbwel-d-sub">
-          You didn’t lose yourself, you just stopped looking. Who you are got crowded out by a hundred reasonable
-          trade-offs. A career that changed, a marriage that drifted, years of carrying everyone. That’s the Fade.
-          And you’re still in there.
+          By the time we get to midlife, we’ve likely been sleepwalking through Doors for years — a career that
+          changed, kids who needed everything, aging parents who suddenly needed us too — and we didn’t even notice
+          as they closed behind us.
         </p>
-        <p className="onbwel-d-sub">
-          <strong>Grinta for Life</strong> is how you start looking again: a real conversation with your AI
-          Companion, then a science-backed program that closes the distance back to yourself.
-        </p>
+        <p className="onbwel-d-sub onbwel-d-sub-lead">This is where you open your eyes.</p>
         <button type="button" className="onbwel-d-cta" onClick={onNext}>Start looking →</button>
-        {/* "/" now lands here, so this hero is the FRONT DOOR — a returning member must have a way through it. */}
         <p className="onbwel-d-signin">
           Already a member? <a href="/login">Log in</a>.
         </p>
