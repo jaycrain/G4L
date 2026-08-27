@@ -29,10 +29,13 @@ import type { PracticeKind } from '../practice/store.ts';
  * `startPracticeWeek(...)` calls out of the route files precisely because a hand-maintained list drifts; the same
  * test now checks this map against them, so a Session that starts opening a week and is not added here fails.
  *
- * w2_image is absent DELIBERATELY: its week has nothing countable, `weekGrids` filters it out, and there is no
- * grid to preview or hand anyone to. Pointing at a tab that will not show their week is worse than saying nothing.
+ * w2_image JOINED 2026-08-26. It was absent because its week had no grid — "five minutes in a picture is not
+ * countable" — which stopped being true the day Jay noticed a week missing from his Playbook and W2 got its row.
+ * Leaving it out would have made W2 the one Session that opens a tickable week and never mentions it, which is
+ * the exact gap this block exists to close.
  */
 export const TRACKER_FOR: Partial<Record<SessionKey, PracticeKind>> = {
+  w2: 'w2_image',
   w3: 'w3_logging',
   b2: 'b2_noticing',
   b3: 'b3_pilot',
@@ -69,9 +72,11 @@ const TRACKER_COPY: Record<PracticeKind, TrackerCopy> = {
     blurb: 'Rate each day and mark what showed up. The week fills in as you go.',
     cta: 'Check it out',
   },
-  // Present so the record is total and a new kind cannot be added without deciding its copy. Never rendered —
-  // w2_image produces no grid, so trackerFor() returns null for it before this is ever read.
-  w2_image: { title: '', blurb: '', cta: '' },
+  w2_image: {
+    title: 'A tracker, built from the picture you made',
+    blurb: 'One row, five minutes a day. Tick the day once you have stood in it.',
+    cta: 'Check it out',
+  },
   reclaim_item: {
     title: 'A tracker, built from your Reclaim List',
     blurb: 'The items you chose to work are the rows. Tick the days you move on one.',

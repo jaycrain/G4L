@@ -45,10 +45,11 @@ function kindsOpenedIn(file: string): string[] {
     .filter((t) => t.includes('_'));
 }
 
-// w2_image is EXEMPT and that is deliberate, not an oversight: its week has nothing countable, so weekGrids
-// filters it out and there is no grid to hand anyone to. Pointing at a tab that will not show their week would
-// be worse than saying nothing.
-const NO_GRID = new Set(['w2_image']);
+// NOTHING IS EXEMPT ANY MORE (2026-08-26). w2_image was the one entry here, on the reasoning that its week had
+// nothing countable — true until Jay counted five open weeks against four rendered grids and W2 got its row. The
+// set is kept rather than deleted because the NEXT kind that genuinely has no grid should land here with its
+// reason written down, not be quietly skipped somewhere else.
+const NO_GRID = new Set<string>();
 
 test('EVERY SESSION THAT OPENS A WEEK NAMES WHERE THAT WEEK LIVES', () => {
   const routes = walk('app').filter((f) => readFileSync(f, 'utf8').includes('startPracticeWeek('));
@@ -109,7 +110,7 @@ test('EVERY SESSION THAT OPENS A WEEK DECLARES IT AS A TRACKER', async () => {
   );
 });
 
-test('EVERY DECLARED TRACKER HAS COPY, AND w2_image HAS NONE TO RENDER', async () => {
+test('EVERY DECLARED TRACKER HAS COPY — INCLUDING W2, WHICH NOW HAS A GRID', async () => {
   const { TRACKER_FOR, trackerCopy, trackerKindFor } = await import('../lib/content/session-tracker.ts');
   for (const [key, kind] of Object.entries(TRACKER_FOR)) {
     const c = trackerCopy(kind!);
@@ -120,7 +121,12 @@ test('EVERY DECLARED TRACKER HAS COPY, AND w2_image HAS NONE TO RENDER', async (
     // is a label, not an orientation.
     assert.match(c.title, /built from/i, `${key}'s title should say where the tracker came from — got "${c.title}"`);
   }
-  // W2 opens a week with nothing countable; weekGrids filters it out, so there is no grid to preview or link to.
-  // Announcing it would point at a tab that will not show their week — worse than saying nothing.
-  assert.equal(trackerKindFor('w2'), null, 'w2 must not announce a tracker — its week has no grid');
+  // REVERSED 2026-08-26, and this is the SECOND assertion in this suite that encoded "W2 has no grid". That one
+  // sentence was written into four places — the grid dispatch, this map, a practice-grid test, and here — so
+  // reversing it took four edits, and the last two only surfaced because the suite went red. A belief repeated
+  // across files is a belief you cannot change in one place.
+  //
+  // W2 now opens a tickable week like the other four, so it must be announced like the other four. Leaving it out
+  // would make W2 the one Session that hands a member a week and never mentions it.
+  assert.equal(trackerKindFor('w2'), 'w2_image', 'W2 has a grid now — its close must hand the member to it');
 });

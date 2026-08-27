@@ -6,11 +6,22 @@ import { TRACKER_FOR, trackerCopy } from '../../../lib/content/session-tracker.t
 export const metadata = { title: 'Dev — where it lives' };
 
 // A representative window: opened on a Wednesday, so it runs a five-day stub to the Sunday and today is day one.
-// The shape a real b2_noticing grid hands over — not a fixture pretending to be a member.
-const SAMPLE_ROWS = [
-  { label: 'Managing your time', marks: [false, false, false, false, false] },
-  { label: 'Getting back on after a slip', marks: [false, false, false, false, false] },
-];
+//
+// PER KIND, because one sample for all five was actively misleading — the W2 block read "one row, five minutes a
+// day" above two B2 skill rows. This page is what gets screenshotted into the Cowork bundle, so a preview that
+// contradicts its own copy is worse than no preview: it is the thing marketing would describe.
+const SAMPLE_ROWS: Record<string, string[]> = {
+  w2_image: ['Five minutes: riding the Boulder climbs at dawn'],
+  w3_logging: ['Checked in', 'I redirected', 'I reframed', 'I restarted'],
+  b2_noticing: ['Finding good information', 'Managing your time', 'Getting back on after a slip'],
+  b3_pilot: ['A 20-minute walk in the morning', 'One piece of toast instead of my usual'],
+  c3_quality: ['A bike ride', 'Pushing the Movement forward', 'Time with family and close friends'],
+};
+const rowsFor = (kind: string) =>
+  (SAMPLE_ROWS[kind] ?? ['A row from your own answers']).map((label) => ({
+    label,
+    marks: [false, false, false, false, false],
+  }));
 
 // LOCAL-ONLY preview (see ../guard.ts). The end card itself needs a finished session to raise, so this renders the
 // line every Session close now carries, for all thirteen at once — which is the only way to see whether they read
@@ -35,7 +46,7 @@ export default async function DevEndCardPage() {
               <p className="ws-endcard-tracker-title">{c.title}</p>
               <p className="ws-endcard-tracker-blurb">{c.blurb}</p>
               <div className="ws-endcard-tracker-grid" aria-hidden="true">
-                {SAMPLE_ROWS.map((r, i) => (
+                {rowsFor(kind!).map((r, i) => (
                   <div key={i} className="ws-endcard-tracker-row">
                     <span className="ws-endcard-tracker-lab">{r.label}</span>
                     <span className="ws-endcard-tracker-days">

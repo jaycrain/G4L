@@ -393,7 +393,13 @@ const W2_RECOGNITION =
 // ── The practice — the week + the W1 connection ──
 const W2_PRACTICE_1 =
   `Here's your work this week, and it's small: five minutes each morning with that image. Close your eyes, make ` +
-  `it vivid — the light, the effort, the feeling. Don't rush it.`;
+  `it vivid — the light, the effort, the feeling. Don't rush it.` + BEAT_SEP +
+  // POINTS AT THE WEEK, because as of 2026-08-26 there IS one. W2's week had no grid at all — excluded on the
+  // reasoning that "five minutes in a picture is not countable" — so this close asked for a daily practice and
+  // named nowhere to record it, and it was the one Session that opened a week it never mentioned. Same sentence
+  // shape as W3's, deliberately: a member meets this instruction four times across the program and should not
+  // have to re-learn it each time.
+  `Open This week in your Playbook and tick the days you do it — five in a row is the whole ask.`;
 const W2_PRACTICE_2 =
   `And here's where it meets last session: when the old voice starts up — "this is stupid," "it'll never happen" — ` +
   `you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the ` +
