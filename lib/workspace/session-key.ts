@@ -77,8 +77,31 @@ export function keyFromForecast(
  * Returns undefined for a key with no curriculum asset — Reconnect is one continuous arc rather than a closable
  * session, and a caller must treat "no id" as "not closable", never as "not closed".
  */
+/**
+ * RECONNECT'S SESSIONS AND THEIR ASSETS. Not derivable from a route the way the other arcs are: only R1 is
+ * route-backed in the curriculum (the Mirror), while the Doors and the Drift Quiz are step-authored assets with
+ * no route to read the key off. So the crosswalk is stated once, here, and imported by everything that needs it.
+ */
+export const RECONNECT_SESSION_ASSET: Record<string, string> = {
+  r1: 'RCN-IDQ',
+  r2: 'RCN-EXC',
+  r3: 'RCN-DFT',
+  r4: 'RCN-CHK',
+  checkpoint: 'RCN-CHK',
+};
+
 export function curriculumIdFor(key: SessionKey): string | undefined {
   const { arc } = chatDispatch(key);
+  // RECONNECT RESOLVES FROM THE MAP ABOVE, and until 2026-08-28 it resolved to nothing at all. The docstring
+  // below said so on purpose — "Reconnect is one continuous arc rather than a closable session" — which was true
+  // of the single 65-minute conversation and false the moment it became three Sessions.
+  //
+  // What that cost: the workspace decides whether to open a Session read-only by asking for its asset id, and a
+  // Reconnect key answered `undefined`, so the entire closed-session check was skipped. A member who had
+  // finished the Mirror could re-enter it and take the 24-item instrument again — which is exactly what happened
+  // to Jay, four times, writing three spurious retakes against a 60-day measurement. (Jay: "Aren't the Sessions
+  // linear, once you're through you can't get back to it?" They are. This is what stopped them being.)
+  if (arc === 'reconnect') return RECONNECT_SESSION_ASSET[key];
   // The route's LAST SEGMENT, which is the key itself except for the Rewire checkpoint — keyed
   // 'rewire-checkpoint' here and routed '/rewire/{memberId}/checkpoint'. Matching the arc as well as the segment
   // keeps 'checkpoint' from resolving to Rebuild's or Reclaim's.

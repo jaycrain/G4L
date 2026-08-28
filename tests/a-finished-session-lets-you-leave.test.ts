@@ -46,8 +46,10 @@ test('a Session that ends WITHOUT changing stage is still recorded as closed', (
   assert.match(actions, /if \(turn\.complete\)/, 'the close is driven by the Session ending, not by a stage change');
   assert.match(actions, /RECONNECT_SESSION_ASSET/, 'each Session maps to its own asset for that close');
 
-  // And the map has to cover every Session, or one of them silently never closes.
-  const map = actions.match(/const RECONNECT_SESSION_ASSET[^}]*\}/)![0];
+  // And the map has to cover every Session, or one of them silently never closes. It lives in session-key.ts
+  // now — the workspace needs the same crosswalk to decide whether a finished Session opens read-only.
+  const keys = readFileSync(new URL('../lib/workspace/session-key.ts', import.meta.url), 'utf8');
+  const map = keys.match(/const RECONNECT_SESSION_ASSET[^}]*\}/)![0];
   for (const key of ['r1', 'r2', 'r3', 'checkpoint']) {
     assert.match(map, new RegExp(`\\b${key}:`), `${key} has no asset — it could never be recorded as done`);
   }
@@ -56,4 +58,42 @@ test('a Session that ends WITHOUT changing stage is still recorded as closed', (
   const fn = actions.slice(actions.indexOf('async function persistReconnectSessionCloses'));
   assert.ok(fn.indexOf('if (turn.complete)') < fn.indexOf('if (from === to) return;'),
     'the completion close must come before the `from === to` early return');
+});
+
+// ── AND YOU CANNOT WALK BACK INTO A SESSION YOU HAVE FINISHED ────────────────────────────────────────────────
+//
+// Jay: "Aren't the Sessions linear, once you're through you can't get back to it?" They are meant to be, and the
+// workspace already had the rule — a Session that is CLOSED with no live state opens read-only instead of
+// starting over. It asks `curriculumIdFor(sessionKey)` for the asset to look up, and every Reconnect key
+// answered `undefined`, so the whole check was skipped.
+//
+// That is what let him re-enter the Mirror and take the 24-item instrument again — three more times, writing
+// three spurious retakes against an instrument whose contract is one reading per 60 days. The instrument was
+// never the problem, which is why an idempotency window would have been the wrong fix: nothing should have been
+// able to ask it a second time.
+import { curriculumIdFor, RECONNECT_SESSION_ASSET } from '../lib/workspace/session-key.ts';
+import { CURRICULUM } from '../lib/curriculum/registry.ts';
+
+test('every Reconnect Session resolves to its curriculum asset', () => {
+  // Without this the read-only redirect cannot fire, and a finished Session restarts.
+  for (const [key, asset] of [['r1', 'RCN-IDQ'], ['r2', 'RCN-EXC'], ['r3', 'RCN-DFT'], ['r4', 'RCN-CHK']] as const) {
+    assert.equal(curriculumIdFor(key as never), asset, `${key} must resolve, or it can never be seen as closed`);
+  }
+});
+
+test('the crosswalk names assets that actually exist', () => {
+  // A map pointing at an id the curriculum does not have would resolve, pass the check above, and then never
+  // match a closed session — the same silence, one layer down.
+  const ids = new Set(CURRICULUM.map((a) => a.id));
+  for (const asset of Object.values(RECONNECT_SESSION_ASSET)) {
+    assert.ok(ids.has(asset), `${asset} is not in the curriculum`);
+  }
+});
+
+test('the crosswalk is defined ONCE', () => {
+  // The close path (app/reconnect/actions.ts) and the read-only redirect (the workspace) need the same fact.
+  // Two copies is how they drift, and a drifted copy here means a Session that closes but never locks.
+  const act = readFileSync(new URL('../app/reconnect/actions.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(act.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, ''),
+    /const RECONNECT_SESSION_ASSET/, 'the action must import the map, not declare its own');
 });

@@ -1,6 +1,7 @@
 'use server';
 
 import { memberTurn } from '../../lib/agent/member-display.ts';
+import { RECONNECT_SESSION_ASSET } from '../../lib/workspace/session-key.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
@@ -161,12 +162,9 @@ const RECONNECT_STAGE_ASSET: Record<string, string> = {
 // measurement stage — `b.complete = true` with the stage unchanged — so the boundary watcher returned early and
 // the IDQ was never recorded as closed. The forecast reads closed sessions to decide what is next, so a member
 // who finished the Mirror was sent straight back into it. (Jay's walk, 2026-08-28.)
-const RECONNECT_SESSION_ASSET: Record<ReconnectSession, string> = {
-  r1: 'RCN-IDQ',
-  r2: 'RCN-EXC',
-  r3: 'RCN-DFT',
-  checkpoint: 'RCN-CHK',
-};
+//
+// The map itself lives in lib/workspace/session-key.ts, because the workspace needs the SAME crosswalk to decide
+// whether to open a finished Session read-only — and a second copy here is how those two would drift apart.
 
 /**
  * R3 — persist the Legacy Letter once the member has confirmed it.
