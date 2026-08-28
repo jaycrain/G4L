@@ -3010,16 +3010,27 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   --onbwel-measure: 640px;
   --onbwel-icon-h: 90px;  /* fixed HEIGHT, variable width: her pick, so a 3:1 mark and a square one carry equal
                              visual weight rather than equal footprint */
-  --onbwel-copy-h: 300px; /* the content zone, sized to the tallest slide (1's three-paragraph body) */
+  /* The content zone, sized to the TALLEST slide's actual content — measured, not guessed: slide 4 is 221px at
+     desktop, and 300px left 79px of dead air on even that one (Jay: "the CTA is too low. Plenty of white space
+     to repurpose"). 232px keeps the fixed-CTA promise Donna asked for and hands ~68px back to every slide. */
+  --onbwel-copy-h: 232px;
+  /* The confidential footer is position:fixed, z-index 40, translucent white. Anything at the bottom of the
+     content sits UNDER it — which is how the "Start looking" button ended up greyed out behind the copyright
+     line on both a phone and a MacBook Air. Reserved here so no slide's CTA can reach it. */
+  --onbwel-foot-clear: 52px;
 }
-.onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: var(--white); }
+.onbwel {
+  min-height: 100dvh; max-height: 100dvh; overflow-y: auto;
+  display: flex; align-items: safe center; background: var(--white);
+}
 /* Slide 1 only: gives the absolutely-positioned wordmark and log-in line something to anchor to. It adds no
    layout of its own — that is the whole point. */
 .onbwel-first { position: relative; }
 .onbwel-wrap {
   width: 100%; max-width: calc(var(--onbwel-measure) + var(--onbwel-gutter));
   margin: 0; /* was `0 auto` — the centering that made slides 2–5 sit ~246px right of slide 1 */
-  padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px calc(env(safe-area-inset-bottom, 0px) + 34px) var(--onbwel-gutter);
+  padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px
+           calc(env(safe-area-inset-bottom, 0px) + 34px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
 }
 /* The copy zone is a fixed box so the CTA below it lands identically on every slide. `min-height`, not `height`:
    a phone that genuinely overflows must grow and scroll rather than clip — the button moving on a 375px screen is
@@ -3181,7 +3192,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    mark landed on top of "YOUR COMEBACK" on the top-aligned narrow layout. Change one, check the other. */
 /* The invert() is GONE. It existed to lift the wordmark off a dark photo; on white ground it rendered a white
    logo on a white page — invisible, and only visible as a bug if you looked for something that was not there. */
-.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: var(--onbwel-gutter); height: 52px; width: auto; z-index: 2; }
+.onbwel-d-wordmark { position: absolute; top: clamp(14px, 2.2vh, 24px); left: var(--onbwel-gutter); height: 52px; width: auto; z-index: 2; }
 /* The hero on mobile (Jay: fold the hero into mobile). Top-aligned with scroll room for the three intro
    paragraphs, tighter type.
 
