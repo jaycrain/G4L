@@ -410,8 +410,18 @@ function reflectReseeing(modelText: string): string {
 // requires substance: no bare assent, and enough words to actually carry a redirect. Same class as the gap-confirm
 // corroboration gate — a model guess must never outrank what the member plainly said.
 function revisionIsGrounded(memberMessage: string): boolean {
-  const t = (memberMessage ?? '').trim();
-  return t.length >= 12 && !isProcessMetaOrAssent(t);
+  // MEASURED AS SUBSTANCE, NOT AS LENGTH. This read `t.length >= 12 && !isProcessMetaOrAssent(t)`, which only
+  // ever caught SHORT assent: "Yes" failed on the character count rather than on its meaning, and anything
+  // longer walked through. Jay answered "Does that sound right, or not quite?" with "That's correct" — fourteen
+  // characters, which cleared the floor — and was immediately asked whether the door he named was wrong. The
+  // guard's own comment says "no bare assent"; two words of pure agreement are exactly that, and it let them by.
+  // ("That's right" is twelve, "Yep that's it" thirteen — the floor was never a test of anything.)
+  //
+  // isKeeperMaterial is already the file's answer to "did the member say something about their LIFE, or react to
+  // our reflection?" — it knows assent, praise, process-talk and brevity, and it sits four lines below this. One
+  // definition of substance, used by the keeper capture and by this gate, so they cannot disagree about the same
+  // sentence. [[member-words-outrank-model-guess]] [[one-fact-many-sites]]
+  return isKeeperMaterial(memberMessage);
 }
 // A KEEPER is the member's own material about their life — never their reaction to our reflection. The turn a
 // draw-out advances on is exactly where a member says "Perfectly depicted!" or "that's it exactly", because the
