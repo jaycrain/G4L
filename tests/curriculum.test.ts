@@ -63,7 +63,16 @@ test('the Reconnect phase is fully authored — every Session has steps; key art
   }
   assert.ok(getSession('RCN-FDR')!.steps!.some((st) => st.contributes === 'your_doors'));
   assert.ok(getSession('RCN-WIN-LIST')!.steps!.some((st) => st.contributes === 'reclaim_list'));
-  assert.equal(getAsset('RCN-IDQ')!.kind, 'measurement'); // the IDQ stays an instrument, not a Session
+  // THE IDQ IS R1, THE FIRST SESSION (2026-08-28). This line said "the IDQ stays an instrument, not a Session"
+  // and it was right until Reconnect was split into three Sessions with the mirror first, per Greg's spec. The
+  // engine, the session registry and the summaries all moved; this table did not, and because it was still a
+  // routeless `measurement` the forecast treated it as content-pending and lit the Doors instead. Jay's walk:
+  // "Program › Reconnect › 2 of 3 — The Doors", on a fresh member.
+  // It is route-backed rather than step-authored, exactly like the v2.3 Rewire Sessions — the conversation is
+  // the content, so `steps` stays empty on purpose.
+  assert.equal(getAsset('RCN-IDQ')!.kind, 'session');
+  assert.equal(getAsset('RCN-IDQ')!.order, 1, 'and it is FIRST');
+  assert.ok((getAsset('RCN-IDQ') as { route?: string }).route, 'route-backed, or the forecast cannot open it');
 });
 
 test('the forecast is derived purely from registry rows — every non-daily asset, order-sorted', () => {
@@ -72,7 +81,7 @@ test('the forecast is derived purely from registry rows — every non-daily asse
   // reconnect column: 7 items in order, ending in the Checkpoint (Book Quiz retired → order 1 gone)
   const recon = cols[0]!.items;
   assert.equal(recon.length, 7);
-  assert.deepEqual(recon.map((a) => a.order), [2, 3, 4, 5, 6, 7, 8]);
+  assert.deepEqual(recon.map((a) => a.order), [1, 3, 4, 5, 6, 7, 8]); // the IDQ moved 2 → 1 as R1, the Mirror
   assert.equal(recon[recon.length - 1]!.kind, 'checkpoint');
   // every non-daily asset appears exactly once across the columns (proves no hardcoding)
   const inColumns = cols.flatMap((c) => c.items).length;
@@ -92,7 +101,11 @@ test('the whole program is authored — all four phases, every Session has steps
   for (const c of cols) {
     assert.equal(c.items.filter((i) => i.kind === 'checkpoint').length, 1, `${c.phase} needs one checkpoint`);
     for (const s of c.items.filter((i) => i.kind === 'session')) {
-      assert.ok((s.steps?.length ?? 0) >= 1, `${s.id} should be authored`);
+      // AUTHORED means "has content a member can reach" — step-authored OR route-backed. The v2.3 conversational
+      // Sessions have always been the latter; the IDQ became one when Reconnect was split. Requiring `steps` of
+      // every session would fail every conversational Session in the product.
+      const built = (s.steps?.length ?? 0) >= 1 || !!(s as { route?: string }).route;
+      assert.ok(built, `${s.id} should be authored (steps) or route-backed`);
     }
   }
   // every phase checkpoint earns its milestone badge
@@ -270,10 +283,13 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   // Fresh: Reconnect is "You're here", the lit asset is the first built Session by order.
   let f = await getForecast(db, memberId);
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, "You're here");
-  assert.equal(f.current!.id, 'RCN-FDR'); // Book Quiz retired; the Doors lead Reconnect now
+  // THE MIRROR LEADS RECONNECT. This asserted 'RCN-FDR' — which is to say, this test was pinning the exact
+  // behaviour Jay reported as a bug, and is the reason the Session split shipped without anyone noticing the
+  // dashboard still opened on the Doors. A test that encodes the old order will defend it.
+  assert.equal(f.current!.id, 'RCN-IDQ');
 
-  // Close every built Reconnect Session → the Checkpoint becomes the lit asset (the IDQ measurement is skipped).
-  for (const id of ['RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
+  // Close every built Reconnect Session → the Checkpoint becomes the lit asset. The IDQ is now one of them.
+  for (const id of ['RCN-IDQ', 'RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
     await saveAnswer(db, memberId, id, 1, 'x', 1);
     await closeSession(db, memberId, id);
   }

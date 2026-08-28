@@ -3444,8 +3444,16 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   .tri-member-name { font-size: 16px; }
   .tri-member-reclaim { font-size: 13px; }
   /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
-     `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
-  .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 2px; flex: 0 0 auto; height: 34px; box-sizing: border-box; }
+     `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar.
+     48px = the 44px MOBILE TAP-TARGET FLOOR + this track's 2px padding top and bottom.
+     It was 34px, which is shorter than the floor, so every tab rendered 44px tall inside a 34px bar: the white
+     selector overflowed its track and both it and its label sat 7px below the bar's centre. Jay, 2026-08-28:
+     "The tab headings aren't vertically centered, neither is selector."
+     Raising the track rather than exempting the tabs, because 34px was the number that was wrong — a segmented
+     control is a primary navigation target on a phone and has no business below the tap floor. That floor is
+     declared with :where() so it yields to any component that sets its own min-height; taking that escape here
+     would have made these three tabs a 30px target to save 14px of bar. */
+  .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 2px; flex: 0 0 auto; height: 48px; box-sizing: border-box; }
   .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: #55595c; padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
   .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
   .tri-main { flex-direction: column; gap: 0; }

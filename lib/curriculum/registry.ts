@@ -109,7 +109,20 @@ const meta = (
 export const CURRICULUM: Asset[] = [
   // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
   ...RECONNECT_SESSIONS,
-  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Comes round again about every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
+  // R1 · THE MIRROR — the FIRST Reconnect Session, and a real one (2026-08-28).
+  //
+  // The engine was split into three Sessions with the IDQ first, per Greg's spec, and this entry was not moved
+  // with it. It stayed `kind: 'measurement'` with no route, and `isBuilt()` counts an asset as built only if it
+  // is a session WITH steps, a checkpoint, or route-backed — so the forecast skipped it as content-pending and
+  // lit the next thing instead. keyFromForecast then read that asset id ('…FDR') and returned 'r2'.
+  //
+  // Which is why Jay's dashboard offered "Reconnect › 2 of 3 · The Doors" to a member who had done neither: the
+  // arcs, the session registry and the summaries all said the Mirror was first, and the one table the dashboard
+  // actually reads still described the pre-split world. Nothing was mis-ordered — order 2 already sorted it
+  // ahead of the Doors at 3 — it simply was not a thing the member could be sent to.
+  //
+  // Route-backed and ordered 1 now, so it is both openable and unambiguously first.
+  meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions — the line we measure everything else against. Comes round again about every 60 days.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
   // ── Rewire ── v2.3 conversational flow when staged (W1→W2→W3→Checkpoint), else the old Atlas Sessions + soft gate.
