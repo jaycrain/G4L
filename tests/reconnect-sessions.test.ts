@@ -13,6 +13,7 @@
 // on to the next stage, which is what made the phase unbroken.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   applyReconnectTurn, reconnectR1Opening, reconnectOpening, reconnectR3Opening, reconnectCheckpointOpening,
   RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC, RECONNECT_CHECKPOINT_ARC,
@@ -49,6 +50,33 @@ test('R1 ENDS when the instrument does — it does not run on into the Drift Qui
   }
   assert.equal(last!.complete, true, 'the Session closes on the 24th answer');
   assert.notEqual(s.stage, 'drift', 'and does NOT hand into R3 — that was the unbroken run');
+
+  // AND IT HAS TO END ON A CLOSE, WHICH THIS TEST ORIGINALLY NEVER CHECKED.
+  //
+  // The two assertions above passed the whole time. `complete` was true, the stage was not 'drift', and the
+  // reply still ended with the Drift Quiz's opening question — because the flag was moved and the copy was not.
+  // Jay met it on his walk: the Mirror closed, the ring moved, he was returned to the dashboard, and the last
+  // thing said to him was a question from a Session he had not opened.
+  //
+  // Control flow and copy are two different claims. [[existence-is-not-the-assertion]]
+  assert.doesNotMatch(last!.reply, /which do you feel the distance from most right now/,
+    "R3's opener must not be spoken at R1's close");
+  assert.doesNotMatch(last!.reply.trim(), /\?$/, 'a Session close does not ask a question nobody is there to answer');
+  assert.match(last!.reply, /Next are your Doors/, 'it says what comes next, like every other Session close');
+});
+
+test('the personalized close ends the same way — both paths, one line', () => {
+  // The engine's close and the model's personalized close are two separate sites, and BOTH appended the Drift
+  // Quiz's opener. Fixing one would have left most members — the personalized path is the common one — still
+  // reading R3's question at the end of R1. One exported constant, used by both.
+  const engine = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const action = readFileSync(new URL('../app/reconnect/actions.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  assert.match(engine, /MIRROR_CLOSE_NEXT\}`/, "the engine's close ends on the next-Session line");
+  assert.match(action, /MIRROR_CLOSE_NEXT\}`/, 'and so does the personalized one');
+  assert.doesNotMatch(action, /driftOpen\(/, "the action must not open R3 from inside R1's close");
 });
 
 // ── R2 · THE DOORS ────────────────────────────────────────────────────────────────────────────────────────────

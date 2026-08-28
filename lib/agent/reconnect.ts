@@ -1031,6 +1031,12 @@ const IDQ_CLUSTER_LEAD: Record<number, string> = {
 };
 const deliverIdqItem = (i: number): string => `${IDQ_CLUSTER_LEAD[i] ?? ''}${itemStem(i)}`;
 const IDQ_REPROMPT = `Just a number for this one, ${IDQ_SCALE_HINT} — how true does it feel?`;
+// WHAT COMES NEXT, at the end of R1 — the third part of a Session close, matching DOORS_CLOSE's shape (what you
+// did · where it lives · what's next). EXPORTED and used by BOTH close paths, because the bug this replaces was
+// exactly that: two sites each appended `driftOpen(...)` and only one of them was ever looked at.
+export const MIRROR_CLOSE_NEXT =
+  "Next are your Doors — the events that opened the distance — and after that the Drift Quiz.";
+
 function idqClose(): string {
   return (
     "That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape " +
@@ -1265,7 +1271,18 @@ const measurementStage: StageDef = administeredStage({
     // 65-minute conversation instead of the three Sessions the summaries canon has always declared. The IDQ is
     // its own Session now — it closes, the member returns to the dashboard, the ring moves, R2 is teed up.
     b.complete = true;
-    b.reply = `${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}`; // two beats → two bubbles (score read | take-stock ask)
+    // AND IT ENDS ON A CLOSE, NOT ON THE NEXT SESSION'S QUESTION.
+    //
+    // This line still read `${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}` — the hand-in from when the
+    // measurement ran straight into the Drift Quiz inside one continuous arc. So R1 set complete, the ring moved,
+    // the member was returned to the dashboard, and the last thing the Companion said to them was the Drift
+    // Quiz's opening question: "Of the things you named, which do you feel the distance from most right now?"
+    // A question nobody was going to be there to answer. Jay: "Should be responding to the question first."
+    //
+    // The comment directly above this said "R1 ENDS HERE" when the flag was added. The flag moved and the words
+    // did not, and the test I wrote for it asserted `complete` and the stage — never the reply. Checking that a
+    // Session ends is not the same as checking what it says on its way out. [[existence-is-not-the-assertion]]
+    b.reply = `${idqClose()}${BEAT_SEP}${MIRROR_CLOSE_NEXT}`; // two beats → two bubbles (score read | what's next)
   },
 });
 

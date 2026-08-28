@@ -346,13 +346,22 @@ test('reconnect measurement · an unclear answer re-prompts and records nothing 
   assert.equal(turn.state.stage, 'measurement', 'stays on the current item');
 });
 
-test('reconnect measurement · the 24th response completes the baseline and hands into the Drift beat', () => {
+test('reconnect measurement · the 24th response completes the baseline and CLOSES R1', () => {
   const almost: ConvState = { stage: 'measurement', administeredResponses: Array(TOTAL_ITEMS - 1).fill(3), collected: { doors: ['grind'] } };
   const turn = applyReconnectTurn(almost, [], '5', { text: '' });
   assert.equal((turn.state.administeredResponses ?? []).length, TOTAL_ITEMS, 'all 24 captured');
   assert.equal(turn.complete, true, 'the 24th answer CLOSES R1 — the Drift Quiz is its own Session now');
   assert.match(turn.reply, /baseline/i, 'the close names the baseline (never a bare number; the ACTION writes it)');
-  assert.match(turn.reply, /inventory|cost/i, 'and opens the Drift beat (the generic close appends the drift opener)');
+
+  // THIS LINE USED TO ASSERT THE BUG. It read `assert.match(turn.reply, /inventory|cost/i, 'and opens the Drift
+  // beat (the generic close appends the drift opener)')` — and it sat directly beneath an assertion I had already
+  // updated to say "the Drift Quiz is its own Session now". Half the test knew about the split and half did not,
+  // so the suite went green while R1 ended by asking a question from R3 that nobody would be there to answer.
+  //
+  // A Session close names what comes next. It does not start the next Session.
+  assert.match(turn.reply, /Next are your Doors/, 'the close says what comes next');
+  assert.doesNotMatch(turn.reply, /what has the Fade cost you|which do you feel the distance from most/i,
+    "and never speaks R3's opener");
 });
 
 // ============================================================================================================

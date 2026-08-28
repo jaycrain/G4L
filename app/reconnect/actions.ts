@@ -12,7 +12,7 @@ import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/
 import { detectReconnectClaims } from '../../lib/agent/gate-claims.ts';
 import {
   liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectR1Opening,
-  reconnectR3Opening, reconnectCheckpointOpening, reconnectMeasurementClose, driftOpen,
+  reconnectR3Opening, reconnectCheckpointOpening, reconnectMeasurementClose, MIRROR_CLOSE_NEXT,
   RECONNECT_ARC, RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC, RECONNECT_CHECKPOINT_ARC, BEAT_SEP,
 } from '../../lib/agent/reconnect.ts';
 import type { ArcConfig } from '../../lib/agent/onboarding-staged.ts';
@@ -86,8 +86,10 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
       // HERE (not the legacy /idq action), so without this the redesign never queued a draft. Draft-only, graceful.
       if (idq.ok) await maybeTriggerDraft(db, memberId, { kind: 'idq', sequenceNo: idq.sequenceNo });
       const close = await reconnectMeasurementClose(turn.state.collected, responses); // ties the shape to their doors
-      // Hand into §2d as its OWN bubble (BEAT_SEP) — the score read and the take-stock ask are separate beats.
-      return close ? `${close}${BEAT_SEP}${driftOpen(turn.state.collected)}` : null;
+      // THE SECOND SITE. The personalized close overrides the engine's generic one, and it appended the Drift
+      // Quiz's opener too — so fixing only the engine would have left every member who gets a personalised close
+      // (which is most of them) still reading R3's question at the end of R1.
+      return close ? `${close}${BEAT_SEP}${MIRROR_CLOSE_NEXT}` : null;
     }
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
