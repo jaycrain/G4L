@@ -900,8 +900,15 @@ const triggersStage: StageDef = {
     const reply = (b.modelText ?? '').trim();
     if (turns >= TRIGGER_DRAWOUT_TURNS) {
       // enough drawn out → the model (per the hand-off note) named the heaviest + posed the Redirect. Into the protocol.
+      //
+      // AND THE FRAME LEADS. W3_PROTOCOL_INTRO — "Now we write the plan … Three moves." — was written for this
+      // exact moment and had ZERO readers, so the member came out of the trigger draw-out straight into "First,
+      // **Redirect** —" with nothing saying a plan had started or that there were three parts to it. The three
+      // move names are vocabulary he is meant to carry out of here and run under pressure; announcing that there
+      // are three is what makes them a set rather than three paragraphs.
+      // Same shape as the identity chips: authored copy that exists, is right, and cannot be reached.
       b.stage = 'protocol';
-      b.reply = reply || W3_REDIRECT;
+      b.reply = `${W3_PROTOCOL_INTRO}${BEAT_SEP}${reply || W3_REDIRECT}`;
     } else {
       // keep drawing out — the model reflected + dug in with ONE follow-up. Its turn is the reply; nothing appended.
       b.reply = reply || W3_TRIGGER_MORE;

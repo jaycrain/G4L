@@ -151,13 +151,31 @@ export function memberSignalsGapComplete(message: string): boolean {
 // Same subtractive idiom as memberAddingMoreGap: strip the affirmation, the scope hedge, and the back-reference,
 // then ask whether anything is LEFT. Nothing left = they are closing. A loss signal always wins, so "those three,
 // and then my mother died" keeps drawing out — the test can only ever close a beat that carries no new fade.
+// "THAT'S THE ___" POINTS BACKWARDS TOO. It was only admitted as a back-reference in the two frozen forms
+// "that's one" and "that's it", so "That's the big stuff" failed the precondition below and never reached the
+// residue test — the test that would have closed it.
+//
+// It matters that the fix goes HERE rather than in GAP_DONE_RE, which is where "that's the ___" closings
+// otherwise live. GAP_DONE_RE is an unanchored substring match with no loss-signal guard, so teaching it "big
+// stuff" would also close on "That's the big stuff, and my sister stopped speaking to me that same year" — and
+// drop the sister. This path keeps both guards: real fade material outranks the shape, and anything left after
+// the strip counts as new. The member has to be saying ONLY that we have it. [[completeness-never-touches-drawout]]
 const BACKREF_RE =
-  /\b(those|these|them|both)\b|\bthat('?s)? (one|it)\b|\bwhat i (already |just )?(said|mentioned|told you|went through)\b/i;
+  /\b(those|these|them|both)\b|\bthat('?s)? (one|it)\b|\bthat'?s the\b|\bwhat i (already |just )?(said|mentioned|told you|went through)\b/i;
 const SCOPE_HEDGE_RE =
   /\b(primarily|mainly|mostly|chiefly|largely|essentially|basically|generally|roughly|broadly|principally|pretty much|more or less|just|only|really|all|about|around|to do with|of it|of them)\b/gi;
 // Placeholder nouns carry no meaning on their own — they are the thing "those" is standing in for.
+// THE "MAIN PART OF IT" NOUNS BELONG HERE TOO (Jay's walk, 2026-08-28). He closed the beat with "That's the big
+// stuff" and was asked again — because "stuff" was not on this list, so the sentence left a residue and read as
+// new content. Same for "that's the brunt of it" and "that's the heart of it", the latter being the exact phrase
+// the engine's own follow-up offers him ("…or is that the heart of how it opened?"). We asked a question in a
+// vocabulary we could not then hear the answer in.
+//
+// These are not the 21st alternation this comment warns about — they are the same CATEGORY as thing/part/bit: a
+// noun standing in for material already given, bounding it rather than adding to it. A loss signal still outranks
+// the whole test, so "the big stuff was my dad dying" keeps drawing out.
 const PLACEHOLDER_RE =
-  /\b(thing|things|one|ones|item|items|event|events|reason|reasons|area|areas|topic|topics|point|points|bit|bits|part|parts|piece|pieces|issue|issues|factor|factors)\b/gi;
+  /\b(thing|things|one|ones|item|items|event|events|reason|reasons|area|areas|topic|topics|point|points|bit|bits|part|parts|piece|pieces|issue|issues|factor|factors|stuff|gist|brunt|bulk|crux|heart|core|meat|essence|upshot|highlights)\b/gi;
 const NUMBER_WORD_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten|couple|few|several|first|second|third)\b/gi;
 const CLOSE_FILLER_RE =
   /\b(it|that|this|they|was|were|is|are|be|been|and|but|so|then|i|we|my|the|a|an|of|in|on|at|for|with|there|here|had|have|has|did|do|really|yeah|yes|no|not|nothing|else|more|other|same|main|big|key)\b/gi;

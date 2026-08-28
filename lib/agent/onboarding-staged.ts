@@ -1940,7 +1940,22 @@ const gapStage: StageDef = {
         // TELL THE MODEL NEXT TURN. Overriding it silently is what produced the divergence; the floor itself is
         // right and stays exactly as it is — nothing here shortens the draw-out.
         s.gapHeld = b.model.gapReady === true;
-        b.reply = withQuestion(b.modelText, gapMore(b.history));
+        const more = gapMore(b.history);
+        // AND DO NOT SHIP THE QUESTION WE ARE ABOUT TO IGNORE.
+        //
+        // When the model decides the story is done it writes a full recap and ends on a CONFIRM — "Does that land
+        // — or is there more to it?". If the engine is still below its depth floor it holds, correctly, but
+        // withQuestion KEEPS a question the model already asked. So the member was shown a confirm that the
+        // engine had just declined to enter, answered it ("That's the big stuff"), and had that answer read as
+        // another chapter of the fade — appended, re-recapped, and asked again. Jay: "still repetitive."
+        //
+        // Nobody was wrong about the member here; the two halves were asking different questions. Only the reply
+        // changes: when the model TRIED TO WRAP and we are holding, its trailing confirm is replaced by the
+        // draw-out question the engine will actually honour. Its recap survives — receiveThen keeps the receipt.
+        //
+        // Keyed on the model's own structured `gapReady` flag, never on reading its prose for intent — that is
+        // the stage-agreement mistake, and it stays reverted. [[stage-agreement-invariant]]
+        b.reply = s.gapHeld && more ? receiveThen(b.modelText, more) : withQuestion(b.modelText, more);
       } else {
         s.gapHeld = false;
         b.reply = reflectGap(b.modelText);
