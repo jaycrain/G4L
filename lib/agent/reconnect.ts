@@ -64,7 +64,11 @@ export function reconnectCallback(c: Collected): string {
     // Richest path: a named Door → the revisable check lands on it by name. Warm reframe → the forecast (what this
     // session will do) → the guiding question. Three beats so the member sees the shape before diving in.
     return [
-      `${identity ? `Last time, we found who you're reclaiming — ${identity} — and it` : 'When we last talked, it'} ` +
+      // "LAST TIME" NO LONGER MEANS ONBOARDING. When the Doors were Reconnect's first Session this pointed
+      // correctly at intake; the Mirror sits between them now, so a member arriving here was told "last time" about
+      // something two Sessions back. Recall without dating it — the same fix this file already made for the
+      // Reclaim List, where "Back at the start" was replaced by "You've named" for exactly this reason.
+      `${identity ? `You've named who you're reclaiming — ${identity} — and it` : 'From what you have told me, it'} ` +
         `felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it.`,
       ENTRANCE_ECHO,
       RECONNECT_FORECAST,
@@ -74,7 +78,7 @@ export function reconnectCallback(c: Collected): string {
   if (gap) {
     // No Door tagged, but the gap story is in hand → open on the story, still revisable.
     return [
-      `Last time, you started to tell me how the distance opened${identity ? ` from ${identity}` : ''}. I've been holding it, and I want to go deeper into it with you now.`,
+      `You started to tell me how the distance opened${identity ? ` from ${identity}` : ''}. I've been holding it, and I want to go deeper into it with you now.`,
       ENTRANCE_ECHO,
       RECONNECT_FORECAST,
       `Does it still feel the way it did — or has it moved?`,
@@ -147,8 +151,23 @@ export function reconnectR1Opening(committed: Collected): Turn {
  * a 2 part process: Part 1 (Drift Quiz) / Part 2 (Legacy Letter)"), which is also why R3 ends warmly: the letter
  * is the last thing a member makes in Reconnect, not a quiz result.
  */
+// The two-part frame, said ONCE at the top of R3. R2's close already promises it — "Next comes the Drift Quiz,
+// and then a letter you'll write to yourself a year out" — so this is the promise being kept, in the same words.
+//
+// It exists because R3 was the one Session that opened cold on a question. When Reconnect was a single
+// conversation that was correct: the drift beat followed the measurement inside a thread the member was already
+// inside, and a frame would have been an interruption. Entered from the dashboard it reads as being asked
+// something before being told what you are doing — the same note Jay made about the identity chips arriving
+// with no sentence in front of them.
+const R3_FRAME =
+  "This one comes in two parts — first what the Fade actually cost, then a letter you'll write to yourself a year out.";
+
 export function reconnectR3Opening(committed: Collected): Turn {
-  return { reply: driftOpen(committed), state: { stage: 'drift', collected: committed }, complete: false };
+  return {
+    reply: `${R3_FRAME}${BEAT_SEP}${driftOpen(committed)}`,
+    state: { stage: 'drift', collected: committed },
+    complete: false,
+  };
 }
 
 /** R4 — THE CHECKPOINT. Its own Session, exactly as RWR-CHK / RBLD-B4 / RCL-C4 are, with the ceremony after it. */
@@ -1034,6 +1053,10 @@ const IDQ_REPROMPT = `Just a number for this one, ${IDQ_SCALE_HINT} — how true
 // WHAT COMES NEXT, at the end of R1 — the third part of a Session close, matching DOORS_CLOSE's shape (what you
 // did · where it lives · what's next). EXPORTED and used by BOTH close paths, because the bug this replaces was
 // exactly that: two sites each appended `driftOpen(...)` and only one of them was ever looked at.
+// R3's equivalent. Greg's own R3 closure names it — "First take a quick step through the Transition Activity."
+export const LEGACY_CLOSE_NEXT =
+  "Next is the Reconnect Checkpoint — a short read on what this work has built, and the close of the Phase.";
+
 export const MIRROR_CLOSE_NEXT =
   "Next are your Doors — the events that opened the distance — and after that the Drift Quiz.";
 
@@ -1243,11 +1266,15 @@ const legacyStage: StageDef = {
       // (see lib/time, the one authority). The action stamps it via memberToday when it persists; the reply says
       // "a year from today", which is true in every timezone.
       b.legacyLetter = { body, datedFor: '' };
-      b.reply = `${capPreamble}${LEGACY_SAVED_1}${BEAT_SEP}${LEGACY_SAVED_2}${BEAT_SEP}${checkpointOpener()}`;
+      // NAMES THE CHECKPOINT, DOES NOT OPEN IT. Both branches here ended on `checkpointOpener()` — the hand-in
+      // from when the Checkpoint was another beat in the same conversation. R3 completes on this turn, so the
+      // member is returned to the dashboard holding the Checkpoint's first instrument question, with the Session
+      // that would have taken the answer already closed. Identical to what R1 was doing with the Drift Quiz.
+      b.reply = `${capPreamble}${LEGACY_SAVED_1}${BEAT_SEP}${LEGACY_SAVED_2}${BEAT_SEP}${LEGACY_CLOSE_NEXT}`;
     } else {
       // No draft ever landed (the model never called the tool). Do not strand them in the beat and do not claim a
       // letter exists — move on quietly. A missing letter is recoverable; a false claim of one is not.
-      b.reply = checkpointOpener();
+      b.reply = LEGACY_CLOSE_NEXT;
     }
     b.legacyDraft = undefined;
     // R3 ENDS HERE. The Checkpoint is its own Session, exactly as RWR-CHK / RBLD-B4 / RCL-C4 are — and Greg's

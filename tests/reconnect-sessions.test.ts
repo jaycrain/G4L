@@ -109,6 +109,29 @@ test('R3 opens on the Drift Quiz and holds the Legacy Letter in the same Session
   assert.ok(RECONNECT_R3_ARC.stageOrder.includes('window'), 'and the window that leads into it');
 });
 
+// THE SAME RULE FOR EVERY SESSION, checked as COPY and not just as control flow.
+//
+// R1 shipped with `complete = true` and the Drift Quiz's opening question in the same reply; nobody caught it
+// because the tests read the flag and the stage. R3 had the identical shape waiting one Session later — BOTH
+// branches of the legacy close ended on `checkpointOpener()` — and would have handed Jay the Checkpoint's first
+// instrument question on his way out to the dashboard. Found by auditing ahead of his walk rather than by him
+// hitting it. [[existence-is-not-the-assertion]]
+test('no Session close speaks the NEXT Session opener', () => {
+  const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  // Every completion in the arc file, with the reply assigned around it.
+  const completions = [...src.matchAll(/b\.complete = true;[\s\S]{0,400}?b\.reply = ([^;]+);/g)].map((m) => m[1]!);
+  const reverse = [...src.matchAll(/b\.reply = ([^;]+);[\s\S]{0,400}?b\.complete = true;/g)].map((m) => m[1]!);
+  const all = [...completions, ...reverse];
+  assert.ok(all.length >= 3, `expected to find the Session closes; found ${all.length}`);
+
+  for (const reply of all) {
+    assert.doesNotMatch(reply, /driftOpen\(|checkpointOpener\(|idqOpen\(|reconnectCallback\(/,
+      `a close must NAME what is next, never open it: ${reply.slice(0, 80)}`);
+  }
+});
+
 test('R3 ENDS after the letter — the Checkpoint is its own Session', () => {
   assert.ok(!RECONNECT_R3_ARC.stageOrder.includes('checkpoint'),
     "Greg's own R3 closure says 'First take a quick step through the Transition Activity' — it is a separate step");
