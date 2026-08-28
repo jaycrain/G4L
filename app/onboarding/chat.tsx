@@ -10,6 +10,7 @@ import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import GapConfirm from './gap-confirm.tsx';
 import { memberDisplay } from '../../lib/agent/member-display.ts';
+import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
@@ -66,6 +67,16 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
   const [declined, setDeclined] = useState(false); // fade gate gracefully declined (Decision E) — terminal, no card
   const [savedForLater, setSavedForLater] = useState(false); // §2c save-and-return: left at the card, place kept
   const [cardReturns, setCardReturns] = useState(0); // times the member sent the card back ("keep talking") — capture-quality signal
+  // FOLLOW THE THREAD. Onboarding was the one conversation in the product with no scroll handling at all: the
+  // member sent a reply and had to go find it, and the Companion's answer arrived wherever the page happened to
+  // be sitting (Jay's walk, 2026-08-27). The hook that fixes it already existed and was already wired into
+  // Reconnect, Rewire, Rebuild, Reclaim and the Founder Console — written, twice over, for this exact complaint
+  // (Donna's "a long reply lands pinned to its bottom"; Jay's "it disappears below the window").
+  //
+  // So the first and longest conversation a member ever has was the only one that did not get it. Same deps as
+  // Reconnect, and the markup already matched the hook's defaults (.chat / .bubble.member), which is the tell
+  // that this was an omission rather than a decision.
+  const chatRef = useChatAutoscroll([messages.length, pending, expects]);
   const taRef = useRef<HTMLTextAreaElement>(null);
   const tokenRef = useRef<string>(''); // per-device onboarding resume token
 
@@ -417,7 +428,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           conventions, and the title-case one arrives second. Every heading around it is sentence case with a full
           stop: "Welcome back." · "First, your account." · "Your place is saved." */}
       <h1>Getting to know you.</h1>
-      <div className="chat">
+      <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats) and a
