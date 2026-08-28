@@ -72,10 +72,16 @@ test('neither the frame nor the recap names her Identity in the third person', (
   const at: ConvState = { stage: 'gap', awaitingConfirm: true,
     collected: { identityNoun: 'Maker', doors: ['career_cliff'], gap: 'the job went' } };
   const frame = applyStagedTurn(at, [], "That's the whole of it.", { text: '', replyIntent: 'done' });
-  assert.doesNotMatch(frame.reply, /the Maker/, 'the frame never names her Identity');
+  // NARROWED 2026-08-28. The rule's harm is the Identity STANDING IN for the member — "what did the Maker DO?",
+  // "what would the Maker be doing", the two faults that produced this test. Naming it as the thing the list
+  // POINTS AT is the sanctioned use, and Jay's Reclaim List intro now ends "Whatever points at the Maker" —
+  // named minutes after she claimed it, in the same sitting, which is the moment CLAUDE.md allows.
+  assert.doesNotMatch(frame.reply, /the Maker (?:DO|do|would|was|is|has|used to)/,
+    'the Identity never stands in for the member');
+  assert.doesNotMatch(frame.reply, /what did the Maker|what would the Maker/i, 'the two original faults, verbatim');
 
   const recap = applyStagedTurn(frame.state, [], '• A creative job\n• Lose 20 lbs\n• Peace at home', { text: '' });
-  assert.doesNotMatch(recap.reply, /the Maker/, 'and neither does the recap');
+  assert.doesNotMatch(recap.reply, /the Maker/, 'and the RECAP still never names her Identity at all — she is past the claiming moment by then');
 });
 
 // DONNA'S TRIPLE READ-BACK, 2026-08-23. "Worked well, straightforward with no hiccups, but did repeat the list so

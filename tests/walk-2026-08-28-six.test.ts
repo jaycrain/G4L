@@ -66,3 +66,42 @@ test('every drawout confirm in Reconnect offers chips — the Doors one was the 
       `${c} must be offered as a tap — English has unlimited ways to say yes`);
   }
 });
+
+// ── THE RECLAIM LIST INTRO — Jay's final copy, 2026-08-28 ─────────────────────────────────────────────────────
+// His note: the old wording "has always been a little awkward to me and didn't fit into how we referred to it
+// downstream." What the new version adds is a RANGE (small/big, this month/this year), four concrete exemplars so
+// a brand-new member can see the shape of an item, and the identity as the thing the list points AT.
+test("the Reclaim List intro renders the member's identity — and a real fallback when they skipped it", async () => {
+  const { applyStagedTurn } = await import('../lib/agent/onboarding-staged.ts');
+  const { claimsGateOutcome } = await import('../lib/agent/gate-claims.ts');
+  const SEP = String.fromCharCode(30);
+  const handIn = (noun?: string) =>
+    applyStagedTurn(
+      {
+        stage: 'gap',
+        awaitingConfirm: true,
+        collected: { ...(noun ? { identityNoun: noun } : {}), gap: 'Work took it, then my dad got sick.', reclaimList: [] },
+      } as never,
+      [], "that's the whole of it", { text: '' },
+    ).reply;
+
+  const named = handIn('Racer');
+  assert.match(named, /Whatever points at the Racer\./, 'names the identity as what the list points AT');
+  // THE SANCTIONED USE, and the line it must not cross: the Identity may be named as what they are RECLAIMING,
+  // never as an address for the member. "points at the Racer" is the former; "what the Racer wants" would not be.
+  assert.doesNotMatch(named, /you, the Racer|Racer, you/i, 'never addresses the member by their Identity');
+
+  // A member who skipped naming gets Jay's own fallback, not a dangling article.
+  const skipped = handIn();
+  assert.match(skipped, /Whatever points at the person you're reclaiming\./);
+  assert.doesNotMatch(skipped, /points at \.|points at the \./, 'no empty label');
+
+  for (const reply of [named, skipped]) {
+    assert.match(reply, /Sleep through the night\. Get back on the bike\./, 'the concrete exemplars survive');
+    assert.match(reply, /something small and something big/, 'and the range that tells her what belongs here');
+    // "It's the list", not "This is the list" — the latter matches the list-is-made pattern. A false positive at
+    // the intro, but the gate cannot see position and it exists because the Companion once announced a Reclaim
+    // List that did not exist. Two words, and the whole beat stays clean.
+    assert.ok(!reply.split(SEP).some(claimsGateOutcome), 'no beat claims the list is already made');
+  }
+});

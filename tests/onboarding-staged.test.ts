@@ -676,7 +676,16 @@ test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phas
   // INVERTED, same rule: the warm bridge no longer says "no wonder the Racer got quiet" — it says "that part of
   // you". The Identity may be named as what they are RECLAIMING; it may not stand in for them as the person who
   // lived it. The warmth is what the surrounding assertions protect, and it survives.
-  assert.doesNotMatch(turn.reply, /the Racer/, 'never refers to the member in the third person by their Identity');
+  //
+  // SCOPED TO THE BRIDGE BEAT (2026-08-28). This reply now carries the bridge AND the Reclaim List intro, and
+  // that intro ends "Whatever points at the Racer" — which is the SANCTIONED use: the Identity as the thing the
+  // list points at, named minutes after she claimed it, in the same sitting. (Jay: "it reinforces the handle
+  // named earlier in this same process.") Asserting over the whole reply would forbid the good use to catch the
+  // bad one. What must never happen is the Identity standing IN for her, and that is what is checked now.
+  const bridge = turn.reply.split(BEAT_SEP)[0]!;
+  assert.doesNotMatch(bridge, /the Racer/, 'the bridge never refers to the member in the third person');
+  assert.doesNotMatch(turn.reply, /the Racer (?:got|was|has|felt|used to|stopped)/i,
+    'and nowhere does the Identity stand in for the person who lived it');
   assert.match(turn.reply, /that part of you/i, 'still lands on what went quiet — in the second person');
   assert.doesNotMatch(turn.reply, /Now, the good part/i, 'no cold pivot');
   assert.match(turn.reply, /want back|first thing/i, 'still opens the reclaim ask');

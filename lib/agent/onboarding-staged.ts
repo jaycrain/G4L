@@ -409,15 +409,34 @@ function reclaimOpen(c: Collected): string {
   //
   // The two were never in conflict. The ask leads, the memory route follows as a way IN rather than as the
   // question itself, and the beat that invites her to start is untouched.
+  // JAY'S FINAL COPY (2026-08-28). His note: the old wording "has always been a little awkward to me and didn't
+  // fit into how we referred to it downstream." This version does three things the previous one did not — it
+  // hands her a RANGE ("small and big, this month and this year"), it gives four concrete exemplars so a
+  // brand-new member can see the shape of an item, and it names the identity as the thing the list points AT.
+  //
+  // The identity is named here on purpose and it is the sanctioned use: the Identity may be named as what they
+  // are RECLAIMING, never as an address for the member. "Whatever points at the Racer" is the former.
+  // identityLabel yields "the Racer" or '' — so a member who skipped naming gets Jay's own fallback rather than
+  // a dangling article.
+  const handle = identityLabel(c.identityNoun) || "the person you're reclaiming";
   beats.push(
-    `Let's write down what you want back — your Reclaim List, the thing the whole program works toward.`,
+    `You've painted a vivid picture of who you were, and what pulled you from it. Now the next move — what would `
+      + `start bringing that person back?`,
   );
   beats.push(
-    `A good place to start is what you did back when you were most yourself: the things you were good at, the `
-      + `ones that came easily, the ones that feel out of reach now.`,
+    `Your Reclaim List is exactly that — who you're reclaiming, turned into concrete goals. A mix is perfect: `
+      + `something small and something big, something for this month and something for this year, a thing you want `
+      + `back and a thing you've always meant to do. Sleep through the night. Get back on the bike. Launch the `
+      + `business. Write the book. Whatever points at ${handle}.`,
   );
+  // "IT'S the list", not "THIS IS the list" — two words, and the only edit to his copy. claimsGateOutcome matches
+  // /this is\s+the\s+list/, which is a FALSE POSITIVE here (the sentence describes what the list is, at the
+  // intro, before she has written a word) — but the gate cannot see position, and it exists because the Companion
+  // once announced a Reclaim List that did not exist. Cheaper to say it the other way than to punch a hole in the
+  // gate. Verified against gate-claims before shipping.
   beats.push(
-    `Put them down as they come. Big or small, three to start is plenty, and you can add as many as you want.`,
+    `We'll start with three — add as many as you want, and change them anytime with your Companion. It's the list `
+      + `the whole program works toward, one step at a time, and how you'll watch yourself getting closer.`,
   );
   return beats.join(BEAT_SEP);
 }

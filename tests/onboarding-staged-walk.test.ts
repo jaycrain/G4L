@@ -590,9 +590,11 @@ test('the gap→reclaim hand-in RECEIVES what she just said before opening the l
   // The invitation's WORDING changed with widget-first (2026-08-22) — it asks what the Identity used to do
   // rather than "let's write down what you want back". The ORDER is the invariant this test exists for, and it
   // is unchanged: her moment is received before anything is asked of her.
-  assert.match(last.reply, /put them down as they come/i, 'and the list still opens');
+  // Keyed to the ORDER, not the wording — the invitation's copy is Jay's and has now changed twice. The
+  // invariant this test exists for is that her moment is received BEFORE anything is asked of her.
+  assert.match(last.reply, /what would start bringing that person back|Your Reclaim List/i, 'and the list still opens');
   assert.ok(
-    last.reply.indexOf(receipt) < last.reply.search(/put them down as they come/i),
+    last.reply.indexOf(receipt) < last.reply.search(/what would start bringing that person back|Your Reclaim List/i),
     'the receipt must come FIRST — receiving after inviting is not receiving',
   );
 });
@@ -614,7 +616,7 @@ test('gap→reclaim receives her Doors by name even when the model says NOTHING'
     turn.reply.indexOf('Two things') < turn.reply.search(/that's a lot to have been carrying/i),
     'and it comes FIRST — receiving after inviting is not receiving',
   );
-  assert.match(turn.reply, /put them down as they come/i, 'the list still opens; no beat is added');
+  assert.match(turn.reply, /what would start bringing that person back|Your Reclaim List/i, 'the list still opens; no beat is added');
   assert.equal(turn.state.stage, 'reclaim', 'and the bias to advance is untouched (4c5b416)');
 });
 
