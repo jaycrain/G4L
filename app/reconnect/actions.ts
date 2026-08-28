@@ -10,7 +10,12 @@ import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
 import { detectReconnectClaims } from '../../lib/agent/gate-claims.ts';
-import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
+import {
+  liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectR1Opening,
+  reconnectR3Opening, reconnectCheckpointOpening, reconnectMeasurementClose, driftOpen,
+  RECONNECT_ARC, RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC, RECONNECT_CHECKPOINT_ARC, BEAT_SEP,
+} from '../../lib/agent/reconnect.ts';
+import type { ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { expectsForState } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
@@ -286,14 +291,37 @@ async function reconnectHarvestOffers(db: Db, memberId: string, prev: ConvState,
   }
 }
 
-export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
+/**
+ * RECONNECT IS FOUR SESSIONS (2026-08-28). Same shape as RewireSession — one arc per Session, entered from the
+ * dashboard, closing back to it. `r1` is the IDQ and comes FIRST, per Greg's spec.
+ */
+export type ReconnectSession = 'r1' | 'r2' | 'r3' | 'checkpoint';
+
+/** The Session's arc. Defaults to r2 so an un-parameterised caller gets the Doors, which is what it used to be. */
+export const reconnectArcFor = (session: ReconnectSession): ArcConfig =>
+  session === 'r1' ? RECONNECT_R1_ARC
+    : session === 'r3' ? RECONNECT_R3_ARC
+    : session === 'checkpoint' ? RECONNECT_CHECKPOINT_ARC
+    : RECONNECT_R2_ARC;
+
+export async function startReconnectAction(
+  memberId: string,
+  session: ReconnectSession = 'r1',
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const db = (await getDb()) as unknown as Db;
   const committed = await loadReconnectCaptures(db, memberId);
   if (!committed) return { ok: false, error: 'We could not find your intake.' };
-  const turn = reconnectOpening(committed);
-  return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+  const turn =
+    session === 'r1' ? reconnectR1Opening(committed)
+      : session === 'r3' ? reconnectR3Opening(committed)
+      : session === 'checkpoint' ? reconnectCheckpointOpening(committed)
+      : reconnectOpening(committed);
+  // The expectation comes from the ONE owner rather than the opening — an administered Session (r1, checkpoint)
+  // must arrive with its 1–5 chips, and a drawout one must not. See expectsForState.
+  const expects = turn.expects ?? expectsForState(reconnectArcFor(session), turn.state);
+  return { ok: true, reply: turn.reply, state: turn.state, expects };
 }
 
 // §2f — assemble the Ceremony reveal data from the DB when the arc reaches stage 'ceremony': the baseline ID Score +
@@ -355,15 +383,18 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
 const beatBubbles = (text: string): ConvMessage[] =>
   text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 
-async function persistArcSession(db: Db, memberId: string, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
+async function persistArcSession(db: Db, memberId: string, history: ConvMessage[], message: string, reply: string, turn: Turn, session: ReconnectSession = 'r2'): Promise<void> {
   try {
-    if (turn.state.stage === 'ceremony') {
-      await clearArcSession(db, memberId, 'reconnect'); // completed — the committed artifacts persist on their own
+    // A SESSION IS DONE WHEN IT COMPLETES — not only at the ceremony. Before the split there was one arc and the
+    // ceremony was the only ending, so this cleared on that stage alone; now each Session has its own close and
+    // leaving a completed one in the store would resume a member into a conversation they had finished.
+    if (turn.complete || turn.state.stage === 'ceremony') {
+      await clearArcSession(db, memberId, 'reconnect', session);
       return;
     }
     // Reconstruct the transcript exactly as the client renders it: prior bubbles + this member turn + the reply's beats.
     const messages: ConvMessage[] = [...history, memberTurn(message), ...beatBubbles(reply)];
-    await saveArcSession(db, memberId, 'reconnect', turn.state, messages);
+    await saveArcSession(db, memberId, 'reconnect', turn.state, messages, session);
   } catch {
     // swallow — resume is best-effort; the turn already succeeded for the member.
   }
@@ -373,14 +404,15 @@ async function persistArcSession(db: Db, memberId: string, history: ConvMessage[
 // from the resumed stage, so a refresh mid-IDQ restores the scale chips), or null when there's nothing to resume.
 export async function loadReconnectSessionAction(
   memberId: string,
+  session: ReconnectSession = 'r2',
 ): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation; scienceSeen?: string[] }; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
     const db = (await getDb()) as unknown as Db;
-    const saved = await loadArcSession(db, memberId, 'reconnect');
+    const saved = await loadArcSession(db, memberId, 'reconnect', session);
     if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
-    const expects = expectsForState(RECONNECT_ARC, saved.state);
+    const expects = expectsForState(reconnectArcFor(session), saved.state);
     // WHAT SHE HAS ALREADY SEEN. Which cards are "taught" is derived from the stage, which says how far she got —
     // not what she was shown. On a resume the component has no memory of the earlier cards, so without this all
     // three re-render at the end of the thread, after the Legacy Letter (Donna, 2026-08-19).
@@ -396,6 +428,7 @@ export async function reconnectTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
+  session: ReconnectSession = 'r2',
 ): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[] }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
@@ -411,7 +444,7 @@ export async function reconnectTurnAction(
     // Every turn (INCLUDING entry) is a live model turn — the entry stage RECEIVES the member's answer to the callback
     // in the model's voice (listen-first), then the engine hands into the Doors excavation as a second beat. (Was
     // deterministic with empty model text, which is why the acknowledgment never appeared and it jumped to the Door.)
-    const turn = await liveTurnReconnect(state, history, message);
+    const turn = await liveTurnReconnect(state, history, message, reconnectArcFor(session));
     logReconnectClaims(memberId, state.stage, turn.reply);
     // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
@@ -426,7 +459,7 @@ export async function reconnectTurnAction(
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
     const finalReply = closeOverride ?? turn.reply;
-    await persistArcSession(db, memberId, history, message, finalReply, turn); // W-15 — save the transcript for resume (or clear at ceremony)
+    await persistArcSession(db, memberId, history, message, finalReply, turn, session); // W-15 — save the transcript for resume (or clear at ceremony)
     return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

@@ -21,20 +21,17 @@ const atInsightConfirm: ConvState = { stage: 'doors', awaitingConfirm: true, col
 //
 // W-35 IS UNCHANGED AND STILL THE POINT: whatever the second beat is, the member's final answer is received
 // FIRST. The test now proves that across the extra turn rather than being deleted for having moved.
-test('W-35 · the handoff LEADS with the model’s acknowledgment, then the break', () => {
+test('W-35 · the handoff LEADS with the model’s acknowledgment, then the R2 close', () => {
   const ack = 'Twelve years — that’s a long time to have carried it, and you named it plainly.';
   const asked = applyReconnectTurn(atInsightConfirm, [], 'about twelve years', { text: ack, replyIntent: 'done' });
   const turn = applyReconnectTurn(asked.state, [], 'It means I can stop pretending it was nothing.', { text: ack });
-  assert.equal(turn.state.stage, 'doors', 'the stage is HELD for the break — see the note on rating chips');
-  assert.ok(turn.reply.startsWith(ack), 'receives their final answer FIRST');
-  assert.match(turn.reply, /excavation done/i, 'then names the boundary');
+  // R2 ENDS HERE NOW (2026-08-28). The interim in-conversation break that briefly lived at this seam is gone —
+  // Reconnect is three Sessions and a Checkpoint, so this is a Session CLOSE and the dashboard comes next.
+  assert.equal(turn.complete, true, 'the Doors Session closes');
+  assert.ok(turn.reply.startsWith(ack), 'receives their final answer FIRST — W-35, unchanged');
+  assert.match(turn.reply, /excavation done/i, 'then names what was done');
+  assert.match(turn.reply, /Drift Quiz/i, 'and what the next Session is');
   assert.ok(turn.reply.indexOf('carried it') < turn.reply.indexOf('excavation done'), 'receive before the frame');
-  assert.equal(turn.expects, undefined, 'and the break carries NO rating chips — it is not a 1–5 question');
-
-  // …and carrying on delivers the instrument, whole, with its own framing.
-  const on = applyReconnectTurn(turn.state, [], 'keep going', { text: '' });
-  assert.equal(on.state.stage, 'measurement', 'the stage advances when she answers the break');
-  assert.match(on.reply, /go through questions that determine your Identity Distance/i, 'the IDQ frame is intact');
 });
 
 test('W-35 · graceful — no model acknowledgment → the break stands alone (no stray separator)', () => {
@@ -45,12 +42,9 @@ test('W-35 · graceful — no model acknowledgment → the break stands alone (n
   assert.doesNotMatch(turn.reply, /^\s*\n/, 'no leading blank separator when there is nothing to receive');
 });
 
-// LEAVING AT THE BREAK IS A REAL OPTION — and it must not sneak her into the instrument she just deferred.
-test('the break honours "later" — the stage does not advance behind her', () => {
+test('the R2 close ends the Session — leaving is now a property of the boundary, not a beat inside it', () => {
   const asked = applyReconnectTurn(atInsightConfirm, [], "yeah, that's it", { text: '', replyIntent: 'done' });
-  const atBreak = applyReconnectTurn(asked.state, [], 'It means I stopped calling it laziness.', { text: '' });
-  const away = applyReconnectTurn(atBreak.state, [], "I'll pick this up tomorrow", { text: '' });
-  assert.equal(away.state.stage, 'doors', 'she is not walked into the IDQ after declining it');
-  assert.match(away.reply, /saved exactly where you left it/i, 'and is told the leaving costs nothing');
-  assert.doesNotMatch(away.reply, /Identity Distance/i, 'the instrument is not started');
+  const turn = applyReconnectTurn(asked.state, [], 'It means I stopped calling it laziness.', { text: '' });
+  assert.equal(turn.complete, true, 'the Session is over; she is returned to the dashboard');
+  assert.doesNotMatch(turn.reply, /keep going|pick this up later/i, 'no in-conversation break survives the split');
 });

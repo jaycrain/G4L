@@ -117,14 +117,43 @@ const RECONNECT_FORECAST =
 
 // The Reconnect opening turn (parallels stagedOpening): the callback message + the arc's initial state, with the
 // COMMITTED captures pre-loaded into `collected`. Stage 'entry' handles the member's response to the callback.
+/**
+ * R2 — THE DOORS. Was the whole-phase opening; it is now one Session of four.
+ *
+ * Snapshot the Door set AS IT STANDS NOW, before this session can revise it. This is the only moment the
+ * distinction is free — after §2b commits an add, `collected.doors` no longer remembers what they walked in with.
+ */
 export function reconnectOpening(committed: Collected): Turn {
-  // Snapshot the Door set AS IT STANDS NOW, before this session can revise it. This is the only moment the
-  // distinction is free — after §2b commits an add, `collected.doors` no longer remembers what they walked in with.
   return {
     reply: reconnectCallback(committed),
     state: { stage: 'entry', collected: committed, doorsAtEntry: [...(committed.doors ?? [])] },
     complete: false,
   };
+}
+
+/**
+ * R1 — THE MIRROR. The first Session of the program, and now the first thing a member does after onboarding.
+ *
+ * `resetOnEntry` is NOT set on measurementStage, so a resumed R1 keeps its answered items; this opening is only
+ * for a fresh start. The expectation (the 1–5 chips for item 1) is computed by the caller from the returned
+ * state via expectsForState — the one owner, so resume and a live turn cannot disagree.
+ */
+export function reconnectR1Opening(committed: Collected): Turn {
+  return { reply: idqOpen(), state: { stage: 'measurement', collected: committed }, complete: false };
+}
+
+/**
+ * R3 — THE DRIFT QUIZ AND THE LEGACY LETTER. Greg designed these as ONE two-part activity ("the activity is now
+ * a 2 part process: Part 1 (Drift Quiz) / Part 2 (Legacy Letter)"), which is also why R3 ends warmly: the letter
+ * is the last thing a member makes in Reconnect, not a quiz result.
+ */
+export function reconnectR3Opening(committed: Collected): Turn {
+  return { reply: driftOpen(committed), state: { stage: 'drift', collected: committed }, complete: false };
+}
+
+/** R4 — THE CHECKPOINT. Its own Session, exactly as RWR-CHK / RBLD-B4 / RCL-C4 are, with the ceremony after it. */
+export function reconnectCheckpointOpening(committed: Collected): Turn {
+  return { reply: checkpointOpener(), state: { stage: 'checkpoint', collected: committed }, complete: false };
 }
 
 // --- the live read: reconstruct the COMMITTED captures from member_profile (never the transcript) -----------
@@ -328,12 +357,10 @@ function reflectDoor(modelText: string): string {
 /** What the Doors insight-confirm chips answer. Phrased as the member would, like DRIFT_CONFIRM and WINDOW_CONFIRM. */
 const DOOR_CONFIRM = 'Have I got that right?';
 
-const DOORS_BREAK = (
-  "That's the excavation done — the part that asks you to remember. What's next is different: a set of " +
-  'statements to rate, about where you are right now. It takes about ten minutes.'
+const DOORS_CLOSE = (
+  "That's the excavation done — the part that asks you to remember. Your Doors are on your dashboard now, and " +
+  "you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to yourself a year out."
 );
-/** The choice that rides with it. Leaving is a real option, said plainly, with the reassurance that it costs nothing. */
-const DOORS_BREAK_CHOICE = 'Want to keep going, or pick this up later? Your place is saved either way.';
 
 const DOORS_MEANING_Q =
   `Last thing on this, and it's the one that matters most: what does recognizing these Doors change about how ` +
@@ -576,19 +603,12 @@ const doorsStage: StageDef = {
     // below, doorDepth would tick, and the Companion would ask for more about a Door she has already closed —
     // which is the "didn't take yes for an answer" shape, rebuilt by hand one beat later.
     if ((sc as { meaningAsked?: boolean }).meaningAsked) {
-      // THE BREAK, not the IDQ opener. She has finished the Door work and answered what it means; the next thing
-      // is a different KIND of activity and she is told so before it starts. `breakOffered` holds the seam for
-      // exactly one turn — her next message either continues or leaves, and both are handled in `measurement`'s
-      // gather. Nothing is gated: this is a landmark with a real choice, never a lockout (Greg's own word).
-      // STAY IN 'doors' FOR THIS ONE TURN. Moving to 'measurement' here also moved the EXPECTATION: the kernel
-      // computes `b.expects ?? nextExpects(stage…)`, so an administered stage emits its 1–5 chips from the
-      // resulting state — and the break question would have arrived with a rating scale under it, asking her to
-      // score "keep going, or pick this up later?". Caught by the walk test counting 25 asks for a 24-item
-      // instrument. Setting b.expects = undefined does not help; `??` falls through. The stage advances in
-      // applyReconnectTurn once she answers.
-      (sc as { breakOffered?: boolean }).breakOffered = true;
+      // R2 ENDS HERE. This morning's in-conversation break lived at this seam and is SUPERSEDED — it was standing
+      // in for a Session boundary, and now there is a real one. Keeping both would ask "want to keep going?"
+      // immediately before closing the Session and returning her to the dashboard.
       b.awaitingConfirm = false;
-      b.reply = receiveThen(b.modelText, `${DOORS_BREAK}${BEAT_SEP}${DOORS_BREAK_CHOICE}`);
+      b.complete = true;
+      b.reply = receiveThen(b.modelText, DOORS_CLOSE);
       return;
     }
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
@@ -684,9 +704,9 @@ const doorsStage: StageDef = {
       // BEFORE the scripted IDQ frame — the deterministic opener must not clobber what they just said.
       // Same seam, the confirm path. Both routes out of the Doors work now land on the same landmark rather than
       // one of them dropping her straight into the instrument — the two-sites gap this file keeps relearning.
-      // Same as the draw-out path: hold the stage until she answers, so the break carries no rating chips.
-      (b.scratch as { breakOffered?: boolean }).breakOffered = true;
-      b.reply = receiveThen(b.modelText, `${DOORS_BREAK}${BEAT_SEP}${DOORS_BREAK_CHOICE}`);
+      // Same seam, the confirm path — R2 closes here too.
+      b.complete = true;
+      b.reply = receiveThen(b.modelText, DOORS_CLOSE);
     }
   },
 };
@@ -977,12 +997,29 @@ const windowStage: StageDef = {
 // (no model call per item). Scoring + the baseline write (submitIdq) happen in the ACTION when the 24 land. The score
 // is a mirror — movement, never a bare number/verdict (governance).
 const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
+/**
+ * R1 IS THE FIRST SESSION IN THE PROGRAM NOW, so this is the first thing a member ever does here — and it opens
+ * the phase, not just the instrument.
+ *
+ * IT USED TO OPEN "We've gone deep into what created the distance", which assumed the Doors had already happened.
+ * With the IDQ moved first (Greg's spec: R1 is "the first assessment", R2 "works well after") that sentence was
+ * simply false, so it could not survive the reorder regardless.
+ *
+ * GREG'S OWN INTRO, MINUS ONE CLAUSE. His V4 member-facing intro for R1 reads: "This is a mirror, not a test.
+ * There are no right answers and no scores to worry about." The mirror is his image and it is a good one; the
+ * discomfort line below is the best sentence in his intro and is kept close to verbatim. What is dropped is the
+ * reassurance — "not a test", "no right answers", "no scores" — which our own rule forbids anywhere near an
+ * instrument: telling accomplished adults they are not being graded implies they feared it, and it makes the
+ * reading sound defensive. Say what the thing IS and move. (Jay, 2026-08-28: "your version, don't think he'll
+ * mind that at all.")
+ */
 function idqOpen(): string {
   return (
-    "We've gone deep into what created the distance. Now, we're going to go through questions that determine your " +
-    "Identity Distance (ID) Score. This will establish a baseline and allow us to watch it close that gap as you " +
-    "progress through G4L. For the following short statements, just tell me how true each feels right now. 1 for not " +
-    `at all. 5 for completely.\n\nFirst a few about your body.\n\n${itemStem(0)}`
+    "Let's start with the mirror.\n\n" +
+    'These are short statements about where you are right now. Tell me how true each one feels — 1 for not at ' +
+    'all, 5 for completely. Some of them will be uncomfortable. That is the point: it means you are being ' +
+    'honest.\n\nWhat comes out is your Identity Distance Score — the starting line we measure everything else ' +
+    `against.\n\nFirst a few about your body.\n\n${itemStem(0)}`
   );
 }
 // Authored cluster transitions at the four dimension boundaries (items 6/12/18) — the only warmth between items, so it
@@ -1207,7 +1244,9 @@ const legacyStage: StageDef = {
       b.reply = checkpointOpener();
     }
     b.legacyDraft = undefined;
-    b.stage = 'checkpoint';
+    // R3 ENDS HERE. The Checkpoint is its own Session, exactly as RWR-CHK / RBLD-B4 / RCL-C4 are — and Greg's
+    // R3 closure already says so in his own words: "First take a quick step through the Transition Activity."
+    b.complete = true;
     b.administeredResponses = [];
     b.awaitingConfirm = false;
   },
@@ -1222,7 +1261,10 @@ const measurementStage: StageDef = administeredStage({
   deliverItem: (n) => deliverIdqItem(n),
   reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
   onComplete: (b) => {
-    b.stage = 'drift';
+    // R1 ENDS HERE (2026-08-28). This handed straight into the Drift Quiz, which is what made Reconnect one
+    // 65-minute conversation instead of the three Sessions the summaries canon has always declared. The IDQ is
+    // its own Session now — it closes, the member returns to the dashboard, the ring moves, R2 is teed up.
+    b.complete = true;
     b.reply = `${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}`; // two beats → two bubbles (score read | take-stock ask)
   },
 });
@@ -1326,6 +1368,60 @@ function handIntoDoors(modelText: string | undefined, c: Collected): string {
   return receiveThen(modelText, doorOpen(c));
 }
 
+/**
+ * RECONNECT IS THREE SESSIONS AND A CHECKPOINT — like every other phase (2026-08-28, Jay).
+ *
+ * It used to be ONE arc of eight stages: a single 65-minute conversation with no boundary anywhere in it. Every
+ * other phase runs one arc PER Session, entered from the dashboard, closing back to it with the ring advanced and
+ * the next teed up. Reconnect alone did not, and it is the rawest experience in the product — the phase that most
+ * needs the member to be able to stop.
+ *
+ * THREE SOURCES ALREADY SAID SO and we had not noticed they agreed:
+ *   · Greg's Gated Assets V4 — four separately-placed assets, R1 IDQ / R2 Doors / R3 Drift+Legacy / R4 Checkpoint,
+ *     each with its own Placement, and his own pacing notes ("restrict a person to 10-15 minutes before pausing
+ *     for the day", "a soft daily cap … or one session/day"). He never describes Reconnect as one sitting.
+ *   · lib/content/summaries.ts, in its own header: "Reconnect holds three (R1 IDQ · R2 Doors · R3 Drift+Legacy)."
+ *     The canon has been right the whole time; the runtime was the outlier.
+ *   · Two testers hitting the same seam independently in the same week.
+ *
+ * THE IDQ COMES FIRST NOW, per Greg's spec — R1 is "the first assessment", and R2 "works well after the Identity
+ * Distance Questionnaire". We had it second. As one continuous arc that ordering barely showed; as discrete
+ * Sessions it IS the spine of the phase, and it means a member's very first Session hands them their baseline.
+ */
+export const RECONNECT_R1_ARC: ArcConfig = {
+  id: 'reconnect-r1',
+  stageOrder: ['measurement'],
+  stages: { measurement: measurementStage },
+  onComplete: () => '',
+};
+export const RECONNECT_R2_ARC: ArcConfig = {
+  id: 'reconnect-r2',
+  stageOrder: ['entry', 'doors'],
+  stages: { entry: reconnectEntryStage, doors: doorsStage },
+  onComplete: () => '',
+};
+export const RECONNECT_R3_ARC: ArcConfig = {
+  id: 'reconnect-r3',
+  stageOrder: ['drift', 'window', 'legacy'],
+  stages: { drift: driftStage, window: windowStage, legacy: legacyStage },
+  onComplete: () => '',
+};
+export const RECONNECT_CHECKPOINT_ARC: ArcConfig = {
+  id: 'reconnect-checkpoint',
+  stageOrder: ['checkpoint', 'ceremony'],
+  stages: { checkpoint: checkpointStage, ceremony: reconnectCeremonyStage },
+  onComplete: () => CEREMONY_LEAD,
+};
+
+/**
+ * THE WHOLE-PHASE ARC — every stage, original order. It is NOT how a member walks Reconnect any more (that is the
+ * four Session arcs above); it is the default for `applyReconnectTurn` so that callers and fixtures which drive a
+ * single stage in isolation keep working, and so the stage machine can still be reasoned about as one map.
+ *
+ * Pointing this at the checkpoint arc instead — the first thing I tried — silently removed six stages from every
+ * existing caller and turned 67 tests red for the wrong reason. Back-compat has to mean the stages are still
+ * THERE; what changed is where the Sessions END, which is a property of the seams, not of this map.
+ */
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
   stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', 'legacy', 'checkpoint', 'ceremony'],
@@ -1343,52 +1439,12 @@ export const RECONNECT_ARC: ArcConfig = {
 };
 
 // The Reconnect turn — config #2 on the generic kernel. Public signature mirrors applyStagedTurn.
-/**
- * THE BREAK TURN IS CONSUMED HERE, before the arc runs.
- *
- * The seam sets `breakOffered` and moves the stage to 'measurement' WITHOUT delivering the IDQ opener — so the
- * member's next message is an answer to "keep going, or pick this up later?", not to a 1–5 item. Left to the
- * administered stage it would be parsed as a rating, fail, and reprompt her with "a number from 1 to 5" — the
- * instrument talking over a question it never asked. That is the tap-vs-prose seam again, one stage along.
- *
- * Intercepted at the pure entry point rather than inside the stage because `administeredStage` is a shared
- * factory: putting a Reconnect-only branch in it would hand the same behaviour to every instrument in the
- * product, none of which offers a break.
- *
- * LEAVING IS ALREADY SAFE — the Session persists per turn and always has. So the departure path stores nothing
- * new; it says so and stops, which is the whole of what was missing.
- */
-export function applyReconnectTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
-  const sc = (state.stageScratch?.doors ?? {}) as { breakOffered?: boolean };
-  if (sc.breakOffered) {
-    const cleared = {
-      ...state,
-      stage: 'measurement',
-      stageScratch: { ...(state.stageScratch ?? {}), doors: { ...sc, breakOffered: false } },
-    } as ConvState;
-    if (memberSteppingAway(memberMessage)) {
-      // She goes with the stage UNMOVED — advancing her into the instrument she just deferred would mean the
-      // break offered a choice and then took it. `breakOffered` is cleared so she is not asked twice on return;
-      // the Doors stage's own resume delivers the IDQ opener when she comes back.
-      return {
-        reply: 'Good — go. Everything is saved exactly where you left it, and the quiz will be here when you come back.',
-        state: { ...state, stageScratch: { ...(state.stageScratch ?? {}), doors: { ...sc, breakOffered: false } } } as ConvState,
-        complete: false,
-      };
-    }
-    // Anything else means carry on. The opener the seam withheld is delivered now, so the instrument starts at
-    // its own first item with its own framing intact.
-    return { reply: idqOpen(), state: cleared, complete: false, expects: expectsForState(RECONNECT_ARC, cleared, 0) };
-  }
-  const turn = runArcTurn(RECONNECT_ARC, state, history, memberMessage, model);
-  // THE BREAK TURN CARRIES NO STRUCTURED SURFACE. The kernel resolves `b.expects ?? nextExpects(stage…)`, so
-  // whichever stage the break sits in supplies one: 'measurement' offers the IDQ's 1–5 chips, 'doors' offers the
-  // Doors board. Both are wrong under "keep going, or pick this up later?" — a question that is neither a rating
-  // nor a board. `b.expects = undefined` cannot express "none" because `??` falls through, so the seam is cleared
-  // HERE, where the turn is already assembled. One line, and it cannot reach any other arc.
-  const after = (turn.state.stageScratch?.doors ?? {}) as { breakOffered?: boolean };
-  if (after.breakOffered) return { ...turn, expects: undefined };
-  return turn;
+/** The Reconnect turn. `arc` is the SESSION's arc — see reconnectArcFor in app/reconnect/actions.ts. */
+export function applyReconnectTurn(
+  state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn,
+  arc: ArcConfig = RECONNECT_ARC,
+): Turn {
+  return runArcTurn(arc, state, history, memberMessage, model);
 }
 
 // --- live tool surface (the model draws out the door + signals depth/intent) ---------------------------------
@@ -1740,7 +1796,10 @@ export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string
 }
 
 // The live Reconnect turn — the model draws out the door + signals depth/intent; the kernel disposes.
-export async function liveTurnReconnect(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+export async function liveTurnReconnect(
+  state: ConvState, history: ConvMessage[], memberMessage: string,
+  arc: ArcConfig = RECONNECT_ARC,
+): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // THE LEGACY TURN IS NOT A CONVERSATIONAL TURN. It has to produce half a page of first-person prose, which is
   // ~500-600 tokens of letter BEFORE the model's spoken text or any other tool call — so on the shared 600-token
@@ -1773,5 +1832,5 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
     tools: RECONNECT_TOOLS,
     messages,
   }));
-  return applyReconnectTurn(state, history, memberMessage, parseReconnectTurn(res.content));
+  return applyReconnectTurn(state, history, memberMessage, parseReconnectTurn(res.content), arc);
 }
