@@ -5,6 +5,7 @@ import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
 import { phaseColumns, dailyLayer, listBadges, getBadge, PHASE_ORDER } from './registry.ts';
 import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge, markSessionClosed } from './store.ts';
+import { RECONNECT_SESSION_ASSETS } from '../workspace/session-key.ts';
 
 const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
@@ -171,12 +172,38 @@ const SESSION_BADGE: Record<string, string> = {
  */
 export async function reconcileReconnectCloses(db: Db, memberId: string): Promise<void> {
   try {
-    const hasBaseline =
-      (await db.query('select 1 from idq_retake where member_id=$1 and sequence_no=0 limit 1', [memberId])).rows.length > 0;
-    if (!hasBaseline) return;
     const closed = new Set(await closedSessionIds(db, memberId));
-    if (closed.has('RCN-IDQ')) return;
-    await markSessionClosed(db, memberId, 'RCN-IDQ');
+
+    // 1 · THE MIRROR, from its own baseline. idq_retake at sequence_no 0 is written by R1 and by nothing else.
+    if (!closed.has('RCN-IDQ')) {
+      const hasBaseline =
+        (await db.query('select 1 from idq_retake where member_id=$1 and sequence_no=0 limit 1', [memberId])).rows.length > 0;
+      if (hasBaseline) {
+        await markSessionClosed(db, memberId, 'RCN-IDQ');
+        closed.add('RCN-IDQ');
+      }
+    }
+
+    // 2 · A PARTLY-CLOSED SESSION IS A FINISHED SESSION. A Reconnect Session covers several curriculum rows and
+    // closes them together, so a set with SOME rows closed and others open cannot be a member mid-Session — it is
+    // the record of a Session that was worked while something was only closing part of it.
+    //
+    // Which is exactly what happened: until v3.5.22 the close marked RCN-EXC and left RCN-FDR open, so the
+    // forecast lit "The Doors" for a member who had just finished it, underneath a line saying he had. The fix
+    // only helps Sessions completed after it shipped; this repairs the ones already on record.
+    //
+    // Safe because it never invents work: a Session with NO rows closed is untouched, so a member who has not
+    // reached R3 is not credited with it.
+    for (const [key, assets] of Object.entries(RECONNECT_SESSION_ASSETS)) {
+      if (key === 'checkpoint') continue; // an alias for r4 — closing it twice is just noise
+      const anyClosed = assets.some((a) => closed.has(a));
+      if (!anyClosed) continue;
+      for (const a of assets) {
+        if (closed.has(a)) continue;
+        await markSessionClosed(db, memberId, a);
+        closed.add(a);
+      }
+    }
   } catch (e) {
     // Best-effort: a member who cannot be reconciled still gets their dashboard.
     console.error(`[curriculum] could not reconcile Reconnect closes for ${memberId}:`, e);

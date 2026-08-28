@@ -122,3 +122,23 @@ test('the Session\'s own row closes LAST, so the dashboard names the Session', (
   // instead of the Session — "You finished Identity Excavation today" about a Session called The Doors.
   assert.match(actions, /\.reverse\(\)/, 'covered rows close first, the Session\'s own row last');
 });
+
+// ── A PARTLY-CLOSED SESSION IS A FINISHED SESSION ────────────────────────────────────────────────────────────
+//
+// Jay, mid-walk: "Does a refresh advance me?" It did not, and could not — his R2 completed before v3.5.22, so
+// only RCN-EXC was marked and RCN-FDR stayed open. The forecast lights the first OPEN row, so it offered him The
+// Doors again underneath "You finished Identity Excavation today".
+//
+// A Session closes all of its rows together, so a partial set is never a member mid-Session — it is the record
+// of a Session that was worked while something was only closing part of it. Repairing it forward is honest;
+// asking him to re-walk forty minutes to satisfy a bookkeeping gap is not.
+test('the reconcile repairs a partial close, and never invents work', () => {
+  const src = readFileSync(new URL('../lib/curriculum/view.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  assert.match(src, /RECONNECT_SESSION_ASSETS/, 'it reads the Session→rows crosswalk, not a hand-listed set');
+  // The safety property: SOME row closed → close the rest. NO row closed → touch nothing, so a member who has
+  // not reached a Session is never credited with it.
+  assert.match(src, /anyClosed/, 'a Session with no rows closed must be left alone');
+  assert.match(src, /if \(!anyClosed\) continue;/, 'and that has to be the guard, not a comment about one');
+});
