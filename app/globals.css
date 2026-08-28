@@ -2767,7 +2767,13 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    rule — a colour that carries meaning cannot double as decoration.
    The eyebrow moves with the background for the same reason: olive type on a neutral card keeps the wrong claim,
    just smaller. It now matches .pb-sec, which is what every other section header on this page uses. */
-.pb-jq { border: 1px solid var(--light-grey, #e8e6e6); background: var(--wash); border-radius: 14px; padding: 16px 18px; margin: 0 0 20px; }
+/* STANDARD GREY, NOT --wash (Donna, 2026-08-28: "change the background to the standard grey used throughout the
+   rest of the app"). The 8/22 fix moved this OFF olive and onto --wash believing that was neutral. It is not:
+   --wash is #f5f4f1 — R245 G244 B241, four points warmer on the red-blue axis — against --grey #e8e6e6, which is
+   R232 G230 B230 and genuinely neutral. So the card kept a warm cast and she read it, correctly, as still olive.
+   Her original reasoning is unchanged and is the file's own rule: olive MEANS a practice/movement thing happened,
+   and a colour that carries meaning cannot double as decoration. A near-neutral is still not the neutral. */
+.pb-jq { border: 1px solid var(--light-grey, #e8e6e6); background: var(--grey); border-radius: 14px; padding: 16px 18px; margin: 0 0 20px; }
 .pb-jq-h { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--navy); }
 .pb-jq-d { font-size: 13px; color: #5f6a73; line-height: 1.5; margin: 5px 0 14px; }
 /* The expand composer sits inside the card it grew from, so the line stays visible while they write into it —

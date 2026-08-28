@@ -25,7 +25,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } 
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -300,6 +300,41 @@ function reflectDoor(modelText: string): string {
 // A WRITTEN ANSWER, NOT A CHIP, because that is what he asked for ("write a brief response to each of these") and
 // because a tap cannot answer it. It sits here, after the Door has been drawn out and confirmed — the last beat
 // of the Doors work — so it lands on everything she has just said rather than on a board she has half forgotten.
+/**
+ * THE BREAK BEFORE THE QUIZ — the doors→measurement seam, named.
+ *
+ * THREE INDEPENDENT SOURCES, none of whom compared notes:
+ *   · Greg, "Refinements and Comments": "build in some pacing … restrict a person to only 10-15 minutes before
+ *     pausing for the day", and "a soft daily cap on foundational sessions in Cycle 1 (~10–15 min or one
+ *     session/day), framed as intentional pacing, not a lockout".
+ *   · Jay, 2026-08-25: Reconnect ran 65 minutes as one unbroken arc with no landmark anywhere. He ruled the
+ *     CONTENT stays ("I wouldn't cut ANY of it") — so it was never a length problem, it was an expectations one.
+ *   · Donna, 2026-08-27: "This would be a good place for a break. Going directly into this here is too much in
+ *     one sitting."
+ *
+ * AND IT IS NOT IN GREG'S SPEC EITHER. His Gated Assets V4 never describes Reconnect as one continuous session;
+ * it specifies four separately-placed assets, and it marks every other seam with words of its own ("First take a
+ * quick step through the Transition Activity"). His R1 copy even builds in the pause: "Sit with that for a
+ * moment before you move on." The unbroken run is ours, not his.
+ *
+ * WHAT THIS IS, AND WHAT IT DELIBERATELY IS NOT. It is a BEAT plus a real choice — not a lockout, which is
+ * Greg's own word for what to avoid. Nothing is gated: "keep going" continues immediately, and the Session
+ * already persists per turn, so leaving here loses nothing and always did. What was missing was anyone SAYING
+ * so at the one seam where the work changes shape — from remembering, to being measured.
+ *
+ * The wording names the change rather than praising the effort: "that was the hard part" is a verdict on her
+ * work, and this beat must not grade it.
+ */
+/** What the Doors insight-confirm chips answer. Phrased as the member would, like DRIFT_CONFIRM and WINDOW_CONFIRM. */
+const DOOR_CONFIRM = 'Have I got that right?';
+
+const DOORS_BREAK = (
+  "That's the excavation done — the part that asks you to remember. What's next is different: a set of " +
+  'statements to rate, about where you are right now. It takes about ten minutes.'
+);
+/** The choice that rides with it. Leaving is a real option, said plainly, with the reassurance that it costs nothing. */
+const DOORS_BREAK_CHOICE = 'Want to keep going, or pick this up later? Your place is saved either way.';
+
 const DOORS_MEANING_Q =
   `Last thing on this, and it's the one that matters most: what does recognizing these Doors change about how ` +
   `you see your own Fade?`;
@@ -541,9 +576,19 @@ const doorsStage: StageDef = {
     // below, doorDepth would tick, and the Companion would ask for more about a Door she has already closed —
     // which is the "didn't take yes for an answer" shape, rebuilt by hand one beat later.
     if ((sc as { meaningAsked?: boolean }).meaningAsked) {
-      b.stage = 'measurement';
+      // THE BREAK, not the IDQ opener. She has finished the Door work and answered what it means; the next thing
+      // is a different KIND of activity and she is told so before it starts. `breakOffered` holds the seam for
+      // exactly one turn — her next message either continues or leaves, and both are handled in `measurement`'s
+      // gather. Nothing is gated: this is a landmark with a real choice, never a lockout (Greg's own word).
+      // STAY IN 'doors' FOR THIS ONE TURN. Moving to 'measurement' here also moved the EXPECTATION: the kernel
+      // computes `b.expects ?? nextExpects(stage…)`, so an administered stage emits its 1–5 chips from the
+      // resulting state — and the break question would have arrived with a rating scale under it, asking her to
+      // score "keep going, or pick this up later?". Caught by the walk test counting 25 asks for a 24-item
+      // instrument. Setting b.expects = undefined does not help; `??` falls through. The stage advances in
+      // applyReconnectTurn once she answers.
+      (sc as { breakOffered?: boolean }).breakOffered = true;
       b.awaitingConfirm = false;
-      b.reply = receiveThen(b.modelText, b.arc.stages.measurement!.opener(b.collected));
+      b.reply = receiveThen(b.modelText, `${DOORS_BREAK}${BEAT_SEP}${DOORS_BREAK_CHOICE}`);
       return;
     }
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
@@ -555,6 +600,17 @@ const doorsStage: StageDef = {
     } else {
       b.reply = reflectDoor(b.modelText);
       b.awaitingConfirm = true;
+      // THE DOORS CONFIRM GETS THE SAME TAP DRIFT AND WINDOW ALREADY HAD (Donna, 2026-08-27: "didn't take yes for
+      // an answer and it only went through one of the Doors") — her count elided; the guard forbids hardcoding it.
+      //
+      // This was the one drawout confirm in Reconnect still classified from free text — the exact arrangement
+      // that produced five patches in two days on the gap gate before it became a board. English has unlimited
+      // ways to say yes, the list cannot be finished, and a better classifier is a better guess. A tap is a fact.
+      //
+      // It is the DEEPEST beat to leave guessing, too: this confirm sits on the Door she has just excavated, so a
+      // misread "yes" reopens the most vulnerable thing she has said. The chips are an easy path, never a gate —
+      // resolveConfirmCorroborated still handles anything she types, exactly as it does for drift and window.
+      b.expects = beatConfirmUnlessLeaving(b.memberMessage, DOOR_CONFIRM);
     }
   },
   confirm(b) {
@@ -626,10 +682,11 @@ const doorsStage: StageDef = {
       // done, and the meaning question is already answered → hand into the measurement block. W-35
       // (receive-before-you-move): lead with the model's in-voice acknowledgment of the member's final answer
       // BEFORE the scripted IDQ frame — the deterministic opener must not clobber what they just said.
-      b.stage = 'measurement';
-      const idqOpener = b.arc.stages.measurement!.opener(b.collected);
-      // Contract 1: receive (keep the reflection, drop the model's trailing question), then the single IDQ opener (#4).
-      b.reply = receiveThen(b.modelText, idqOpener);
+      // Same seam, the confirm path. Both routes out of the Doors work now land on the same landmark rather than
+      // one of them dropping her straight into the instrument — the two-sites gap this file keeps relearning.
+      // Same as the draw-out path: hold the stage until she answers, so the break carries no rating chips.
+      (b.scratch as { breakOffered?: boolean }).breakOffered = true;
+      b.reply = receiveThen(b.modelText, `${DOORS_BREAK}${BEAT_SEP}${DOORS_BREAK_CHOICE}`);
     }
   },
 };
@@ -1286,8 +1343,52 @@ export const RECONNECT_ARC: ArcConfig = {
 };
 
 // The Reconnect turn — config #2 on the generic kernel. Public signature mirrors applyStagedTurn.
+/**
+ * THE BREAK TURN IS CONSUMED HERE, before the arc runs.
+ *
+ * The seam sets `breakOffered` and moves the stage to 'measurement' WITHOUT delivering the IDQ opener — so the
+ * member's next message is an answer to "keep going, or pick this up later?", not to a 1–5 item. Left to the
+ * administered stage it would be parsed as a rating, fail, and reprompt her with "a number from 1 to 5" — the
+ * instrument talking over a question it never asked. That is the tap-vs-prose seam again, one stage along.
+ *
+ * Intercepted at the pure entry point rather than inside the stage because `administeredStage` is a shared
+ * factory: putting a Reconnect-only branch in it would hand the same behaviour to every instrument in the
+ * product, none of which offers a break.
+ *
+ * LEAVING IS ALREADY SAFE — the Session persists per turn and always has. So the departure path stores nothing
+ * new; it says so and stops, which is the whole of what was missing.
+ */
 export function applyReconnectTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
-  return runArcTurn(RECONNECT_ARC, state, history, memberMessage, model);
+  const sc = (state.stageScratch?.doors ?? {}) as { breakOffered?: boolean };
+  if (sc.breakOffered) {
+    const cleared = {
+      ...state,
+      stage: 'measurement',
+      stageScratch: { ...(state.stageScratch ?? {}), doors: { ...sc, breakOffered: false } },
+    } as ConvState;
+    if (memberSteppingAway(memberMessage)) {
+      // She goes with the stage UNMOVED — advancing her into the instrument she just deferred would mean the
+      // break offered a choice and then took it. `breakOffered` is cleared so she is not asked twice on return;
+      // the Doors stage's own resume delivers the IDQ opener when she comes back.
+      return {
+        reply: 'Good — go. Everything is saved exactly where you left it, and the quiz will be here when you come back.',
+        state: { ...state, stageScratch: { ...(state.stageScratch ?? {}), doors: { ...sc, breakOffered: false } } } as ConvState,
+        complete: false,
+      };
+    }
+    // Anything else means carry on. The opener the seam withheld is delivered now, so the instrument starts at
+    // its own first item with its own framing intact.
+    return { reply: idqOpen(), state: cleared, complete: false, expects: expectsForState(RECONNECT_ARC, cleared, 0) };
+  }
+  const turn = runArcTurn(RECONNECT_ARC, state, history, memberMessage, model);
+  // THE BREAK TURN CARRIES NO STRUCTURED SURFACE. The kernel resolves `b.expects ?? nextExpects(stage…)`, so
+  // whichever stage the break sits in supplies one: 'measurement' offers the IDQ's 1–5 chips, 'doors' offers the
+  // Doors board. Both are wrong under "keep going, or pick this up later?" — a question that is neither a rating
+  // nor a board. `b.expects = undefined` cannot express "none" because `??` falls through, so the seam is cleared
+  // HERE, where the turn is already assembled. One line, and it cannot reach any other arc.
+  const after = (turn.state.stageScratch?.doors ?? {}) as { breakOffered?: boolean };
+  if (after.breakOffered) return { ...turn, expects: undefined };
+  return turn;
 }
 
 // --- live tool surface (the model draws out the door + signals depth/intent) ---------------------------------

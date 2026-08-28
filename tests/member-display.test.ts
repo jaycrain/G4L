@@ -16,7 +16,15 @@ import { memberDisplay, looksLikeMachineLine, handledFormats } from '../lib/agen
 import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
 import { serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
 
-test('memberDisplay — the Doors board renders as an act she performed, not internal state', () => {
+// SUPERSEDED BY HER OWN RULING (Donna, 2026-08-28: "Remove it"). The receipt used to read "Marked the ones that
+// are mine." and she called it unneeded inline feedback — the app narrating an action she had just watched
+// herself take. It now renders to the EMPTY STRING and the chat paints no bubble.
+//
+// The test does NOT go away, and this is the important part: the format must still be CLAIMED. memberDisplay
+// falls through to the raw text on an unhandled format, so a deletion that stopped claiming '[board]' would put
+// `[board] door:body=2 …` back on screen — the exact leak this whole file exists to stop, reintroduced as a side
+// effect of removing a line of copy. What is asserted is now the silence, and that it is deliberate.
+test('memberDisplay — the Doors board renders as NOTHING, and never as internal state', () => {
   // Donna's exact submission, item 11.
   const raw = serializeBoardSubmission({
     doors: [
@@ -35,7 +43,7 @@ test('memberDisplay — the Doors board renders as an act she performed, not int
   const shown = memberDisplay(raw);
   assert.ok(!looksLikeMachineLine(shown), `still machine syntax: ${shown}`);
   assert.doesNotMatch(shown, /door:|quiet_drift|first:|biggest:|open:/, 'no internal tokens survive');
-  assert.equal(shown, 'Marked the ones that are mine.');
+  assert.equal(shown, '', 'her tap is acknowledged by the board itself, not narrated back at her');
 });
 
 test('memberDisplay — the gap confirm renders as the chip label she actually tapped', () => {

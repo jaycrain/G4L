@@ -79,8 +79,18 @@ const FORMATS: { id: string; display: (t: string) => string | null }[] = [
     // Companion's next turn reflects the Doors back. So the bubble names the ACT, in her voice, echoing the
     // screen's own instruction ("mark the ones that are yours"). Naming a count would be a second place for the
     // number to be wrong.
+    // REMOVED ON HER RULING (Donna, 2026-08-27: "Remove it"). This rendered "Marked the ones that are mine." in
+    // her own bubble after she used the board — narrating an action she had just watched herself take.
+    //
+    // WHAT REPLACES IT IS NOTHING, DELIBERATELY, and the empty string is load-bearing: memberDisplay returns the
+    // input unchanged when no format matches, so returning null here would put the raw `[board] door:body=2 …`
+    // wire string back on screen — the exact leak this whole file exists to stop, reintroduced by a deletion.
+    // '' is a handled format whose rendering is silence.
+    //
+    // The chat suppresses an empty member bubble; the TRANSCRIPT still records the turn, because the board
+    // submission is her act and the record of a Session should not show the Companion talking to nobody.
     id: '[board]',
-    display: (t) => (parseBoardSubmission(t) ? 'Marked the ones that are mine.' : null),
+    display: (t) => (parseBoardSubmission(t) ? '' : null),
   },
 ];
 
@@ -95,7 +105,11 @@ export function memberDisplay(text: string): string {
   if (!t) return text;
   for (const f of FORMATS) {
     const shown = f.display(t);
-    if (shown) return shown;
+    // `!== null`, NOT truthiness. A format may legitimately render to the EMPTY STRING — the Doors board does,
+    // since Donna asked for its receipt removed — and `if (shown)` would treat that as "no match" and fall
+    // through to returning the raw text, putting `[board] door:body=2 …` back on screen. A deletion would have
+    // reintroduced the exact leak this file exists to prevent, silently.
+    if (shown !== null) return shown;
   }
   return text;
 }

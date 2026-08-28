@@ -429,15 +429,23 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           stop: "Welcome back." · "First, your account." · "Your place is saved." */}
       <h1>Getting to know you.</h1>
       <div className="chat" ref={chatRef}>
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}`}>
-            {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats) and a
-                raw render shows the member literal asterisks. Its own header calls it "the system-wide fix from one
-                place"; it had reached three of six chat clients, and this was one of the three it missed (Jay,
-                2026-08-11: "Still getting some .md showing through"). MEMBER text stays raw — they wrote it. */}
-            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
-          </div>
-        ))}
+        {messages.map((m, i) => {
+          // A TURN THAT RENDERS TO NOTHING PAINTS NO BUBBLE. The Doors board's receipt was removed on Donna's
+          // ruling (2026-08-27) and now displays as the empty string; without this, her turn would leave a bare
+          // grey box on screen. The turn itself is untouched in the stored transcript — it is her act.
+          const shown = m.role === 'member' ? memberDisplay(m.text) : m.text;
+          if (m.role === 'member' && shown === '') return null;
+          return (
+            <div key={i} className={`bubble ${m.role}`}>
+              {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats)
+                  and a raw render shows the member literal asterisks. Its own header calls it "the system-wide fix
+                  from one place"; it had reached three of six chat clients, and this was one of the three it
+                  missed (Jay, 2026-08-11: "Still getting some .md showing through"). MEMBER text stays raw — they
+                  wrote it, apart from the tap mapping above. */}
+              {m.role === 'agent' ? <RichText text={m.text} /> : shown}
+            </div>
+          );
+        })}
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}

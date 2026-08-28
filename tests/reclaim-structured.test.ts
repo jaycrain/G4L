@@ -28,7 +28,13 @@ test('structured reclaim — the submission is stored VERBATIM and advances to t
   // THE RECAP RIDES ON THE HANDOFF — one turn (2026-08-23). It briefly held the stage for an evidence question;
   // that question is cut because W2's Visioning already builds an ordinary-day picture off this very list.
   assert.equal(t.state.stage, 'grinta', 'the submission hands into the Grinta baseline in one turn');
-  assert.match(t.reply, /here's what you wrote/i, 'the read-back is deterministic, not the model\'s job');
+  // THE READ-BACK IS GONE (Donna, 2026-08-28, her 12:49 screenshot). She submits through the BUILDER, which shows
+  // every item as she types it, and this printed the identical text in the very next bubble. A read-back earns
+  // its place when the member cannot see what we heard; here she can. What it was FOR — her act acknowledged —
+  // is carried by the recap line asserted below, without restating her words.
+  assert.doesNotMatch(t.reply, /here's what you wrote/i, 'the list is not echoed back at her');
+  for (const item of ['Join a softball team', 'Lose 30 lbs', 'Sleep through the night'])
+    assert.ok(!t.reply.includes(item), `"${item}" must not be repeated — it is ten pixels above her own bubble`);
   assert.match(t.reply, /harder thing to write down/i, 'the recap recognises the act');
   assert.match(t.reply, /starting point, not a contract/i, 'and sets the expectation that this gets sharpened');
   assert.doesNotMatch(t.reply, /on an ordinary week/i, 'the evidence question is gone — W2 owns that beat');
@@ -92,9 +98,12 @@ test('structured reclaim — the model is SILENT on the recap turn (list read ba
   });
 
   const reply = t.reply;
-  // ONE read-back. Counting an item's occurrences is the assertion because that is precisely what she counted.
-  assert.equal(reply.split('Lose 20 lbs').length - 1, 1, 'her list is read back exactly once, not twice');
-  assert.match(reply, /Here's what you wrote/, 'the engine recap is what does the reading back');
+  // ZERO read-backs now (Donna, 2026-08-28). This test was written when the count was ONE — the fix for the
+  // model ALSO reading the list back. Her later complaint was that one is still one too many: the builder above
+  // her bubble already shows every item. Counting occurrences is still exactly the right assertion; the number
+  // it should be has changed.
+  assert.equal(reply.split('Lose 20 lbs').length - 1, 0, 'her list is not read back at all — she can see it');
+  assert.match(reply, /harder thing to write down/, 'the recap still recognises the act, without restating it');
 
   // The model's whole turn is dropped — so neither of the rule breaks it carried can reach her.
   assert.doesNotMatch(reply, /Maker/, 'her Identity is never spoken in the third person');

@@ -188,8 +188,14 @@ test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the 
   const done = applyReconnectTurn(base, [], "yeah, that's exactly it", { text: 'Good.', replyIntent: 'done' });
   assert.equal(done.state.stage, 'doors', 'a landed insight asks the meaning question before leaving the Doors beat');
   assert.match(done.reply, /change about how you see your own Fade/i, "Greg's fourth reflection question");
+  // UPDATED 2026-08-28: her answer now lands on the BREAK, and the stage advances when she says to carry on.
+  // Greg's docs specify pacing and never describe Reconnect as one sitting; Jay and Donna both hit the unbroken
+  // run. The contract this line protects — her answer is received and the beat ends — is unchanged.
   const after = applyReconnectTurn(done.state, [], 'It means I stopped blaming myself for all of it.', { text: '' });
-  assert.equal(after.state.stage, 'measurement', 'and her answer hands into the measurement block (§2c stub)');
+  assert.equal(after.state.stage, 'doors', 'her answer lands on the break, which holds the stage for one turn');
+  assert.match(after.reply, /excavation done/i, 'the seam is named');
+  const on = applyReconnectTurn(after.state, [], 'keep going', { text: '' });
+  assert.equal(on.state.stage, 'measurement', 'and carrying on hands into the measurement block (§2c stub)');
   const dispute = applyReconnectTurn(base, [], "no, that's not it at all", { text: '', replyIntent: 'dispute' });
   assert.equal(dispute.state.awaitingConfirm, false, 'a dispute reopens');
   assert.equal(dispute.state.stage, 'doors', 'stays in the Doors beat');
@@ -310,8 +316,13 @@ test('reconnect revision · a disputed add is dropped, humbly — the named set 
 test('reconnect measurement · Doors done hands into the administered check-in (warm open + scale, not a survey wall)', () => {
   const atDoors: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['grind'] } };
   const asked = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
-  const turn = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
-  assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement');
+  const atBreak = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
+  // The break sits between them now — and carries NO structured surface, because "keep going, or pick this up
+  // later?" is neither a rating nor a board. That was a real bug on the way in: the walk test counted 25 asks
+  // for a 24-item instrument because the break turn was emitting the IDQ's chips underneath it.
+  assert.equal(atBreak.expects, undefined, 'the break offers no chips');
+  const turn = applyReconnectTurn(atBreak.state, [], 'keep going', { text: '' });
+  assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement once she carries on');
   assert.match(turn.reply, /Identity Distance/i, 'framed warmly (the ID Score), not a survey wall');
   assert.match(turn.reply, /1 to 5|not at all/i, 'gives the 1–5 scale');
 });

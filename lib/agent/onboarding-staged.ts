@@ -2071,9 +2071,15 @@ function reclaimRecap(c: Collected): string {
     // reclaimReceipt as a FALLBACK — fired only when the model was silent — so no walk had ever exercised it.
     // Making the read-back deterministic is what finally surfaced it.
     //
-    // "Here's what you wrote" is the same information as a receipt of HER action rather than a declaration of
-    // ours, which is what it should have been either way.
-    list.length ? `Here's what you wrote — ${list.join(' · ')}.` : '',
+    // THE READ-BACK IS GONE (Donna, 2026-08-27, her 12:49 screenshot). She submits through the BUILDER — a widget
+    // that shows every item as she types it — and this printed the identical text in the very next bubble, ten
+    // pixels below her own. A read-back earns its place when the member cannot see what we heard; here she can,
+    // and repeating it says only that we can echo.
+    //
+    // What it was FOR still matters and is not lost: the receipt is her action acknowledged, which the sentence
+    // below does without restating her words. The old note here worried about the phrasing claiming the list was
+    // made; the fix for that was never to keep saying it more carefully.
+    '',
     // "This is the list the whole program is pointed at now" was the first draft, and claimsGateOutcome caught it
     // — the gate built this morning, on copy written this evening. It reads as "your list is made", which is the
     // engine's statement to make, not the Companion's. Saying where the WORK goes claims nothing about the list.
@@ -2399,9 +2405,10 @@ const grintaStage: StageDef = administeredStage({
 function reclaimReceipt(c: Collected): string {
   const list = (c.reclaimList ?? []).map((x) => x.trim()).filter(Boolean);
   if (!list.length) return '';
-  // Same correction as the recap's read-back above: "That's your list" trips the list-is-made gate. This is the
-  // fallback path (model silent), which is why it went unnoticed for so long.
-  return `Here's what you wrote — ${list.join(' · ')}.`;
+  // REMOVED WITH ITS TWIN ABOVE (Donna, 2026-08-27). Same sentence, the fallback path — and the same reason: the
+  // builder already showed her the list. Returning '' means the caller's own beat carries the turn, which is
+  // what a member who has just typed three things actually needs next.
+  return '';
 }
 
 /**
