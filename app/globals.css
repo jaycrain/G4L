@@ -3102,7 +3102,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    shared grid — 4px and 9px, invisible to the eye and exactly the kind of drift Donna's spec exists to remove.
    Pinned bottom-left on the same gutter: same position on screen, no longer part of the maths. */
 .onbwel-d-signin {
-  position: absolute; left: var(--onbwel-gutter); bottom: clamp(20px, 4vh, 40px); margin: 0;
+  /* ABOVE THE FIXED FOOTER, on the same reserve the CTA uses. `bottom: clamp(20px, 4vh, 40px)` put it 20–40px
+     off the bottom, which clears a one-line footer and is completely hidden by a wrapped one: at 393px the
+     copyright runs to three lines and the bar is 50px tall, so the whole "Already a member? Log in" sat behind
+     it (Jay, 2026-08-28 — "still hidden on mobile and iPad").
+     This is the CTA's footer bug in a second element. I reserved room for the button and left the one thing
+     underneath it still pinned to the viewport edge — so keying both to --onbwel-foot-clear is the fix, not
+     another hand-picked offset. */
+  position: absolute; left: var(--onbwel-gutter); bottom: calc(var(--onbwel-foot-clear) + 10px); margin: 0;
   color: var(--muted-grey); font-size: 14px;
 }
 .onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
@@ -3218,7 +3225,14 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
      a desktop browser and on an iPad (both above the breakpoint) and wrongly on a phone, which is exactly the
      report. A variable overridden in a media query is the same "one fact, two sites" shape as everything else
      that has bitten this file. */
-  :root { --onbwel-copy-h: 316px; }
+  :root {
+    --onbwel-copy-h: 316px;
+    /* THE ART AT HALF HEIGHT ON MOBILE (Jay, 2026-08-28: "the top images are oversized proportionally").
+       90px reads fine against a 1440px column and dominates a 393px one — the mark is the same size while
+       everything around it got narrower. 45px restores the proportion. The icon BOX rule is untouched, so
+       Donna's "one fixed height, variable width, equal visual weight" still holds; only the number changes. */
+    --onbwel-icon-h: 45px;
+  }
   /* .onbwel-d-hero and .onbwel-d-cta rules REMOVED — dead since slide 1 was unified into the shared shell on
      2026-08-28; neither class is rendered any more. Leaving them looked like mobile had a layout of its own. */
 }

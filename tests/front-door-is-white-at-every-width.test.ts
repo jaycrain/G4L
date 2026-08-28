@@ -90,9 +90,20 @@ test('every --onbwel- variable override is accounted for', () => {
   // somebody added an override; read it and decide, do not just bump the count.
   assert.deepEqual(
     overrides,
-    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px', 'foot-clear=52px', 'copy-h=316px'],
+    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px', 'foot-clear=52px',
+     'copy-h=316px', 'icon-h=45px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
+});
+
+// The art is HALVED on mobile while the copy zone GROWS — the two mobile overrides move in opposite directions
+// and both are correct. A narrow column wraps text to more lines (so the zone needs more room) and makes a
+// fixed-height mark loom (so it needs less). Pinned together because "make it all smaller on mobile" is the
+// plausible-sounding change that would break one of them.
+test('the art is half height on mobile, while the copy zone is taller', () => {
+  const icons = [...CSS.matchAll(/--onbwel-icon-h:\s*(\d+)px/g)].map((m) => Number(m[1]));
+  assert.equal(icons.length, 2, 'a base height and a mobile override');
+  assert.equal(icons[1], Math.round(icons[0]! / 2), 'mobile is half the base — Jay, 2026-08-28');
 });
 
 test('the mobile copy zone is TALLER than desktop, because the copy wraps to more lines', () => {
@@ -103,4 +114,22 @@ test('the mobile copy zone is TALLER than desktop, because the copy wraps to mor
   // base would mean somebody copied the desktop number across without re-measuring.
   assert.ok(mobile! > base!, `mobile (${mobile}px) must exceed desktop (${base}px) — narrow columns wrap taller`);
   assert.ok(mobile! >= 304, `must fit the tallest mobile slide (304px); got ${mobile}px`);
+});
+
+// THE LOG-IN LINE IS NOT DECORATION — "/" lands on this screen, so it is the only way through for someone who
+// already has an account. It was pinned to the viewport edge at `bottom: clamp(20px, 4vh, 40px)`, which clears a
+// one-line footer and is entirely swallowed by a wrapped one: at 393px the copyright runs to three lines and the
+// fixed bar is 50px tall, so the whole line sat behind it.
+//
+// The same bug as the CTA, in the element directly beneath it. I reserved room for the button and left this one
+// measured from the viewport instead — which is why both are keyed to the same variable now rather than to two
+// hand-picked offsets that can drift apart.
+test('the log-in line clears the fixed footer, on the same reserve as the CTA', () => {
+  // COMMENTS STRIPPED FIRST. The rule documents the value it replaced — `bottom: clamp(20px, 4vh, 40px)` — and
+  // the first version of this assertion matched that quotation, failing on its own explanation. A guard that
+  // reads prose is a guard that punishes writing any down.
+  const rule = CSS.match(/\.onbwel-d-signin \{[\s\S]*?\}/)![0].replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(rule, /bottom:\s*calc\(var\(--onbwel-foot-clear\)/,
+    'measured from the footer reserve, never from the viewport edge');
+  assert.doesNotMatch(rule, /bottom:\s*clamp/, 'a viewport-relative offset cannot know how tall the footer wrapped');
 });
