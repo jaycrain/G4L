@@ -87,10 +87,12 @@ const W1_DOMAINS = [
 ];
 const W1_DOMAIN_NUDGE = "No wrong answer here — just the story you actually run. What's the version in your head?";
 // NAME THE CAMPAIGN — the reveal after the five (fixed framing; the model personalizes the turn ask that follows).
+// THE FALLBACK MUST NOT COUNT EITHER. "Every one of those" asserts that all five answers were lies, which is the
+// same claim the model made and the same one Jay pushed back on. It hedges to the ones that were.
 const W1_CAMPAIGN =
-  `Now look at what you just laid out. Every one of those sounds reasonable — that's the trick. And every one keeps ` +
-  `you exactly where you are. That's not weakness; it's the campaign, running on autopilot. You just made it visible ` +
-  `— and that's the first real move.`;
+  `Now look at what you just laid out. The ones that sound most reasonable are the trick — they keep you exactly ` +
+  `where you are. That's not weakness; it's the campaign, running on autopilot. You just made it visible — and ` +
+  `that's the first real move.`;
 // The turn is GUIDED and model-driven (picks the heaviest lie in the member's own words). This fallback runs only if
 // the model returns nothing — a clear single ask, still member-picked.
 export const W1_TURN_ASK_FALLBACK =
@@ -272,6 +274,18 @@ const REWIRE_W1_SYSTEM =
   MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
   "You are the G4L Companion running W1, the Disinformation Audit, in Rewire (Phase 2). The member is naming the " +
   "comfortable LIES they tell themselves across five life domains (body, habits, time, who they are, what's still " +
+  // NOT EVERY DOMAIN YIELDS A LIE, and saying otherwise is the fastest way to lose a member's trust in the
+  // instrument. Jay walked the five and answered several with the truth — "I'm still in there", "I can ride
+  // better than I ever have" — and was told "Five lies named." He said: "This was confusing, I didn't answer
+  // these with lies."
+  //
+  // The model already half-knew: its very next turn said "that one doesn't need a counter, it already is the
+  // true line." So it can tell the difference; nothing told it it was ALLOWED to. The Session walks five places
+  // a lie can hide, which is not a promise that five are hiding there.
+  "A DOMAIN MAY HOLD NO LIE. Some answers are already true lines — said plainly, with no flinch. When that " +
+  "happens, say so and move on: name it as the true line it is, never call it a lie, and never manufacture a " +
+  "counter for something that does not need one. Count only what was actually a lie; never assert a number of " +
+  "lies the member did not name. " +
   "possible). Never judge, grade, praise, or diagnose; a self-lie is a hundred reasonable decisions, not a failing — " +
   "normalize it. Reflect their WORDS back; never state who they ARE as a fact (no identity verdicts like 'that's a " +
   "man who stopped believing he's allowed to want anything' — W-39) — if you name a pattern, offer it as a check " +
