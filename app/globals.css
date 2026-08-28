@@ -827,7 +827,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   display: flex; align-items: center; justify-content: center; font-size: 16px;
 }
 .cer-label { font-size: 0.82rem; font-weight: 600; color: var(--teal-text); letter-spacing: 0.02em; }
-.cer-beat { font-size: 1.5rem; line-height: 1.42; color: var(--navy); font-weight: 400; margin: 0; min-height: 100px; }
+/* THE RESERVE IS TWO LINES, NOT 100px (Donna, 2026-08-27: "too much space between the top sentence and the next
+   content" on the first ceremony). The min-height stops the card jumping as the typewriter types, which is worth
+   keeping — but 100px against a 1.42 line-height at this size reserves nearly three lines, so a one- or two-line
+   beat left ~32px of dead air above the reveal. Expressed in `em` so it tracks the font size and .cer-beat.small
+   gets the right reserve for free, instead of a second hardcoded number to keep in step. */
+.cer-beat { font-size: 1.5rem; line-height: 1.42; color: var(--navy); font-weight: 400; margin: 0; min-height: calc(1.42em * 2); }
 .cer-beat.small { font-size: 1.2rem; font-weight: 400; line-height: 1.5; }
 .cer-caret { color: var(--teal-text); font-weight: 400; }
 .cer-reveal { margin: 16px 0 2px; }

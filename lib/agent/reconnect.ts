@@ -226,7 +226,12 @@ function doorOpen(c: Collected): string {
   // most instead of the one our matcher put first.
   if (!c.boardDone) {
     return (
-      'Before we go deeper, here is the whole set — every Door we see people come through. ' +
+      // NO SEQUENCING CLAIM (Donna, 2026-08-27). This opened "Before we go deeper," which asserts it is the next
+      // thing said — and when a member dismisses Why-it-Works the MODEL has just written its own hand-in ("let's
+      // go back through that first door properly"), so the two land together and contradict each other about
+      // where we are. The board framing does not need to place itself in the sequence; it only needs to say what
+      // the board is. Dropping four words removes the collision without touching either turn.
+      'Here is the whole set — every Door we see people come through. ' +
       'Mark the ones that are yours. There is no wrong answer here, and most people mark more than one.'
     );
   }
