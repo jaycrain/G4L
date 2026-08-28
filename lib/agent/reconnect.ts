@@ -655,7 +655,7 @@ const doorsStage: StageDef = {
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
     const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.doorDepth, DOOR_MIN_DEPTH, DOOR_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
     if (!advance) {
-      b.reply = withQuestion(b.modelText, doorMore(b.history));
+      b.reply = heldDrawout(b.modelText, b.model.depthReady, doorMore(b.history));
     } else {
       b.reply = reflectDoor(b.modelText);
       b.awaitingConfirm = true;
@@ -841,7 +841,7 @@ const driftStage: StageDef = {
     // last SUBSTANTIVE line is what we hold — see keepIfMaterial.
     keepIfMaterial(b);
     if (!advance) {
-      b.reply = withQuestion(b.modelText, driftMore(b.history));
+      b.reply = heldDrawout(b.modelText, b.model.depthReady, driftMore(b.history));
     } else {
       // Only wait for a confirm if we actually REFLECTED. With no model text there is no shape to check — entering
       // the confirm state behind a "tell me more" leaves the engine listening for the answer to a question it never
@@ -937,9 +937,36 @@ const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
  *
  * NULL still means nothing to reflect — see reflectDrift. Same contract, same reason.
  */
+/**
+ * THE REPLY WHEN THE ENGINE HOLDS A DRAW-OUT — without shipping the question it is declining to answer.
+ *
+ * When the model decides a beat is done it writes its reflection and ends on a CONFIRM ("Is that the day worth
+ * chasing?"). If the engine is still under the beat's depth floor it holds, correctly — but `withQuestion` KEEPS
+ * a question the model already asked, so the member is shown a confirm the engine is not listening for. Their
+ * answer then arrives at the gather handler, which can only read it as more material, and asks again.
+ *
+ * Jay, R3, 2026-08-28: "Is that the day worth chasing?" → "Absolutely" → "What else is different by 7am?" He
+ * answered the question he was asked and was asked another one.
+ *
+ * This is the same fault fixed in onboarding's gap beat this morning, in the three Reconnect draw-outs that were
+ * never looked at — doors, drift and window all had the identical line. Hence a shared helper rather than a third
+ * and fourth copy of the fix. [[one-fact-many-sites]]
+ *
+ * Keyed on the model's structured `depthReady` flag, never on reading its prose for intent — that is the
+ * stage-agreement mistake and it stays reverted. [[stage-agreement-invariant]]
+ */
+function heldDrawout(modelText: string, depthReady: boolean | undefined, more: string | null): string {
+  return depthReady && more ? receiveThen(modelText, more) : withQuestion(modelText, more);
+}
+
 function reflectWindow(modelText: string): string | null {
   const t = (modelText ?? '').trim();
-  return t || null;
+  // A REFLECTION HAS TO REFLECT SOMETHING. Any non-empty string used to qualify, so the model's "That's the day."
+  // — three words — became the beat's reflect-and-confirm: Jay was shown a bubble that restated nothing and asked
+  // to confirm it, so he said "That's it" a second time. When there is nothing substantial to hold up, the caller
+  // already has the right behaviour (fall back to the rotating probe); it just was never reached.
+  if (t.split(/\s+/).filter(Boolean).length < 8) return null;
+  return t;
 }
 const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
 // The close — name that Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
@@ -974,7 +1001,7 @@ const windowStage: StageDef = {
     // the drift: hold the last line that carried real material, not their reaction to the reflection.
     keepIfMaterial(b);
     if (!advance) {
-      b.reply = withQuestion(b.modelText, windowMore(b.history));
+      b.reply = heldDrawout(b.modelText, b.model.depthReady, windowMore(b.history));
     } else {
       // See driftStage — no reflection means nothing to confirm, and the fallback rotates rather than repeating.
       const reflected = reflectWindow(b.modelText);
@@ -1007,7 +1034,7 @@ const windowStage: StageDef = {
       b.reply = REOPEN_WINDOW; // not the right vision yet — keep looking, don't force it
     } else if (intent === 'addition') {
       b.awaitingConfirm = false;
-      b.reply = withQuestion(b.modelText, windowMore(b.history));
+      b.reply = heldDrawout(b.modelText, b.model.depthReady, windowMore(b.history));
     } else {
       // done → the VISION (the spark) is a KEEPER (V-harvest: 'lights_you_up'). Queue it (default-emit); action commits.
       const payload = (b.driftPayload ?? '').trim();
