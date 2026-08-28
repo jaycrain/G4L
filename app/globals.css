@@ -2984,15 +2984,46 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    8.53:1 and charcoal 14.35:1 — both clear AA comfortably. Brand teal (#3B9495) is only 3.59:1 on white and is
    therefore NEVER type here; it appears as a FILL behind white text on the CTA (5.98:1 via --teal-text) and as
    the active dot. The same trap as the collapsed hero bar, one surface over. */
+/* ══ THE SHARED ONBOARDING LAYOUT (Donna's alignment spec, 2026-08-27) ══════════════════════════════════════════
+   Slide 1 was one component and slides 2–5 were another, so their content started at different left edges — 8vw
+   on slide 1, and (100% − 640px)/2 on the rest because they were CENTERED. At 1280px that is ~102px against
+   ~348px: the "jump left/right when swiping through" she reported, and the reason nudging would not have fixed it.
+   These four variables ARE the shared layout; both components read them and nothing else sets those values.
+
+   THE VERTICAL SLOTS ARE FIXED so the eye never has to re-find anything: the icon sits in a box of one height
+   whatever its shape, the headline starts at the same y on every slide, and the button sits at the same y on all
+   five — sized to the slide that needs the most room. Her ruling on the white space that leaves under the short
+   slides: "White space is ok." */
+:root {
+  --onbwel-gutter: 8vw;   /* slide 1's left margin — the benchmark every slide now shares */
+  --onbwel-measure: 640px;
+  --onbwel-icon-h: 90px;  /* fixed HEIGHT, variable width: her pick, so a 3:1 mark and a square one carry equal
+                             visual weight rather than equal footprint */
+  --onbwel-copy-h: 300px; /* the content zone, sized to the tallest slide (1's three-paragraph body) */
+}
 .onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: var(--white); }
-.onbwel-wrap { width: 100%; max-width: 640px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px calc(env(safe-area-inset-bottom, 0px) + 34px); }
+/* Slide 1 only: gives the absolutely-positioned wordmark and log-in line something to anchor to. It adds no
+   layout of its own — that is the whole point. */
+.onbwel-first { position: relative; }
+.onbwel-wrap {
+  width: 100%; max-width: calc(var(--onbwel-measure) + var(--onbwel-gutter));
+  margin: 0; /* was `0 auto` — the centering that made slides 2–5 sit ~246px right of slide 1 */
+  padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px calc(env(safe-area-inset-bottom, 0px) + 34px) var(--onbwel-gutter);
+}
+/* The copy zone is a fixed box so the CTA below it lands identically on every slide. `min-height`, not `height`:
+   a phone that genuinely overflows must grow and scroll rather than clip — the button moving on a 375px screen is
+   a worse outcome than losing the copy under it. */
+.onbwel-copy { min-height: var(--onbwel-copy-h); }
+/* Slide 1 shows no dots but reserves their height, so all five headlines start at the same y. Height mirrors
+   .onbwel-dots exactly (8px dot + 30px margin) — if that changes, this follows it. */
+.onbwel-dots-spacer { height: 8px; margin-bottom: 30px; }
 .onbwel-dots { display: flex; gap: 8px; margin-bottom: 30px; }
 .onbwel-dot { width: 8px; height: 8px; border-radius: 50%; background: #d8dbdd; transition: 0.3s; }
 .onbwel-dot.on { background: var(--teal-text); width: 24px; border-radius: 4px; }
 .onbwel-kick { color: #8fd0d1; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 16px; }
 /* MIXED CASE, not all caps (Donna, 2026-08-17): the billboard headings were uppercased in CSS while the source
    strings were sentence case, so every screen shouted. */
-.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 600; color: var(--navy); font-size: clamp(38px, 7vw, 60px); line-height: 0.96; letter-spacing: 0.4px; margin: 0; }
+.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 600; color: var(--navy); font-size: clamp(38px, 4.2vw, 56px); line-height: 0.98; letter-spacing: 0.4px; margin: 0; }
 .onbwel-head-line { display: block; }
 .onbwel-road { margin: 28px 0 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
 .onbwel-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
@@ -3021,11 +3052,6 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    There is no two-way split of this sentence that fits at 52px -- the size is the constraint, not the break.
    46px puts both authored lines inside the column with room to spare. The other three screens are unchanged;
    this variant already carried its own clamp, so this is a smaller number, not a new exception. */
-.onbwel-heart-list .onbwel-head { font-size: clamp(34px, 6vw, 46px); }
-.onbwel-heart-list .onbwel-body { font-size: 16px; margin-top: 16px; }
-.onbwel-heart-list .onbwel-list { font-size: 15.5px; line-height: 1.45; margin-top: 14px; }
-.onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
-.onbwel-heart-list .onbwel-cta { margin-top: 20px; }
 .onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
 .onbwel-reassure { margin-top: 18px; color: var(--muted-grey); font-size: 14px; }
 
@@ -3040,18 +3066,23 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   .onbwel-track-d { display: block; }
   .onbwel-track-m { display: none; }
 }
-.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 96px 8vw 44px; overflow-y: auto;
+.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 96px var(--onbwel-gutter) 44px; overflow-y: auto;
   /* WHITE, not the photo-over-navy stack (Donna, 2026-08-27). overflow-y stays `auto` and that is load-bearing:
      this is the FRONT DOOR, and on a short laptop the copy exceeds one screen — a hard clip once made the CTA
      physically unreachable. One screen whenever it fits; scrolls only when it cannot. */
   background: var(--white); }
-.onbwel-d-heart { max-width: 640px; }
+.onbwel-d-heart { max-width: var(--onbwel-measure); }
 .onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
-.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 600; color: var(--navy); font-size: clamp(38px, 4.2vw, 56px); line-height: 0.98; letter-spacing: 0.3px; margin: 0; }
-.onbwel-d-sub { color: var(--charcoal); font-size: 18px; line-height: 1.55; margin-top: 18px; max-width: 560px; }
 /* Front-door sign-in affordance — "/" lands on the welcome hero now, so a RETURNING member needs a visible way
    through it. Quiet on purpose: the primary action is still Sign up. (Jay 7/29, entry narrowing) */
-.onbwel-d-signin { margin-top: 16px; color: var(--muted-grey); font-size: 14px; }
+/* OUT OF THE VERTICAL FLOW (2026-08-27). This line exists only on slide 1, so while it sat inside the centered
+   column it made slide 1's block taller than every other slide's and pushed its headline and button off the
+   shared grid — 4px and 9px, invisible to the eye and exactly the kind of drift Donna's spec exists to remove.
+   Pinned bottom-left on the same gutter: same position on screen, no longer part of the maths. */
+.onbwel-d-signin {
+  position: absolute; left: var(--onbwel-gutter); bottom: clamp(20px, 4vh, 40px); margin: 0;
+  color: var(--muted-grey); font-size: 14px;
+}
 .onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
 .onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
@@ -3064,17 +3095,16 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* HALF THE HEIGHT (Donna, 2026-08-27): "reduce size of the image 50%" on every screen. At 150px the illustration
    was the loudest thing above the fold and pushed the headline down; at 75px it reads as a mark introducing the
    words rather than competing with them. Per-screen overrides below where she asked for a different number. */
-.onbwel-art { display: block; width: auto; max-width: min(100%, 420px); max-height: 75px; margin: 0 0 24px; }
-/* Slide 5's rings: 40%, not 50%, and explicitly left-aligned — it is the one near-square mark in the set, so the
-   same cap reads smaller on it than on the wide ones. */
-.onbwel-art-rings { max-height: 90px; margin-right: auto; }
-/* Slide 4's progress mark: 20% back up from the halved default, left-aligned. Her two instructions for this
-   screen read as contradictory in isolation — "reduce 50%" and "20% larger than how it is rendered currently" —
-   and 90px is the reading that satisfies both AND matches the proportion in her comp, where the donut sits
-   noticeably larger than the headline's line-height. Taking "currently" as the pre-reduction 150px would give
-   180px, which is nearly twice what the mockup shows. */
-.onbwel-art-progress { max-height: 90px; margin-right: auto; }
-.onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; }
+.onbwel-art { display: block; width: auto; max-width: min(100%, 420px);
+  height: var(--onbwel-icon-h); object-fit: contain; object-position: left center;
+  margin: 0 auto 24px 0; }
+/* SUPERSEDED by the shared icon box (Donna's item 5, 2026-08-27). The rings and progress used to carry their own
+   heights — 90px each against the default's 75px — which is exactly the "icons vary wildly in size" she flagged.
+   One container height now, art fitted inside it, so a wide mark and a square one read as the same element. */
+
+/* SURVIVES the shared-layout merge: it sets weight and colour on "This is where you open your eyes", not layout.
+   Its siblings (.onbwel-d-head, .onbwel-d-sub, .onbwel-heart-list *) were deleted with the slide-1-only
+   component — a second headline scale is exactly what put slide 1 a few pixels off the shared grid. */
 .onbwel-d-sub-lead { font-weight: 700; color: var(--navy); }
 
 /* SLIDE 2 — the exchange, as REAL CHAT BUBBLES (Donna, 2026-08-27): Companion left, member right. Two indented
@@ -3140,7 +3170,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    mark landed on top of "YOUR COMEBACK" on the top-aligned narrow layout. Change one, check the other. */
 /* The invert() is GONE. It existed to lift the wordmark off a dark photo; on white ground it rendered a white
    logo on a white page — invisible, and only visible as a bug if you looked for something that was not there. */
-.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 52px; width: auto; z-index: 2; }
+.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: var(--onbwel-gutter); height: 52px; width: auto; z-index: 2; }
 /* The hero on mobile (Jay: fold the hero into mobile). Top-aligned with scroll room for the three intro
    paragraphs, tighter type.
 
@@ -3154,10 +3184,12 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    every other "one fact, two sites" defect in this file — the fix is not a third copy, it is that the mobile rule
    now only says what is genuinely different on a phone (padding, alignment) and inherits the colour. */
 @media (max-width: 1000px) {
+  /* The copy zone is TALLER on a phone, sized to slide 4 — the longest body plus the two member bubbles, which
+     is the slide that needs the most space at this width (Donna: allow for it, "white space is ok"). Desktop
+     fits inside 300px; narrow columns wrap more, so the same content needs more room. */
+  :root { --onbwel-copy-h: 380px; }
   .onbwel-d-hero { min-height: 100dvh; justify-content: flex-start;
     padding: calc(env(safe-area-inset-top, 0px) + 116px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px); }
-  .onbwel-d-head { font-size: clamp(38px, 11vw, 56px); }
-  .onbwel-d-sub { font-size: 16px; line-height: 1.5; margin-top: 16px; }
   .onbwel-d-cta { margin-top: 26px; }
 }
 

@@ -65,7 +65,11 @@ test('the display face carries every weight the display rules ask of it', () => 
 test('Donna\'s SemiBold intro headlines can actually render as SemiBold', () => {
   const condensed = loadedWeights('Barlow_Condensed');
   assert.ok(condensed.includes(600), 'the intro headlines are set to 600; without a 600 face they render at 800');
-  for (const rule of ['.onbwel-head', '.onbwel-d-head']) {
+  // ONE rule now. .onbwel-d-head was slide 1's separate headline and was deleted on 2026-08-27 when the five
+  // intro screens were merged onto one shared layout — a second headline scale was part of what put slide 1 off
+  // the shared grid. This test failed on that deletion, which is correct behaviour for a guard pinned to a rule:
+  // the rule went away legitimately, so the guard follows it rather than the other way round.
+  for (const rule of ['.onbwel-head']) {
     const b = blocks().find((x) => x.selector === rule);
     assert.ok(b, `${rule} not found`);
     assert.match(b.body, /font-weight:\s*600/, `${rule} should be SemiBold — Donna's ask, 2026-08-27`);

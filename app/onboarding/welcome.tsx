@@ -45,17 +45,16 @@ const ART: Partial<Record<ArtKey, string>> = {
   'wake-up': '/brand/onboarding/wake-up.svg',
   companion: '/brand/onboarding/companion.svg',
   walk: '/brand/onboarding/walk.svg',
-  progress: '/brand/onboarding/progress.svg',
+  progress: '/brand/onboarding/progress.png',
   rings: '/brand/onboarding/rings.svg',
 };
 function Art({ k }: { k?: ArtKey }) {
   const src = k && ART[k];
   if (!src) return null;
-  // Two marks take their own size — the rings (40% down, not 50%) and progress (back up 20% from the halved
-  // default). See .onbwel-art-rings / .onbwel-art-progress.
-  const extra = k === 'rings' ? ' onbwel-art-rings' : k === 'progress' ? ' onbwel-art-progress' : '';
+  // ONE ICON BOX for every slide (Donna's item 5) — fixed height, variable width, left-aligned. The per-slide
+  // size overrides that used to live here are what "the icons vary wildly in size" described.
   // eslint-disable-next-line @next/next/no-img-element
-  return <img className={`onbwel-art${extra}`} src={src} alt="" aria-hidden="true" />;
+  return <img className="onbwel-art" src={src} alt="" aria-hidden="true" />;
 }
 
 // PART 1 OF 4 · GETTING READY — Jay + Cowork's messaging pass (2026-08-13).
@@ -181,6 +180,9 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
               <span key={x} className="onbwel-head-line">{line}</span>
             ))}
           </h1>
+          {/* FIXED-HEIGHT COPY ZONE so the CTA sits at the same y on every slide (Donna's item 3). Sized to the
+              tallest slide; her ruling on the gap it leaves under the short ones: "White space is ok." */}
+          <div className="onbwel-copy">
           {beat.body.map((seg, x) => (
             <p key={x} className="onbwel-body">{renderBody([seg])}</p>
           ))}
@@ -213,7 +215,7 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
               ))}
             </div>
           )}
-          {beat.tail && <p className="onbwel-body">{renderBody(beat.tail)}</p>}
+          </div>
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
           {/* The forecast beat now states the 20 minutes itself, in context, so the old blanket reassurance under
               the final CTA would say it twice. */}
@@ -234,20 +236,31 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
 // member arrives at too; a front door with no way through it for someone who already has an account is a bug that
 // looks like a design.
 function WelcomeHero({ onNext }: { onNext: () => void }) {
+  // ONE SHELL FOR ALL FIVE (Donna's spec, 2026-08-27). Slide 1 used to be its own container with its own padding,
+  // its own centering and its own headline scale, which is why every other slide sat ~246px to its right and a
+  // few pixels off vertically. It renders through .onbwel / .onbwel-wrap now, exactly like the beats; the only
+  // slide-1-only pieces are the wordmark and the log-in line, both positioned OUT OF FLOW so they cannot move the
+  // shared grid.
   return (
-    <div className="onbwel-d-hero">
+    <div className="onbwel onbwel-first">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="onbwel-d-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-      <div className="onbwel-d-heart">
+      <div className="onbwel-wrap">
+        {/* NO DOTS ON SLIDE 1 (Donna, 2026-08-27) — but the space they occupy is RESERVED, so the headline starts
+            at the same y here as on every other slide. Reserving it is what makes "no dots" a design choice
+            instead of a 38px vertical offset nobody meant. */}
+        <div className="onbwel-dots-spacer" aria-hidden="true" />
         <Art k="wake-up" />
-        <h1 className="onbwel-d-head">This could be your<br />wake-up call.</h1>
-        <p className="onbwel-d-sub">
+        <h1 className="onbwel-head">This could be your<br />wake-up call.</h1>
+        <div className="onbwel-copy">
+        <p className="onbwel-body">
           By the time we get to midlife, we’ve likely been sleepwalking through Doors for years — a career that
           changed, kids who needed everything, aging parents who suddenly needed us too — and we didn’t even notice
           as they closed behind us.
         </p>
-        <p className="onbwel-d-sub onbwel-d-sub-lead">This is where you open your eyes.</p>
-        <button type="button" className="onbwel-d-cta" onClick={onNext}>Start looking →</button>
+        <p className="onbwel-body onbwel-d-sub-lead">This is where you open your eyes.</p>
+        </div>
+        <button type="button" className="onbwel-cta" onClick={onNext}>Start looking →</button>
         <p className="onbwel-d-signin">
           Already a member? <a href="/login">Log in</a>.
         </p>
