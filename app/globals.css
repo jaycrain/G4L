@@ -2754,12 +2754,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* THE DAILY CUE, in the dashboard's pinned zone with the keeper and the standing update. Lowest of the three,
    right on top of the composer, because it is the only one that asks the member to GO somewhere — ambient first,
    then status, then the thing to do. Olive-tinted like its Playbook twin so the two read as one feature. */
-.tri-waiting { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; padding: 10px 14px;
-  border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 12px; text-decoration: none;
-  font-size: 13.5px; font-weight: 600; color: var(--navy); }
-.tri-waiting:hover { background: #f6f8e8; }
-.tri-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
-  color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+/* (Removed 2026-08-28: `.tri-waiting` / `.tri-waiting-n`. Nothing rendered them — the component uses
+   .pb-waiting — so this was a second, olive copy of the card below, sitting where anyone fixing the colour would
+   naturally look and change nothing. It is the CSS twin of the unreachable-rule class this codebase keeps
+   paying for.) */
 
 /* YOUR READS — the assessment outputs on the Reads tab. Plain statements, never a score; styled as prose the
    member can read rather than a panel of metrics, because that is exactly what it must not become. */
@@ -2772,13 +2770,23 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    governance, so it reads as an aside rather than another finding. */
 .pb-read-line:last-child { font-style: italic; font-size: 13px; color: var(--muted-grey); margin-top: 6px; }
 
+/* NEUTRAL, BY DONNA'S OWN RULING — the same one already applied to .pb-jq below.
+   Her reasoning: olive MEANS a practice/movement thing happened (the week grid, logged cells, the Momentum
+   count), and this card is a queue of things the member SAID. An olive wash claims movement that did not happen.
+   A colour that carries meaning cannot double as decoration.
+   IT WAS FIXED IN ONE OF THREE PLACES. The 8/28 pass moved the Journal queue (.pb-jq) to --grey and left this
+   card — the one on the DASHBOARD, which is where Jay was looking — still olive, plus a dead `.tri-waiting`
+   copy above. Same ruling, three sites, one changed. [[one-fact-many-sites]] */
 .pb-waiting { display: flex; align-items: center; gap: 9px; width: 100%; margin: 1.1rem 0; padding: 11px 16px;
-  border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--light-grey, #e8e6e6); background: var(--grey); border-radius: 12px; cursor: pointer;
   font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--navy); text-align: left; }
-.pb-waiting:hover { background: #f6f8e8; }
+.pb-waiting:hover { background: #e0dedd; }
 /* The count is the pull — it is the only reason this row gets clicked, so it carries the weight. */
 /* The flank version: smaller, no arrow, sits inside the Playbook panel above its See-more link. */
 .pb-waiting-sm { margin: 12px 0 4px; padding: 8px 11px; font-size: 12.5px; text-decoration: none; }
+/* THE COUNT KEEPS ITS COLOUR. The wash was the false claim — a tinted CARD says "this is a movement surface".
+   The badge is a count, and the olive there reads as the app's accent on a number, not as a category of card.
+   Donna's ruling was about the background; narrowing it to the background is the faithful reading. */
 .pb-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
   color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
 
