@@ -39,7 +39,7 @@ import DailyBeatPanel from '../daily-beat-panel.tsx';
 import { getDailyBeat } from '../../../lib/daily-beat/store.ts';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
-import { getForecast, getPassport, getFacets, ensureOnboardingBadge, reconcileRedesignBadges } from '../../../lib/curriculum/view.ts';
+import { getForecast, getPassport, getFacets, ensureOnboardingBadge, reconcileRedesignBadges, reconcileReconnectCloses } from '../../../lib/curriculum/view.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
@@ -81,6 +81,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await logEvent(db, memberId, 'page_view', { surface: 'dashboard' });
   // Reaching the dashboard means onboarding was completed — seed the passport's first badge.
   await ensureOnboardingBadge(db, memberId);
+  // Before the forecast is read: a Session whose WORK is on record but whose close was never written would
+  // otherwise be offered again as the next step. See reconcileReconnectCloses.
+  await reconcileReconnectCloses(db, memberId).catch(() => {});
 
   // Redesign (Layer 2) — flag-gated parallel render. Off in prod → everything below is the untouched live dashboard.
   if (redesignEnabled()) {

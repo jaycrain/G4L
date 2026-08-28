@@ -4,7 +4,7 @@
 import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
 import { phaseColumns, dailyLayer, listBadges, getBadge, PHASE_ORDER } from './registry.ts';
-import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge } from './store.ts';
+import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge, markSessionClosed } from './store.ts';
 
 const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
@@ -150,6 +150,39 @@ const SESSION_BADGE: Record<string, string> = {
   // 'RCL-C3' → 'quality-days' is DELIBERATELY not here: that badge earns when the member LOGS a quality day (living
   // the tracking week, in app/quality-day/actions.ts), not on the C3 definition close (Donna).
 };
+/**
+ * RECONNECT SESSION CLOSES, RECONCILED FROM EVIDENCE.
+ *
+ * A Session close is bookkeeping, and bookkeeping can be missed; the WORK leaves durable traces that cannot be.
+ * When the two disagree, the trace is right.
+ *
+ * This exists because of a real hole: R1 finishes ON its own stage (`complete = true`, stage unchanged) and the
+ * close detector only watched for stage CHANGES, so every member who completed the Mirror before 2026-08-28 has
+ * a scored baseline and no record of the Session. The forecast reads closed sessions to decide what is next, so
+ * it kept offering them the Mirror they had just finished — a loop, and one that looks like the Session failing
+ * rather than a missing row. (Jay's walk.)
+ *
+ * ONLY THE IDQ, and only from its own baseline. `idq_retake` at sequence_no 0 is written by R1 and by nothing
+ * else, so its presence means R1 was worked. The other Sessions have no comparably exclusive trace — the Doors,
+ * for instance, are named at ONBOARDING, so closing R2 on "this member has Doors" would mark a Session done that
+ * they have never opened. A reconciliation that guesses is worse than the hole it fills.
+ *
+ * Idempotent (markSessionClosed upserts and emits session_close only on the first close) and best-effort.
+ */
+export async function reconcileReconnectCloses(db: Db, memberId: string): Promise<void> {
+  try {
+    const hasBaseline =
+      (await db.query('select 1 from idq_retake where member_id=$1 and sequence_no=0 limit 1', [memberId])).rows.length > 0;
+    if (!hasBaseline) return;
+    const closed = new Set(await closedSessionIds(db, memberId));
+    if (closed.has('RCN-IDQ')) return;
+    await markSessionClosed(db, memberId, 'RCN-IDQ');
+  } catch (e) {
+    // Best-effort: a member who cannot be reconciled still gets their dashboard.
+    console.error(`[curriculum] could not reconcile Reconnect closes for ${memberId}:`, e);
+  }
+}
+
 export async function reconcileRedesignBadges(db: Db, memberId: string): Promise<void> {
   try {
     const [closedArr, gatesArr] = await Promise.all([closedSessionIds(db, memberId), listGates(db, memberId)]);
