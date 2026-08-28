@@ -1589,12 +1589,22 @@ function administeredStuckHelp(max: number): string {
  * `awaitingConfirm` are what the structured branches read, and a signature that lets a caller omit them is a
  * signature that invites this bug back. The seam is closed by removing the choice.
  */
-export function expectsForState(arc: ArcConfig, state: ConvState, answered = 0): Expectation | undefined {
+export function expectsForState(arc: ArcConfig, state: ConvState): Expectation | undefined {
   return nextExpects(
     arc,
     state.stage as StageId,
     false, // a resumable session is by definition not complete
-    answered,
+    // DERIVED HERE, NOT PASSED IN. This was `answered = 0`, and the default is a lie in the only situation this
+    // function exists for: a resume, where by definition something has already been answered. Rewire, Rebuild
+    // and Reclaim each computed `saved.state.administeredResponses?.length ?? 0` at their own call site and
+    // passed it; Reconnect's two call sites did not — so resuming the IDQ, the longest instrument in the
+    // product, always reported "Question 1 of 24" while the thread above it showed item twenty.
+    // (Jay's walk, 2026-08-28, switching between the dashboard and the Session.)
+    //
+    // The docstring above already argued this: "a signature that lets a caller omit them is a signature that
+    // invites this bug back. The seam is closed by removing the choice." The signature still let a caller omit
+    // the count. Now it cannot, and the three hand-copied derivations collapse to one. [[one-fact-many-sites]]
+    state.administeredResponses?.length ?? 0,
     state.collected ?? {},
     state.awaitingConfirm ?? false,
   );

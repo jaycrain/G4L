@@ -111,8 +111,7 @@ export async function loadReclaimSessionAction(
     const db = (await getDb()) as unknown as Db;
     const saved = await loadArcSession(db, memberId, 'reclaim', session);
     if (!saved || saved.messages.length === 0) return { ok: true };
-    const answered = saved.state.administeredResponses?.length ?? 0;
-    const expects = expectsForState(reclaimArcFor(session), saved.state, answered);
+    const expects = expectsForState(reclaimArcFor(session), saved.state);
     return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };

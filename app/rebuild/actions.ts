@@ -177,8 +177,7 @@ export async function loadRebuildSessionAction(
     const db = (await getDb()) as unknown as Db;
     const saved = await loadArcSession(db, memberId, 'rebuild', session);
     if (!saved || saved.messages.length === 0) return { ok: true };
-    const answered = saved.state.administeredResponses?.length ?? 0;
-    const expects = expectsForState(rebuildArcFor(session), saved.state, answered);
+    const expects = expectsForState(rebuildArcFor(session), saved.state);
     return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };

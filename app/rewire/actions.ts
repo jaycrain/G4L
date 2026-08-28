@@ -223,8 +223,7 @@ export async function loadRewireSessionAction(
     const db = (await getDb()) as unknown as Db;
     const saved = await loadArcSession(db, memberId, 'rewire', session);
     if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
-    const answered = saved.state.administeredResponses?.length ?? 0;
-    const expects = expectsForState(rewireArcFor(session), saved.state, answered);
+    const expects = expectsForState(rewireArcFor(session), saved.state);
     return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };

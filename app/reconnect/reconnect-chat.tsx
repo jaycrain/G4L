@@ -80,7 +80,8 @@ export default function ReconnectChat({
   const awaitingContinue = !!pendingCeremony && !ceremony;
   // Tell the shell which beat we're on. Report-only; see the prop's note.
   useEffect(() => { onStage?.(state?.stage ?? null); }, [state?.stage, onStage]);
-  const started = useRef(false);
+  // Holds WHICH session was started, not merely that one was — see the load effect below.
+  const started = useRef<string | null>(null);
   const chatRef = useChatAutoscroll([messages.length, pending, expects]);
 
   // WHERE each Understand card was earned — the message count at the moment its asset first became taught. The
@@ -125,8 +126,13 @@ export default function ReconnectChat({
   const seenThisSession = scienceSeen.includes(session);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
+    if (started.current === session) return;
+    started.current = session;
+    // A different Session in the same component: drop the previous one's conversation before loading this one,
+    // or its thread renders under this Session's expectation — a late item above a "Question 1 of 24" chip row.
+    setMessages([]);
+    setState(null);
+    setExpects(null);
     (async () => {
       setPending(true);
       // W-15 — resume an in-flight session first (a refresh/crash mid-excavation no longer loses the work); only start
@@ -147,7 +153,13 @@ export default function ReconnectChat({
       setState(r.state);
       setExpects(r.expects ?? null);
     })();
-  }, [memberId]);
+    // KEYED ON THE SESSION TOO. This ran on `[memberId]` alone, with `started` guarding a second run — so if the
+    // component is reused across a Session change (same component, different route param, which is exactly what
+    // moving between the dashboard and a Session can do) it kept the previous Session's thread and state and
+    // never loaded the new one. Resetting the guard is the point: the ref exists to stop a double-start for ONE
+    // session, not to stop the next session from ever starting.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memberId, session]);
 
   async function submit(text: string) {
     if (!text || !state || pending) return;
