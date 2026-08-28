@@ -377,8 +377,18 @@ function reflectDoor(modelText: string): string {
 const DOOR_CONFIRM = 'Have I got that right?';
 
 const DOORS_CLOSE = (
-  "That's the excavation done — the part that asks you to remember. Your Doors are on your dashboard now, and " +
-  "you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to yourself a year out."
+  // TWO CORRECTIONS, both from Jay's R2 walk (2026-08-28).
+  //
+  // "the excavation" is the ASSET's name (RCN-EXC, Identity Excavation), not the Session's. The member has been
+  // in a Session called The Doors for forty minutes and had never seen this word — he asked "Is this the
+  // excavation?", which is the question a member asks when the product calls one thing two names.
+  //
+  // And the Doors are NOT on the dashboard. redesign-dashboard.tsx keeps them off it deliberately — "privacy:
+  // sensitive if someone's looking over the member's shoulder" — so this sent him to look somewhere they were
+  // designed not to be. They live in the Playbook, under "Who you are".
+  "That's the Door work done — the part that asks you to remember. Your Doors are in your Playbook now, under " +
+  "Who you are, and you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to " +
+  "yourself a year out."
 );
 
 const DOORS_MEANING_Q =

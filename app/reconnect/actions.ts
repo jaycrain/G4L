@@ -1,7 +1,7 @@
 'use server';
 
 import { memberTurn } from '../../lib/agent/member-display.ts';
-import { RECONNECT_SESSION_ASSET } from '../../lib/workspace/session-key.ts';
+import { RECONNECT_SESSION_ASSETS } from '../../lib/workspace/session-key.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
@@ -258,8 +258,15 @@ async function persistReconnectSessionCloses(db: Db, memberId: string, prev: Con
     // THE SESSION ENDED — close IT, whatever the stage did. Checked before the boundary logic because a Session
     // can now finish without leaving its stage, which is the case the boundary watcher below cannot see.
     if (turn.complete) {
-      const own = RECONNECT_SESSION_ASSET[session];
-      if (own) await markSessionClosed(db, memberId, own);
+      // EVERY row the Session covers, not just one — see RECONNECT_SESSION_ASSETS. Closing a subset leaves the
+      // forecast lighting a row the member has already worked, which reads as the Session not having counted.
+      // REVERSED, so the Session's OWN row closes LAST. The dashboard's "You finished X today" names the most
+      // recently closed row, and R2 covers two — so closing them in array order left Jay reading "You finished
+      // Identity Excavation today" about a Session called The Doors, which is what made him ask whether they
+      // were the same thing. Array order stays primary-first because curriculumIdFor reads [0].
+      for (const asset of [...(RECONNECT_SESSION_ASSETS[session] ?? [])].reverse()) {
+        await markSessionClosed(db, memberId, asset);
+      }
     }
     const from = String(prev.stage ?? '');
     const to = String(turn.state.stage ?? '');

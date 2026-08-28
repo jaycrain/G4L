@@ -193,7 +193,7 @@ test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the 
   // run. The contract this line protects — her answer is received and the beat ends — is unchanged.
   const after = applyReconnectTurn(done.state, [], 'It means I stopped blaming myself for all of it.', { text: '' });
   assert.equal(after.state.stage, 'doors', 'her answer lands on the break, which holds the stage for one turn');
-  assert.match(after.reply, /excavation done/i, 'the seam is named');
+  assert.match(after.reply, /Door work done/i, 'the seam is named');
   assert.equal(after.complete, true, 'the Doors Session ENDS — it no longer runs on into the questionnaire');
   const dispute = applyReconnectTurn(base, [], "no, that's not it at all", { text: '', replyIntent: 'dispute' });
   assert.equal(dispute.state.awaitingConfirm, false, 'a dispute reopens');
@@ -320,7 +320,7 @@ test('reconnect measurement · Doors done hands into the administered check-in (
   // survey wall — is now asserted of R1's own opener, in tests/reconnect-sessions.test.ts.
   const done = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
   assert.equal(done.complete, true, 'the Doors Session closes');
-  assert.match(done.reply, /excavation done/i, 'naming what was done');
+  assert.match(done.reply, /Door work done/i, 'naming what was done');
 });
 
 test('reconnect measurement · a 1–5 answer records in order and delivers the next item, OFF the depth kernel', () => {

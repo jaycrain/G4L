@@ -40,10 +40,13 @@ export const WHERE_IT_LIVES: Record<SessionKey, WhereItLives> = {
     href: DASHBOARD,
     cta: 'Open your dashboard',
   },
+  // THE DOORS ARE NOT ON THE DASHBOARD, and never were: redesign-dashboard.tsx deliberately keeps them off it
+  // ("privacy: sensitive if someone's looking over the member's shoulder"). They live in the Playbook, under
+  // "Who you are". This line sent members to look for them somewhere they were designed not to appear.
   r2: {
-    line: 'Your Doors are on your dashboard, and you can change them any time.',
-    href: DASHBOARD,
-    cta: 'Open your dashboard',
+    line: 'Your Doors are in your Playbook, under Who you are, and you can change them any time.',
+    href: PLAYBOOK,
+    cta: 'Open your Playbook',
   },
   r3: {
     line: 'Your Legacy Letter is in your Playbook. Open it a year from now and see how far the distance closed.',
@@ -51,7 +54,7 @@ export const WHERE_IT_LIVES: Record<SessionKey, WhereItLives> = {
     cta: 'Open your Playbook',
   },
   r4: {
-    line: 'Your Reclaim List, your Doors and your starting ID Score are on your dashboard — that is the ground everything else builds on.',
+    line: 'Your Reclaim List and your starting ID Score are on your dashboard, and your Doors are in your Playbook under Who you are — that is the ground everything else builds on.',
     href: DASHBOARD,
     cta: 'Open your dashboard',
   },

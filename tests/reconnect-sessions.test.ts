@@ -87,8 +87,13 @@ test('R2 ENDS after the Door work, naming what was done and what is next', () =>
 
   assert.equal(done.complete, true, 'the Doors Session closes');
   assert.notEqual(done.state.stage, 'measurement', 'it does not run on into the questionnaire');
-  assert.match(done.reply, /excavation done/i, 'names what was done');
-  assert.match(done.reply, /dashboard/i, 'says where the Doors now live');
+  assert.match(done.reply, /Door work done/i, 'names what was done');
+  // "the excavation" was the ASSET's name (RCN-EXC), never the Session's — the member has been in "The Doors"
+  // the whole time and asked what the excavation was. And the Doors are in the PLAYBOOK, not the dashboard:
+  // redesign-dashboard keeps them off it on purpose, so the old line sent him somewhere they cannot appear.
+  assert.doesNotMatch(done.reply, /excavation/i, 'an internal asset name is not a member-facing word');
+  assert.match(done.reply, /Playbook/i, 'says where the Doors actually live');
+  assert.doesNotMatch(done.reply, /on your dashboard/i, 'because they are not on the dashboard');
   assert.match(done.reply, /Drift Quiz/i, 'and what the next Session is');
 });
 

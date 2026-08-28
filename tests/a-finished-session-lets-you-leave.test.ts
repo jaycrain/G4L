@@ -44,12 +44,12 @@ test('a Session that ends WITHOUT changing stage is still recorded as closed', (
   // The invisible one. R1 completes on the measurement stage, so the `from !== to` boundary watcher never sees
   // it. Without this the forecast keeps lighting a Session the member has already finished.
   assert.match(actions, /if \(turn\.complete\)/, 'the close is driven by the Session ending, not by a stage change');
-  assert.match(actions, /RECONNECT_SESSION_ASSET/, 'each Session maps to its own asset for that close');
+  assert.match(actions, /RECONNECT_SESSION_ASSETS/, 'each Session maps to its own asset for that close');
 
   // And the map has to cover every Session, or one of them silently never closes. It lives in session-key.ts
   // now — the workspace needs the same crosswalk to decide whether a finished Session opens read-only.
   const keys = readFileSync(new URL('../lib/workspace/session-key.ts', import.meta.url), 'utf8');
-  const map = keys.match(/const RECONNECT_SESSION_ASSET[^}]*\}/)![0];
+  const map = keys.match(/const RECONNECT_SESSION_ASSETS[^}]*\}/)![0];
   for (const key of ['r1', 'r2', 'r3', 'checkpoint']) {
     assert.match(map, new RegExp(`\\b${key}:`), `${key} has no asset — it could never be recorded as done`);
   }
@@ -71,12 +71,15 @@ test('a Session that ends WITHOUT changing stage is still recorded as closed', (
 // three spurious retakes against an instrument whose contract is one reading per 60 days. The instrument was
 // never the problem, which is why an idempotency window would have been the wrong fix: nothing should have been
 // able to ask it a second time.
-import { curriculumIdFor, RECONNECT_SESSION_ASSET } from '../lib/workspace/session-key.ts';
+import { curriculumIdFor, RECONNECT_SESSION_ASSETS } from '../lib/workspace/session-key.ts';
 import { CURRICULUM } from '../lib/curriculum/registry.ts';
 
 test('every Reconnect Session resolves to its curriculum asset', () => {
   // Without this the read-only redirect cannot fire, and a finished Session restarts.
-  for (const [key, asset] of [['r1', 'RCN-IDQ'], ['r2', 'RCN-EXC'], ['r3', 'RCN-DFT'], ['r4', 'RCN-CHK']] as const) {
+  // r2's own row is RCN-FDR ("The Doors") — the Session's identity. RCN-EXC ("Identity Excavation") is a second
+  // row the same conversation covers, and closing only THAT one is what left the forecast pointing him back into
+  // a Session he had just finished.
+  for (const [key, asset] of [['r1', 'RCN-IDQ'], ['r2', 'RCN-FDR'], ['r3', 'RCN-DFT'], ['r4', 'RCN-CHK']] as const) {
     assert.equal(curriculumIdFor(key as never), asset, `${key} must resolve, or it can never be seen as closed`);
   }
 });
@@ -85,7 +88,7 @@ test('the crosswalk names assets that actually exist', () => {
   // A map pointing at an id the curriculum does not have would resolve, pass the check above, and then never
   // match a closed session — the same silence, one layer down.
   const ids = new Set(CURRICULUM.map((a) => a.id));
-  for (const asset of Object.values(RECONNECT_SESSION_ASSET)) {
+  for (const asset of Object.values(RECONNECT_SESSION_ASSETS).flat()) {
     assert.ok(ids.has(asset), `${asset} is not in the curriculum`);
   }
 });
@@ -95,5 +98,27 @@ test('the crosswalk is defined ONCE', () => {
   // Two copies is how they drift, and a drifted copy here means a Session that closes but never locks.
   const act = readFileSync(new URL('../app/reconnect/actions.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(act.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, ''),
-    /const RECONNECT_SESSION_ASSET/, 'the action must import the map, not declare its own');
+    /const RECONNECT_SESSION_ASSETS/, 'the action must import the map, not declare its own');
+});
+
+test('a Session closes EVERY curriculum row it covers', () => {
+  // Reconnect has seven rows and three Sessions: the rows are Greg's assets, the Sessions are what a member
+  // sits down to do. Close a subset and the forecast lights a row that has already been worked — which is what
+  // put "Nice work — The Doors is next" directly under "You finished Identity Excavation today".
+  assert.deepEqual(RECONNECT_SESSION_ASSETS.r2, ['RCN-FDR', 'RCN-EXC']);
+  assert.deepEqual(RECONNECT_SESSION_ASSETS.r3, ['RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']);
+
+  // Every non-daily Reconnect row must be covered by exactly one Session, or it can never be closed at all.
+  const covered = Object.entries(RECONNECT_SESSION_ASSETS)
+    .filter(([k]) => k !== 'checkpoint') // an alias for r4, not a fifth Session
+    .flatMap(([, v]) => v);
+  const rows = CURRICULUM.filter((a) => a.phase === 'reconnect' && a.layer !== 'Daily').map((a) => a.id);
+  for (const id of rows) assert.ok(covered.includes(id), `${id} belongs to no Session — nothing can ever close it`);
+  assert.equal(new Set(covered).size, covered.length, 'a row claimed by two Sessions would close early');
+});
+
+test('the Session\'s own row closes LAST, so the dashboard names the Session', () => {
+  // "You finished X today" reads the most recently closed row. Closing in array order named the covered row
+  // instead of the Session — "You finished Identity Excavation today" about a Session called The Doors.
+  assert.match(actions, /\.reverse\(\)/, 'covered rows close first, the Session\'s own row last');
 });

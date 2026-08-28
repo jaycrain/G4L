@@ -82,12 +82,19 @@ export function keyFromForecast(
  * route-backed in the curriculum (the Mirror), while the Doors and the Drift Quiz are step-authored assets with
  * no route to read the key off. So the crosswalk is stated once, here, and imported by everything that needs it.
  */
-export const RECONNECT_SESSION_ASSET: Record<string, string> = {
-  r1: 'RCN-IDQ',
-  r2: 'RCN-EXC',
-  r3: 'RCN-DFT',
-  r4: 'RCN-CHK',
-  checkpoint: 'RCN-CHK',
+export const RECONNECT_SESSION_ASSETS: Record<string, string[]> = {
+  r1: ['RCN-IDQ'],
+  // A SESSION COVERS MORE THAN ONE CURRICULUM ROW. Reconnect has seven rows and three Sessions, because the rows
+  // are Greg's ASSETS and the Sessions are what a member sits down to do. The Doors work is both "The Doors"
+  // (RCN-FDR) and "Identity Excavation" (RCN-EXC) — one conversation, two authored assets.
+  //
+  // Closing only one of them is what left Jay stuck: R2 marked RCN-EXC done, RCN-FDR stayed open, and the
+  // forecast lit the next OPEN row — "Nice work — The Doors is next", pointing him back into the Session he had
+  // just finished, directly under a line saying he had finished it. R3 would have done the same across three.
+  r2: ['RCN-FDR', 'RCN-EXC'],
+  r3: ['RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST'],
+  r4: ['RCN-CHK'],
+  checkpoint: ['RCN-CHK'],
 };
 
 export function curriculumIdFor(key: SessionKey): string | undefined {
@@ -101,7 +108,8 @@ export function curriculumIdFor(key: SessionKey): string | undefined {
   // finished the Mirror could re-enter it and take the 24-item instrument again — which is exactly what happened
   // to Jay, four times, writing three spurious retakes against a 60-day measurement. (Jay: "Aren't the Sessions
   // linear, once you're through you can't get back to it?" They are. This is what stopped them being.)
-  if (arc === 'reconnect') return RECONNECT_SESSION_ASSET[key];
+  // The FIRST row is the Session's own identity — the one the forecast and the read-only check look up.
+  if (arc === 'reconnect') return RECONNECT_SESSION_ASSETS[key]?.[0];
   // The route's LAST SEGMENT, which is the key itself except for the Rewire checkpoint — keyed
   // 'rewire-checkpoint' here and routed '/rewire/{memberId}/checkpoint'. Matching the arc as well as the segment
   // keeps 'checkpoint' from resolving to Rebuild's or Reclaim's.
