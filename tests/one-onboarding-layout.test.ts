@@ -34,12 +34,22 @@ test('the left margin has ONE definition and every slide reads it', () => {
   assert.match(wrap, /var\(--onbwel-gutter\)/, 'the wrap must start at the shared gutter');
 });
 
-test('there is one headline scale, not two', () => {
-  const heads = [...CSS.matchAll(/\.onbwel-head \{([^}]*)\}|\.onbwel-d-head \{([^}]*)\}/g)]
+test('there is one headline scale per screen size — never one per slide', () => {
+  // WHAT THIS GUARDS IS SLIDE 1, not responsiveness. Slide 1 used to be its own container with its own headline
+  // scale (.onbwel-d-head), which is why its block measured differently from slides 2-5 and sat a few pixels
+  // off the shared grid. Two scales at the SAME width is the bug.
+  //
+  // A step-down inside a media query is a different thing entirely and is allowed: the short-phone band drops
+  // the headline to 32px to buy the vertical room that keeps all five buttons on the same line at 375x667.
+  // The first version of this test could not tell those apart and failed on the responsive step, which would
+  // have argued for deleting a fix that was working.
+  const topLevel = CSS.replace(/@media[^{]*\{(?:[^{}]|\{[^{}]*\})*\}/g, '');
+  const heads = [...topLevel.matchAll(/\.onbwel-head \{([^}]*)\}|\.onbwel-d-head \{([^}]*)\}/g)]
     .map((m) => (m[1] ?? m[2] ?? '').match(/font-size:\s*([^;]+)/)?.[1]?.trim())
     .filter(Boolean);
   assert.ok(heads.length >= 1, 'no headline rule found');
   assert.equal(new Set(heads).size, 1, `two headline scales produce two block heights: ${heads.join(' vs ')}`);
+  assert.doesNotMatch(CSS, /\.onbwel-d-head \{/, 'a slide-1-only headline scale is the original misalignment');
 });
 
 test('the icon sits in one fixed-height box on every slide', () => {
@@ -49,12 +59,22 @@ test('the icon sits in one fixed-height box on every slide', () => {
   assert.doesNotMatch(CSS, /\.onbwel-art-(rings|progress)\s*\{/, 'per-slide icon sizes are what "vary wildly" meant');
 });
 
-test('the CTA lands at the same y — a fixed copy zone above it', () => {
-  assert.match(CSS, /--onbwel-copy-h:/, 'the content zone needs a declared height');
+test('the CTA lands at the same y — anchored to the bottom, not floated on a measured zone', () => {
+  // THE MECHANISM CHANGED AND THIS TEST HAD TO CHANGE WITH IT. It used to assert a declared --onbwel-copy-h,
+  // because a fixed zone above the button was how the button was held still. That zone had to equal the tallest
+  // slide's height at every breakpoint, it never did, and the slide that exceeded it moved the whole centred
+  // block: art and headline up, button down.
+  //
+  // Anchoring needs no measurement. The proof is a render, not a rule — five slides, one button position, at
+  // every viewport swept on 2026-08-28.
   const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
-  // min-height, NOT height: a phone that genuinely overflows must grow and scroll rather than clip the copy.
-  assert.match(copy, /min-height:\s*var\(--onbwel-copy-h\)/);
-  assert.doesNotMatch(copy, /[^-]height:\s*var\(--onbwel-copy-h\)/, 'a hard height would clip on a narrow screen');
+  assert.match(copy, /flex:/, 'the zone takes up the slack instead of declaring a height');
+  assert.doesNotMatch(copy, /min-height:|[^-]height:/, 'any declared height here reintroduces the drift');
+
+  // Centring is what turned a taller block into movement at BOTH ends. Anchored, a taller block grows downward
+  // into the slack and nothing above it moves.
+  const shell = CSS.match(/\.onbwel \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(shell, /overflow-y:\s*auto/, 'a screen too short must scroll rather than clip');
 });
 
 test('slide 1 shows no dots but reserves their space', () => {

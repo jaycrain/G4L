@@ -68,14 +68,12 @@ test('the welcome shell scrolls itself, and reserves room for the fixed footer',
   assert.ok(clear >= 44, `the footer is ~2 lines plus padding; ${clear}px is not enough clearance`);
 });
 
-test('the copy zone is sized to real content, not a round number', () => {
-  // 300px was a guess and left 79px of dead air on the TALLEST slide — "the CTA is too low. Plenty of white space
-  // to repurpose" (Jay). Measured: slide 4's body is 221px at desktop. The fixed-CTA promise Donna asked for
-  // survives; the slack does not.
-  const h = Number(CSS.match(/--onbwel-copy-h:\s*(\d+)px/)![1]);
-  assert.ok(h >= 221, `must fit the tallest slide's content (221px); got ${h}px`);
-  assert.ok(h <= 260, `${h}px reintroduces the dead space the measurement removed`);
-});
+// RETIRED WITH THE VARIABLE IT GUARDED. This asserted that --onbwel-copy-h was an odd, measured number rather
+// than a round guess — a good rule for a value that had to equal the tallest slide's real height. The value no
+// longer exists: the zone flexes and the button anchors, so there is nothing left to measure and nothing left to
+// round. The invariant that replaced it is 'the copy zone flexes and the wrap anchors' below.
+//
+// The one surviving number of this kind is the footer reserve, which is checked by its own test further down.
 
 // A LAYOUT VARIABLE OVERRIDDEN IN A MEDIA QUERY MUST BE FOUND WHEN THE BASE ONE CHANGES.
 //
@@ -88,13 +86,16 @@ test('the copy zone is sized to real content, not a round number', () => {
 // the base value forces a decision about each override rather than silently missing it.
 test('every --onbwel- variable override is accounted for', () => {
   const overrides = [...CSS.matchAll(/--onbwel-([a-z-]+):\s*([^;]+);/g)].map((m) => `${m[1]}=${m[2].trim()}`);
-  // gutter, measure, icon-h, copy-h, foot-clear at :root — plus copy-h once for mobile. A NEW entry here means
-  // somebody added an override; read it and decide, do not just bump the count.
+  // --onbwel-copy-h IS GONE. It was a hand-measured height for the tallest slide, one per breakpoint, and it was
+  // wrong at every breakpoint it ever had; the copy zone flexes now and the button is anchored to the bottom
+  // instead. What remains is the icon box, which is a genuine per-size design choice, in four bands:
+  //   90px base · 45px phone · 72px laptop (801–900 tall) · 24px short phone · 56px short laptop (≤800 tall)
+  // A NEW entry here means somebody added an override; read it and decide, do not just bump the count.
   assert.deepEqual(
     overrides,
-    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px',
+    ['gutter=8vw', 'measure=640px', 'icon-h=90px',
      'foot-clear=calc(52px + env(safe-area-inset-bottom, 0px))',
-     'copy-h=316px', 'icon-h=45px'],
+     'icon-h=45px', 'icon-h=72px', 'icon-h=24px', 'icon-h=56px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
 });
@@ -103,20 +104,50 @@ test('every --onbwel- variable override is accounted for', () => {
 // and both are correct. A narrow column wraps text to more lines (so the zone needs more room) and makes a
 // fixed-height mark loom (so it needs less). Pinned together because "make it all smaller on mobile" is the
 // plausible-sounding change that would break one of them.
-test('the art is half height on mobile, while the copy zone is taller', () => {
+test('the art is half height on mobile, and smaller again when the screen is short', () => {
   const icons = [...CSS.matchAll(/--onbwel-icon-h:\s*(\d+)px/g)].map((m) => Number(m[1]));
-  assert.equal(icons.length, 2, 'a base height and a mobile override');
-  assert.equal(icons[1], Math.round(icons[0]! / 2), 'mobile is half the base — Jay, 2026-08-28');
+  assert.equal(icons.length, 5, 'base, phone, laptop band, short phone, short laptop');
+  const [base, phone] = icons;
+  // A narrow column makes a fixed-height mark loom — 90px reads fine against a wide column and dominates a
+  // 393px one. This halving is Jay's, 2026-08-28.
+  assert.equal(phone, Math.round(base! / 2), 'the phone override is half the base');
+  // Every other band exists to buy vertical room on a screen too short to hold the tallest slide, so each one
+  // must be SMALLER than the size it shadows. A band that grew the icon would be spending the height it was
+  // added to save.
+  for (const v of icons.slice(2)) assert.ok(v < base!, `a short-screen band must not exceed the base (${v}px)`);
 });
 
-test('the mobile copy zone is TALLER than desktop, because the copy wraps to more lines', () => {
-  const all = [...CSS.matchAll(/--onbwel-copy-h:\s*(\d+)px/g)].map((m) => Number(m[1]));
-  assert.equal(all.length, 2, 'one base value and one mobile override');
-  const [base, mobile] = all;
-  // Measured at 393px: slide 4's body is 304px there against 221px at desktop. A mobile value SMALLER than the
-  // base would mean somebody copied the desktop number across without re-measuring.
-  assert.ok(mobile! > base!, `mobile (${mobile}px) must exceed desktop (${base}px) — narrow columns wrap taller`);
-  assert.ok(mobile! >= 304, `must fit the tallest mobile slide (304px); got ${mobile}px`);
+// THE BUTTON'S POSITION IS A PROPERTY OF THE VIEWPORT, NOT OF THE COPY.
+//
+// This replaces "the mobile copy zone is TALLER than desktop", which policed the two hand-measured heights that
+// used to hold the button still. Both were wrong in the end — slide 4 needed 243px against desktop's 232 and
+// 326px against the phone's 316 — so on every device four screens agreed and the fifth sat 5px off, art and
+// headline drifting up as the button drifted down, because the block was centred and its height moved with it.
+//
+// Anchored, there is no number to get wrong: the top group sits at the top, the button sits at the bottom, and
+// the copy zone is whatever is left. Measured across all five slides after the change: 507 at 375x667, 630 at
+// 393x852, 710 at 430x932, 802 at 768x1024, 958 at 820x1180, 1144 at 1024x1366, 530 at 1280x720, 610 at
+// 1440x820, 690 at 1440x900 — one value per viewport, five slides each.
+test('the copy zone flexes and the wrap anchors — nothing measures the tallest slide any more', () => {
+  // COMMENTS STRIPPED. The rule that replaced it explains what it replaced BY NAME, and the first version of
+   // this assertion failed on that explanation — the second time in this file a guard has punished writing the
+   // reason down. Assert against declarations, never against prose.
+  assert.doesNotMatch(CSS.replace(/\/\*[\s\S]*?\*\//g, ''), /--onbwel-copy-h/,
+    'a fixed copy height is the mechanism that moved the button; it does not come back');
+
+  const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(copy, /flex:\s*1 0 auto/,
+    'grow into the slack, never shrink below the copy — shrinking clips the last lines instead of scrolling');
+
+  const wrap = CSS.match(/\.onbwel-wrap \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  assert.match(wrap, /flex-direction:\s*column/, 'the wrap is the column the anchoring depends on');
+  assert.match(wrap, /min-height:\s*100dvh/, 'and it must fill the screen, or there is no slack to absorb');
+
+  // Slides 2–5 nest everything inside .onbwel-heart, so the column has to pass through it or only slide 1
+  // anchors — which would be the same bug, visible on four screens out of five.
+  const heart = CSS.match(/\.onbwel-heart \{([^}]*)\}/)?.[1] ?? '';
+  assert.match(heart, /flex:\s*1 1 auto/, '.onbwel-heart must carry the column into slides 2-5');
+  assert.match(heart, /min-height:\s*0/, 'so a screen too short hands its overflow to the shell scroll');
 });
 
 // THE LOG-IN LINE IS NOT DECORATION — "/" lands on this screen, so it is the only way through for someone who
@@ -173,8 +204,7 @@ test('the footer reserve includes the safe-area inset the footer itself pads by'
 // and the query was wrong. That is why this asserts the breakpoint.
 test('phone-only proportions live below the column breakpoint, not the track breakpoint', () => {
   const block = CSS.match(/@media \(max-width: 740px\) \{[\s\S]*?\n\}/)![0];
-  assert.match(block, /--onbwel-copy-h/, 'the copy zone is a wrapping concern');
-  assert.match(block, /--onbwel-icon-h/, 'and so is a fixed-height mark in a narrow column');
+  assert.match(block, /--onbwel-icon-h/, 'a fixed-height mark in a narrow column is a wrapping concern');
 
   // And they must NOT also be set at the track breakpoint, which would shadow this one for 740–1000px.
   //

@@ -3013,7 +3013,6 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   /* The content zone, sized to the TALLEST slide's actual content — measured, not guessed: slide 4 is 221px at
      desktop, and 300px left 79px of dead air on even that one (Jay: "the CTA is too low. Plenty of white space
      to repurpose"). 232px keeps the fixed-CTA promise Donna asked for and hands ~68px back to every slide. */
-  --onbwel-copy-h: 232px;
   /* The confidential footer is position:fixed, z-index 40, translucent white. Anything at the bottom of the
      content sits UNDER it — which is how the "Start looking" button ended up greyed out behind the copyright
      line on both a phone and a MacBook Air.
@@ -3035,13 +3034,38 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-wrap {
   width: 100%; max-width: calc(var(--onbwel-measure) + var(--onbwel-gutter));
   margin: 0; /* was `0 auto` — the centering that made slides 2–5 sit ~246px right of slide 1 */
+  /* THE BOTTOM PADDING IS THE BREATHING ROOM, and it is spent from slack rather than taken from the copy.
+     34px put the button and the log-in line right up against the footer on every device while a large blank
+     sat above them (Jay, 2026-08-28: "plenty of white space across screens to borrow pixels against"). The
+     copy zone below flexes, so raising this moves the button UP and the blank absorbs it — no screen loses a
+     word of copy for it. */
   padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px
-           calc(34px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
+           calc(76px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
+  /* A COLUMN OF EXACTLY ONE SCREEN — this is what stops the button moving between slides.
+     The block used to be centred and sized by its content, so any slide whose copy ran a line long made the
+     whole block taller and the centring pushed EVERYTHING: on slide 4 the art and headline rose 5px while the
+     button dropped 5px. Five screens, four of them agreeing and one visibly off, at every width.
+     Anchored instead of centred: the art and headline sit at the top, the button and the line under it sit at
+     the bottom, and .onbwel-copy takes up the slack between them. The button's y is now a property of the
+     VIEWPORT, not of how long that slide's copy happens to be — so it cannot drift, at any width, on any
+     device, and no per-breakpoint measurement keeps it honest. */
+  display: flex; flex-direction: column; min-height: 100dvh;
 }
-/* The copy zone is a fixed box so the CTA below it lands identically on every slide. `min-height`, not `height`:
-   a phone that genuinely overflows must grow and scroll rather than clip — the button moving on a 375px screen is
-   a worse outcome than losing the copy under it. */
-.onbwel-copy { min-height: var(--onbwel-copy-h); }
+/* Slides 2–5 nest their art/headline/copy/button inside .onbwel-heart, so the column has to pass THROUGH it or
+   the slack lands in the wrong box and only slide 1 anchors. min-height:0 lets it shrink below its content on a
+   screen too short to hold it, which is what hands the overflow to .onbwel's scroll instead of clipping it. */
+.onbwel-heart { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+/* THE COPY ZONE IS THE SLACK, not a fixed box. It was `min-height: var(--onbwel-copy-h)` — one hand-measured
+   height per breakpoint, meant to hold the tallest slide so the button below it landed in the same place.
+   That number was wrong three times: 232px at desktop (slide 4 needs 243), 316px on the phone (slide 4 needs
+   326), and for a while the phone's number was being handed to every iPad. Each fix was a new measurement,
+   and a measurement goes stale the moment anyone edits a sentence.
+   Flexing, it holds whatever that slide's copy needs and gives the rest of the screen back — and the button is
+   anchored below it either way. Nothing to re-measure when the copy changes. */
+/* `1 0 auto` — GROW into the slack, never SHRINK below the copy. With shrink enabled a screen too short to hold
+   the text would compress this box under its content and clip the bottom lines instead of handing the overflow
+   up to .onbwel's scroll. Losing a sentence silently is worse than a scrollbar. */
+.onbwel-copy { flex: 1 0 auto; }
 /* Slide 1 shows no dots but reserves their height, so all five headlines start at the same y. Height mirrors
    .onbwel-dots exactly (8px dot + 30px margin) — if that changes, this follows it. */
 .onbwel-dots-spacer { height: 8px; margin-bottom: 30px; }
@@ -3233,12 +3257,67 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 @media (max-width: 740px) {
   :root {
     /* Measured at 393px: the tallest slide's body is 304px, because a narrow column wraps to more lines. */
-    --onbwel-copy-h: 316px;
     /* And the same narrowness makes a fixed-height mark loom: 90px reads fine against a wide column and
        dominates this one. Donna's icon-box rule is untouched — one fixed height, variable width, equal visual
        weight — only the number changes. */
     --onbwel-icon-h: 45px;
   }
+}
+
+/* ── SHORT WINDOWS — the constraint here is HEIGHT, so the query is height ────────────────────────────────────
+   The button holds its position by being anchored to the bottom with the copy zone absorbing the slack. That
+   only works while there IS slack: at 1280x720 the tallest slide ran out, the copy pushed the button down by
+   whatever that slide needed, and the jump came straight back — 525 / 559 / 498 / 588 / 554 across the five.
+   No amount of anchoring fixes a screen the content does not fit on; the content has to cost less height.
+   So this trims the three things that are pure spacing — the icon box, the top padding, the button's own top
+   margin — and gives back some of the bottom breathing room, which is the one thing here that is a preference
+   rather than a requirement. The copy itself is never touched.
+
+   SCOPED `min-width: 741px` so it cannot reach a phone. Phones are governed by the column-width rule above and
+   are tall in this dimension anyway; without the floor, a 393x852 phone matches `max-height: 900px` and would
+   have its 45px icon overwritten by this block's 64px — the same "one fact, two sites" collision this file has
+   already paid for twice. */
+/* TWO BANDS, because "short" is not one thing. A 720px window has no spare height at all and every pixel goes
+   to fitting the tallest slide; an 820px laptop had 95px of slack going unspent while its button still sat
+   close to the footer. One band would either squeeze the laptop for no reason or overflow the small window. */
+@media (min-width: 741px) and (min-height: 801px) and (max-height: 900px) {
+  :root { --onbwel-icon-h: 72px; }
+  .onbwel-wrap {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 32px);
+    padding-bottom: calc(64px + var(--onbwel-foot-clear));
+  }
+  .onbwel-cta { margin-top: 26px; }
+}
+/* SHORT PHONES — a 375x667 handset, which is the current SE. It is the hardest case in the file: the narrow
+   column wraps the copy to the most lines it ever takes, and the screen is the shortest we support, so the two
+   constraints pull against each other harder here than anywhere else.
+   Kept separate from the tablet bands rather than folded in, because a phone's levers are different: its icon
+   is already 45px (the tablet bands start at 72), and the body type can afford to come down a step at this
+   width where it cannot on a wide column. */
+@media (max-width: 740px) and (max-height: 750px) {
+  /* These numbers are the tightest in the file and they are not arbitrary: each step down was measured against
+     the tallest slide until it stopped overflowing 375x667. At 32px icon / 24px bottom / 18px dots it still ran
+     over by 23px, so four screens agreed and the fifth sat 23px lower. */
+  :root { --onbwel-icon-h: 24px; }
+  .onbwel-wrap {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    padding-bottom: calc(14px + var(--onbwel-foot-clear));
+  }
+  .onbwel-head { font-size: 32px; }
+  .onbwel-body { font-size: 16px; line-height: 1.5; margin-top: 14px; }
+  .onbwel-cta { margin-top: 18px; }
+  .onbwel-dots, .onbwel-dots-spacer { margin-bottom: 12px; }
+}
+
+@media (min-width: 741px) and (max-height: 800px) {
+  /* 56px, not 64: at 64 the tallest slide still overran a 720px window by 8px, so four screens agreed and the
+     fifth sat 8px lower — the same defect at a smaller amplitude, which is the version that ships unnoticed. */
+  :root { --onbwel-icon-h: 56px; }
+  .onbwel-wrap {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
+    padding-bottom: calc(44px + var(--onbwel-foot-clear));
+  }
+  .onbwel-cta { margin-top: 22px; }
 }
 
 @media (max-width: 1000px) {
