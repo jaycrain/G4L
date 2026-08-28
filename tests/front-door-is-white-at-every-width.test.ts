@@ -62,7 +62,8 @@ test('the welcome shell scrolls itself, and reserves room for the fixed footer',
   assert.match(wrap, /--onbwel-foot-clear/,
     'the bottom padding must reserve the fixed footer, or the CTA lands underneath it');
 
-  const clear = Number(CSS.match(/--onbwel-foot-clear:\s*(\d+)px/)![1]);
+  // The base number inside the calc — the reserve is `calc(<base> + env(safe-area-inset-bottom))` now.
+  const clear = Number(CSS.match(/--onbwel-foot-clear:\s*calc\((\d+)px/)![1]);
   assert.ok(clear >= 44, `the footer is ~2 lines plus padding; ${clear}px is not enough clearance`);
 });
 
@@ -90,7 +91,8 @@ test('every --onbwel- variable override is accounted for', () => {
   // somebody added an override; read it and decide, do not just bump the count.
   assert.deepEqual(
     overrides,
-    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px', 'foot-clear=52px',
+    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px',
+     'foot-clear=calc(52px + env(safe-area-inset-bottom, 0px))',
      'copy-h=316px', 'icon-h=45px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
@@ -132,4 +134,20 @@ test('the log-in line clears the fixed footer, on the same reserve as the CTA', 
   assert.match(rule, /bottom:\s*calc\(var\(--onbwel-foot-clear\)/,
     'measured from the footer reserve, never from the viewport edge');
   assert.doesNotMatch(rule, /bottom:\s*clamp/, 'a viewport-relative offset cannot know how tall the footer wrapped');
+});
+
+// THE FOOTER RESERVE MUST KNOW ABOUT THE NOTCH.
+//
+// `body.onbwel-bleed .confidential-footer` pads its bottom with `calc(5px + env(safe-area-inset-bottom))` — so on
+// a home-indicator iPhone the bar is ~34px taller than anywhere else. env() resolves to 0 in a headless browser,
+// which is why six viewports all reported the log-in line clearing and Jay's actual phone still had it hidden.
+// Every measurement I could take was blind to the one thing that mattered.
+//
+// The reserve includes the inset now. This is the only guard in the file that protects against a condition the
+// test runner cannot reproduce, which is precisely why it is written as a rule about the CSS rather than a
+// measurement of a render.
+test('the footer reserve includes the safe-area inset the footer itself pads by', () => {
+  const decl = CSS.match(/--onbwel-foot-clear:\s*([^;]+);/)![1];
+  assert.match(decl, /env\(safe-area-inset-bottom/,
+    'the bar grows by the inset, so the reserve must too — or the notch eats whatever sits above it');
 });

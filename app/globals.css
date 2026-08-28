@@ -3016,8 +3016,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   --onbwel-copy-h: 232px;
   /* The confidential footer is position:fixed, z-index 40, translucent white. Anything at the bottom of the
      content sits UNDER it — which is how the "Start looking" button ended up greyed out behind the copyright
-     line on both a phone and a MacBook Air. Reserved here so no slide's CTA can reach it. */
-  --onbwel-foot-clear: 52px;
+     line on both a phone and a MacBook Air.
+     THE INSET IS PART OF THE FOOTER'S HEIGHT, so it is part of the reserve. That bar's own padding is
+     `calc(5px + env(safe-area-inset-bottom))` — on a home-indicator iPhone that is ~34px this rule could not
+     see, because env() resolves to 0 in a headless browser. So every measurement I took said the log-in line
+     cleared, and on Jay's actual phone it was still behind the bar. The button survived only because the wrap's
+     padding happened to add the inset separately; the log-in line, keyed to this variable alone, did not.
+     One reserve, and it knows about the notch. */
+  --onbwel-foot-clear: calc(52px + env(safe-area-inset-bottom, 0px));
 }
 .onbwel {
   min-height: 100dvh; max-height: 100dvh; overflow-y: auto;
@@ -3030,7 +3036,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   width: 100%; max-width: calc(var(--onbwel-measure) + var(--onbwel-gutter));
   margin: 0; /* was `0 auto` — the centering that made slides 2–5 sit ~246px right of slide 1 */
   padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px
-           calc(env(safe-area-inset-bottom, 0px) + 34px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
+           calc(34px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
 }
 /* The copy zone is a fixed box so the CTA below it lands identically on every slide. `min-height`, not `height`:
    a phone that genuinely overflows must grow and scroll rather than clip — the button moving on a 375px screen is
@@ -3109,7 +3115,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
      This is the CTA's footer bug in a second element. I reserved room for the button and left the one thing
      underneath it still pinned to the viewport edge — so keying both to --onbwel-foot-clear is the fix, not
      another hand-picked offset. */
-  position: absolute; left: var(--onbwel-gutter); bottom: calc(var(--onbwel-foot-clear) + 10px); margin: 0;
+  position: absolute; left: var(--onbwel-gutter); bottom: calc(var(--onbwel-foot-clear) + 18px); margin: 0;
   color: var(--muted-grey); font-size: 14px;
 }
 .onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
