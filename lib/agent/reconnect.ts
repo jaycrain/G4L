@@ -21,7 +21,7 @@ import { doorProvenance } from './door-provenance.ts';
 import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
+import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } from './onboarding-intent.ts';
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
@@ -185,6 +185,21 @@ const NOTHING_LEFT_TO_ASK = 'Take your time — say more whenever you\'re ready.
  *  turn. `prompt` is what the chips answer — shown with them, never appended to the Companion's words. */
 function beatConfirmExpectation(prompt: string, set: BeatConfirmSet = 'default'): Expectation {
   return { kind: 'beat_confirm', choices: beatConfirmChoices(set).map((c) => ({ value: c.value, label: c.label })), prompt, set };
+}
+
+/**
+ * The same offer, WITHHELD when the member has just said they are leaving (Donna, 2026-08-27: "the rote buttons
+ * to click at the end which were out of context as I had just said I would step away").
+ *
+ * ONE HELPER because two stages offer these chips and both had the identical gap — drift and window. A guard
+ * written at one call site is how this file already learned that Reconnect leaked the Doors board: two surfaces,
+ * one of which knew the rule.
+ *
+ * Returns undefined rather than a different expectation: the Companion's reflection still lands, the member can
+ * still type, and awaitingConfirm is left to the caller — this decides what is on screen, not where we are.
+ */
+function beatConfirmUnlessLeaving(memberMessage: string, prompt: string, set: BeatConfirmSet = 'default'): Expectation | undefined {
+  return memberSteppingAway(memberMessage) ? undefined : beatConfirmExpectation(prompt, set);
 }
 
 function withQuestion(modelText: string, probe: string | null): string {
@@ -722,7 +737,7 @@ const driftStage: StageDef = {
       if (reflected) {
         b.reply = reflected;
         b.awaitingConfirm = true;
-        b.expects = beatConfirmExpectation(DRIFT_CONFIRM);
+        b.expects = beatConfirmUnlessLeaving(b.memberMessage, DRIFT_CONFIRM);
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;
@@ -853,7 +868,7 @@ const windowStage: StageDef = {
         b.awaitingConfirm = true;
         // THE RULING, AS A TAP. The prompt rides on the chips rather than being written into the Companion's turn,
         // so a model that closed its own beat is not contradicted by a question it did not ask.
-        b.expects = beatConfirmExpectation(WINDOW_CONFIRM);
+        b.expects = beatConfirmUnlessLeaving(b.memberMessage, WINDOW_CONFIRM);
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;

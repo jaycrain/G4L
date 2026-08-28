@@ -46,6 +46,29 @@ export function memberDeflecting(message: string): boolean {
   return memberWantsToWrap(m) || DEFLECT_RE.test(m);
 }
 
+// LEAVING IS NOT THE SAME AS BEING DONE WITH A BEAT, and we had no signal for it.
+//
+// Donna, 2026-08-27: "It did an amazing job of having an understanding conversation with me. But it did follow on
+// with the rote buttons to click at the end which were out of context as I had just said I would step away."
+//
+// The Companion's reply was right; what followed it was a ruling to make. `memberDeflecting` covers "we're done
+// here", "moving on" — closing THIS beat — and none of it covers someone saying they will come back later.
+// Someone stepping away has not declined to answer; they are gone, and asking for a decision on the way out is
+// the moment a warm conversation turns into a form.
+//
+// SUPPRESSION ONLY. This never advances a stage, never stores anything, and never ends a Session — it withholds
+// the chips for one turn. The failure direction is therefore harmless: a false positive costs a tap they could
+// have had, and they can still type. A false negative is what she already saw.
+// THE MODAL IS REQUIRED, not optional. Written with `i(...)?` first, so a bare "I go" matched and "I go running
+// most mornings" — a member's own content, in the stage where they describe who they were — read as an exit.
+// Caught by this file's own false-positive test before it ran anywhere. Leaving is always announced with an
+// intention ("I'll", "I need to"), never with a bare present tense.
+const STEPPING_AWAY_RE =
+  /\b(step(ping)? away|i(?:'?ll| will| need to| have to| gotta| got to| should) +(?:go|run|head out|leave|stop)\b|i'?ll be back|come back (?:to (?:this|it)|later)|pick (?:this|it) up (?:later|tomorrow|again)|(?:that'?s |this is )?enough for (?:now|today)|another time|talk (?:later|tomorrow)|good ?night|calling it (?:a night|here))\b/i;
+export function memberSteppingAway(message: string): boolean {
+  return STEPPING_AWAY_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
 // The member signalling the fade story is WHOLE ("that's the whole of it", "no more", "more or less it for now").
 // Until this fires (or a turn adds nothing new), the gap stage keeps RECEIVING so a multi-event story fully
 // surfaces (and its Doors with it) before we reflect and advance.
