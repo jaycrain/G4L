@@ -22,7 +22,7 @@ import type { KeeperProposal } from '../../lib/agent/harvest.ts';
 // Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
 // stage it closed at, not the member's current one.
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
-import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
+import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
@@ -290,14 +290,14 @@ export default function ReconnectChat({
         )}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
-        {expects?.kind === 'doors_board' && <DoorsBoard expects={expects} disabled={pending || !state} onSubmit={(p) => void submit(p)} />}
-        {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {!done && expects?.kind === 'doors_board' && <DoorsBoard expects={expects} disabled={pending || !state} onSubmit={(p) => void submit(p)} />}
+        {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
         {/* THE RULING, AS A TAP (Jay, 2026-08-25). The engine used to write this question into the Companion's turn
             whenever the model's text lacked a "?" — which fired on closes, because a close has no question BY
             DESIGN. He answered "Absolutely" and was asked the same thing again. The prompt now rides on the chips,
             so the model's words are never contradicted by a question it did not ask, and the member still has an
             unambiguous way to rule. The composer stays: typed replies fall through to the classifier as before. */}
-        {expects?.kind === 'beat_confirm' && (
+        {!done && expects?.kind === 'beat_confirm' && (
           <div className="beatc">
             {expects.prompt && <span className="beatc-prompt">{expects.prompt}</span>}
             <div className="beatc-chips">
@@ -318,7 +318,13 @@ export default function ReconnectChat({
       </div>
       {error && <p className="error">{error}</p>}
       {/* The text box is hidden on an administered turn (the chips above ARE the input); it returns on conversational turns. */}
-      {showComposer(!!expects, awaitingContinue) && (
+      {/* AND NOTHING TO TYPE INTO. The composer stayed live after the Session closed, so Jay read the close,
+          tapped "Got it", and was left on a screen that still invited a reply — then typing one produced
+          "Something went wrong": the Session was finished and cleared, so there was no conversation left for his
+          turn to join. He was stuck with no way out but the browser.
+          Every other arc already hides its input at `done`; Reconnect never had to, because it was one arc that
+          ran into the ceremony. Three Sessions that each END is a different thing. */}
+      {!done && showComposer(!!expects, awaitingContinue) && (
         <form className="chat-input" onSubmit={send}>
           <textarea
             value={input}
@@ -346,6 +352,16 @@ export default function ReconnectChat({
       {awaitingContinue && (
         <div className="chat-continue">
           <button type="button" onClick={() => setCeremony(pendingCeremony)}>See where that landed →</button>
+        </div>
+      )}
+      {/* THE HAND HOME. Every other arc ends on this; Reconnect did not, because as one continuous conversation
+          its only ending was the ceremony and the ceremony carries its own. Now R1, R2 and R3 each finish and
+          return the member to the dashboard, and without this the end of a Session was a dead end.
+          notifySessionComplete raises the workspace's "here's what you built" receipt, which owns the navigation
+          — the same event Rewire, Rebuild and Reclaim fire. */}
+      {done && !awaitingContinue && !ceremony && (
+        <div className="chat-continue">
+          <button type="button" onClick={() => notifySessionComplete()}>Continue →</button>
         </div>
       )}
     </div>

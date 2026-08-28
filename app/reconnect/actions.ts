@@ -156,6 +156,18 @@ const RECONNECT_STAGE_ASSET: Record<string, string> = {
   measurement: 'RCN-IDQ', // The IDQ — the baseline ID Score
 };
 
+// A SESSION'S OWN ASSET, for the close that happens when the Session ENDS rather than when a stage is left.
+// This is the gap the split created: closes were detected by watching `from !== to`, and R1 now finishes ON the
+// measurement stage — `b.complete = true` with the stage unchanged — so the boundary watcher returned early and
+// the IDQ was never recorded as closed. The forecast reads closed sessions to decide what is next, so a member
+// who finished the Mirror was sent straight back into it. (Jay's walk, 2026-08-28.)
+const RECONNECT_SESSION_ASSET: Record<ReconnectSession, string> = {
+  r1: 'RCN-IDQ',
+  r2: 'RCN-EXC',
+  r3: 'RCN-DFT',
+  checkpoint: 'RCN-CHK',
+};
+
 /**
  * R3 — persist the Legacy Letter once the member has confirmed it.
  *
@@ -243,8 +255,14 @@ async function persistLegacyLetter(db: Db, memberId: string, turn: Turn): Promis
   }
 }
 
-async function persistReconnectSessionCloses(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+async function persistReconnectSessionCloses(db: Db, memberId: string, prev: ConvState, turn: Turn, session: ReconnectSession = 'r2'): Promise<void> {
   try {
+    // THE SESSION ENDED — close IT, whatever the stage did. Checked before the boundary logic because a Session
+    // can now finish without leaving its stage, which is the case the boundary watcher below cannot see.
+    if (turn.complete) {
+      const own = RECONNECT_SESSION_ASSET[session];
+      if (own) await markSessionClosed(db, memberId, own);
+    }
     const from = String(prev.stage ?? '');
     const to = String(turn.state.stage ?? '');
     if (from === to) return;
@@ -468,7 +486,7 @@ export async function reconnectTurnAction(
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
     await persistDoorsBoard(db, memberId, turn); // R2 — her Doors board taps, before anything reads the set
     await persistLegacyLetter(db, memberId, turn); // R3 — the member's own letter, dated in THEIR timezone
-    await persistReconnectSessionCloses(db, memberId, state, turn); // record the Session closes the arc bypass dropped
+    await persistReconnectSessionCloses(db, memberId, state, turn, session); // record the Session closes the arc bypass dropped
     await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
