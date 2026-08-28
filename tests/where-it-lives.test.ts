@@ -27,7 +27,10 @@ test('a session that PRODUCES something names it and offers the way there', () =
     if ((CHECKPOINTS as readonly string[]).includes(k)) continue;
     const w = whereItLives(k);
     assert.ok(w.href && w.cta, `${k}: produced an artifact, so there must be somewhere to open`);
-    assert.match(w.href('MID'), /^\/(playbook|dashboard)\/MID$/, `${k}: the link must carry the member id`);
+    // A QUERY STRING IS ALLOWED — the point of this assertion is the member id, and it was written before the
+    // Playbook had tabs. Links that name a tab now carry `?tab=`, so an exact-end anchor rejected the fix for
+    // "the closing card didn't take me to the right tab". The member id is still required.
+    assert.match(w.href('MID'), /^\/(playbook|dashboard)\/MID(\?[\w=&-]+)?$/, `${k}: the link must carry the member id`);
   }
 });
 

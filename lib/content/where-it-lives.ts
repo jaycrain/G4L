@@ -30,6 +30,18 @@ export type WhereItLives = {
 };
 
 const PLAYBOOK = (id: string) => `/playbook/${id}`;
+/**
+ * A LINK THAT LANDS WHERE THE SENTENCE SAYS IT WILL.
+ *
+ * The Playbook has read `?tab=` since it got tabs, and none of these links used it — so "It lives in your
+ * Playbook, under Who you are" opened on This week and the member had to go find it. Jay, R3: "Closing card and
+ * Playbook link didn't take me to the correct tab."
+ *
+ * The rule these encode is that the copy and the destination are ONE fact. If a line names a tab, its href must
+ * open that tab; a test below asserts exactly that, so a future line naming a tab cannot ship pointing at the
+ * default.
+ */
+const PLAYBOOK_TAB = (tab: string) => (id: string) => `/playbook/${id}?tab=${tab}`;
 const DASHBOARD = (id: string) => `/dashboard/${id}`;
 
 export const WHERE_IT_LIVES: Record<SessionKey, WhereItLives> = {
@@ -45,22 +57,26 @@ export const WHERE_IT_LIVES: Record<SessionKey, WhereItLives> = {
   // "Who you are". This line sent members to look for them somewhere they were designed not to appear.
   r2: {
     line: 'Your Doors are in your Playbook, under Who you are, and you can change them any time.',
-    href: PLAYBOOK,
+    href: PLAYBOOK_TAB('who'),
     cta: 'Open your Playbook',
   },
   r3: {
-    line: 'Your Legacy Letter is in your Playbook. Open it a year from now and see how far the distance closed.',
-    href: PLAYBOOK,
+    line: 'Your Legacy Letter is in your Playbook, under Who you are. Open it a year from now and see how far the distance closed.',
+    href: PLAYBOOK_TAB('who'),
     cta: 'Open your Playbook',
   },
   r4: {
-    line: 'Your Reclaim List and your starting ID Score are on your dashboard, and your Doors are in your Playbook under Who you are — that is the ground everything else builds on.',
+    // ONE DESTINATION PER LINE. This named two — the dashboard AND the Playbook's Who you are — behind a single
+    // button that opens the dashboard, so half the sentence pointed somewhere the button would not take you.
+    // The Doors were already handed over at R2's close, with a link that lands on the right tab; repeating them
+    // here under the wrong button is worse than not repeating them.
+    line: 'Your Reclaim List and your starting ID Score are on your dashboard — that is the ground everything else builds on.',
     href: DASHBOARD,
     cta: 'Open your dashboard',
   },
   w1: {
-    line: 'Your true lines are in your Playbook, under Your Moves. Reach for them when the old voice starts up.',
-    href: PLAYBOOK,
+    line: 'Your true lines are in your Playbook, under What worked. Reach for them when the old voice starts up.',
+    href: PLAYBOOK_TAB('worked'),
     cta: 'Open your Playbook',
   },
   w2: {
