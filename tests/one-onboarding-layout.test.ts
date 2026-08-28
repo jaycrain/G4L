@@ -68,8 +68,13 @@ test('the CTA lands at the same y — anchored to the bottom, not floated on a m
   // Anchoring needs no measurement. The proof is a render, not a rule — five slides, one button position, at
   // every viewport swept on 2026-08-28.
   const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(copy, /flex:/, 'the zone takes up the slack instead of declaring a height');
-  assert.doesNotMatch(copy, /min-height:|[^-]height:/, 'any declared height here reintroduces the drift');
+  assert.match(copy, /flex:\s*1 1 auto/, 'the zone takes up the slack instead of declaring a height');
+  // `min-height: 0` is the OPPOSITE of a declared height — it is what permits a flex item to shrink below its
+  // own content, which is the whole mechanism. What must never come back is a height MEASURED from the copy.
+  // A character class, not a lookahead: `\s*(?!0)` backtracks to the empty match and then reads the SPACE as
+  // "not a zero", so it fires on the very declaration it means to allow.
+  assert.doesNotMatch(copy, /min-height:\s*[^0\s]/, 'a measured minimum is the drift; only `min-height: 0` belongs here');
+  assert.doesNotMatch(copy, /[^-]height:\s*var\(/, 'and never a height read from a tuned variable');
 
   // Centring is what turned a taller block into movement at BOTH ends. Anchored, a taller block grows downward
   // into the slack and nothing above it moves.

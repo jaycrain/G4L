@@ -68,6 +68,23 @@ export default function GapConfirm({
               what the list IS, and says the Companion THINKS rather than heard, which is the propose in
               propose-confirm. */}
           <span className="gapc-doors-lead">Doors I think you walked through:</span>
+          {/* Named as HERS to correct, not a checklist to complete — and only once she has taken one off does the
+              surface acknowledge it, so the resting state stays a statement rather than a prompt.
+              THE RESTING LINE NAMES THE CONTROL AND SETS THE HORIZON (Donna, 2026-08-21). "Take one off if it
+              isn't yours" never said HOW, and left the impression this was her last word on her Doors. It is not:
+              R2's board shows all twelve and she rates each one. Jay ruled the promise ships as written — the
+              program keeps it for anyone who continues, and someone who stops has lost nothing. */}
+          {/* "THE REST STAY" ANSWERS A DISAPPEARANCE WE CANNOT SHOW HIM (Jay, mid-walk 2026-08-25). Tapping
+              "There's more" clears awaitingConfirm, so the next turn renders no confirm surface and the Doors
+              leave the screen — they are still held (proposeDoors seeds from the existing set) and they come
+              back at the next confirm, but nothing on screen says so, and Jay reasonably read it as lost. The
+              fix has to land BEFORE the tap, because after it there is no surface left to reassure him on. */}
+          <span className="gapc-doors-hint">
+            {dropped.size > 0
+              ? 'Taken off — I won’t count it.'
+              : 'Tap one to deselect it. The rest stay while you keep talking, and we revisit them in more detail later.'}
+          </span>
+
           {/* TAP THE DOOR TO TAKE IT OFF — the same affordance as the Identity picker (Jay, 2026-08-22: "we don't
               use those Xs anywhere else in the app. How do the selections appear in Identity in onboarding?").
               He is right and the ✕ was mine: nowhere else does a member remove something with a delete glyph, and
@@ -101,22 +118,6 @@ export default function GapConfirm({
               );
             })}
           </div>
-          {/* Named as HERS to correct, not a checklist to complete — and only once she has taken one off does the
-              surface acknowledge it, so the resting state stays a statement rather than a prompt.
-              THE RESTING LINE NAMES THE CONTROL AND SETS THE HORIZON (Donna, 2026-08-21). "Take one off if it
-              isn't yours" never said HOW, and left the impression this was her last word on her Doors. It is not:
-              R2's board shows all twelve and she rates each one. Jay ruled the promise ships as written — the
-              program keeps it for anyone who continues, and someone who stops has lost nothing. */}
-          {/* "THE REST STAY" ANSWERS A DISAPPEARANCE WE CANNOT SHOW HIM (Jay, mid-walk 2026-08-25). Tapping
-              "There's more" clears awaitingConfirm, so the next turn renders no confirm surface and the Doors
-              leave the screen — they are still held (proposeDoors seeds from the existing set) and they come
-              back at the next confirm, but nothing on screen says so, and Jay reasonably read it as lost. The
-              fix has to land BEFORE the tap, because after it there is no surface left to reassure him on. */}
-          <span className="gapc-doors-hint">
-            {dropped.size > 0
-              ? 'Taken off — I won’t count it.'
-              : 'Tap one to deselect it. The rest stay while you keep talking, and we revisit them in more detail later.'}
-          </span>
         </div>
       )}
       <div className="gapc-row">

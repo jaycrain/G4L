@@ -86,16 +86,17 @@ test('the welcome shell scrolls itself, and reserves room for the fixed footer',
 // the base value forces a decision about each override rather than silently missing it.
 test('every --onbwel- variable override is accounted for', () => {
   const overrides = [...CSS.matchAll(/--onbwel-([a-z-]+):\s*([^;]+);/g)].map((m) => `${m[1]}=${m[2].trim()}`);
-  // --onbwel-copy-h IS GONE. It was a hand-measured height for the tallest slide, one per breakpoint, and it was
-  // wrong at every breakpoint it ever had; the copy zone flexes now and the button is anchored to the bottom
-  // instead. What remains is the icon box, which is a genuine per-size design choice, in four bands:
-  //   90px base · 45px phone · 72px laptop (801–900 tall) · 24px short phone · 56px short laptop (≤800 tall)
+  // TWO OVERRIDES, DOWN FROM FIVE. --onbwel-copy-h is gone, and so are the three height BANDS that trimmed the
+  // icon and the padding to make the tallest slide fit a short screen. Both were the same mistake in different
+  // clothing: a number measured against particular content, which goes stale the moment the copy changes and
+  // cannot see a real device's safe-area inset at all. The copy zone scrolls itself now, so nothing above or
+  // below it has to be tuned. What's left is one genuine design choice — the mark is smaller on a phone.
   // A NEW entry here means somebody added an override; read it and decide, do not just bump the count.
   assert.deepEqual(
     overrides,
     ['gutter=8vw', 'measure=640px', 'icon-h=90px',
      'foot-clear=calc(52px + env(safe-area-inset-bottom, 0px))',
-     'icon-h=45px', 'icon-h=72px', 'icon-h=24px', 'icon-h=56px'],
+     'icon-h=45px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
 });
@@ -104,17 +105,13 @@ test('every --onbwel- variable override is accounted for', () => {
 // and both are correct. A narrow column wraps text to more lines (so the zone needs more room) and makes a
 // fixed-height mark loom (so it needs less). Pinned together because "make it all smaller on mobile" is the
 // plausible-sounding change that would break one of them.
-test('the art is half height on mobile, and smaller again when the screen is short', () => {
+test('the art is half height on a phone', () => {
   const icons = [...CSS.matchAll(/--onbwel-icon-h:\s*(\d+)px/g)].map((m) => Number(m[1]));
-  assert.equal(icons.length, 5, 'base, phone, laptop band, short phone, short laptop');
+  assert.equal(icons.length, 2, 'a base height and the phone override — the short-screen bands are gone');
   const [base, phone] = icons;
   // A narrow column makes a fixed-height mark loom — 90px reads fine against a wide column and dominates a
   // 393px one. This halving is Jay's, 2026-08-28.
   assert.equal(phone, Math.round(base! / 2), 'the phone override is half the base');
-  // Every other band exists to buy vertical room on a screen too short to hold the tallest slide, so each one
-  // must be SMALLER than the size it shadows. A band that grew the icon would be spending the height it was
-  // added to save.
-  for (const v of icons.slice(2)) assert.ok(v < base!, `a short-screen band must not exceed the base (${v}px)`);
 });
 
 // THE BUTTON'S POSITION IS A PROPERTY OF THE VIEWPORT, NOT OF THE COPY.
@@ -136,12 +133,24 @@ test('the copy zone flexes and the wrap anchors — nothing measures the tallest
     'a fixed copy height is the mechanism that moved the button; it does not come back');
 
   const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(copy, /flex:\s*1 0 auto/,
-    'grow into the slack, never shrink below the copy — shrinking clips the last lines instead of scrolling');
+  assert.match(copy, /flex:\s*1 1 auto/, 'the copy zone is the one box allowed to give up height');
+  assert.match(copy, /min-height:\s*0/, 'without this a flex item will not shrink below its content');
+  assert.match(copy, /overflow-y:\s*auto/, 'so long copy scrolls INSIDE the zone instead of moving the button');
 
   const wrap = CSS.match(/\.onbwel-wrap \{([\s\S]*?)\n\}/)?.[1] ?? '';
   assert.match(wrap, /flex-direction:\s*column/, 'the wrap is the column the anchoring depends on');
-  assert.match(wrap, /min-height:\s*100dvh/, 'and it must fill the screen, or there is no slack to absorb');
+  // HEIGHT, NOT MIN-HEIGHT. A minimum lets the column grow past the screen when the copy is long — which is
+  // what it did, so the page scrolled and the button moved anyway. Fixed, the slack has nowhere to go but the
+  // copy zone.
+  assert.match(wrap, /height:\s*100dvh/, 'a fixed height is what forces the copy to shrink instead of the column growing');
+  assert.doesNotMatch(wrap, /min-height:\s*100dvh/, 'a minimum height lets the column grow and the button move');
+
+  // ONLY the copy zone may shrink. A flex item shrinks by default, so the BUTTON was absorbing the overflow
+  // itself — measured 57/53/59/49/53px tall across the five slides at 375x667, which is the jump Jay kept
+  // reporting while I kept looking at padding.
+  assert.match(CSS, /\.onbwel-cta, \.onbwel-d-cta \{[^}]*flex:\s*none/, 'the button never shrinks');
+  assert.match(CSS, /\.onbwel-cta, \.onbwel-d-cta \{[^}]*align-self:\s*flex-start/,
+    'nor stretches to the column width — a flex child stretches unless told not to');
 
   // Slides 2–5 nest everything inside .onbwel-heart, so the column has to pass through it or only slide 1
   // anchors — which would be the same bug, visible on four screens out of five.
