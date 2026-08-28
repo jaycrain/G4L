@@ -122,8 +122,10 @@ const PHASE_TITLE: Record<string, string> = { r: 'Reconnect', w: 'Rewire', b: 'R
  * string, and a label typed at each call site is three chances for them to disagree about what a Session is called.
  */
 export function teachingSourceLabel(key: SessionKey, stage?: string | null): string {
-  // Reconnect is one arc over three assets, so the label follows the BEAT the science came from, not the session.
-  const asset = sessionAsset(key) ?? (key === 'reconnect' ? reconnectAssetForStage(stage) : undefined);
+  // Reconnect used to be one arc over three assets, so the label had to follow the BEAT the science came from.
+  // Now each Session IS its asset and sessionAsset resolves r1/r2/r3 directly; the stage fallback is kept for the
+  // checkpoint, which spans all three and has no single asset of its own.
+  const asset = sessionAsset(key) ?? (key === 'r4' ? reconnectAssetForStage(stage) : undefined);
   if (!asset) return 'the Program';
   return `${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}`.trim().replace(/ ·\s*$/, '');
 }

@@ -5,7 +5,12 @@ import { showComposer } from '../../lib/chat/composer.ts';
 import RichText from '../rich-text.tsx';
 import { memberDisplay } from '../../lib/agent/member-display.ts';
 import { serializeBeatConfirm, type BeatConfirmIntent } from '../../lib/agent/beat-confirm.ts';
-import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
+import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction, type ReconnectSession } from './actions.ts';
+import type { SessionKey } from '../../lib/workspace/session-key.ts';
+
+/** The Session's workspace key — what the teaching surfaces (frame, science cards, "why this matters") read off.
+ *  The checkpoint's key is r4; the rest are 1:1 with the session token. */
+const sessionKeyFor = (s: ReconnectSession): SessionKey => (s === 'checkpoint' ? 'r4' : s);
 import ScaleChips from '../components/scale-chips.tsx';
 import DoorsBoard from './doors-board.tsx';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
@@ -39,10 +44,15 @@ const doorName = (slug?: string) => DOORS.find((d) => d.slug === slug)?.displayN
 export default function ReconnectChat({
   memberId,
   mobile = false,
+  session = 'r2',
   onStage,
 }: {
   memberId: string;
   mobile?: boolean;
+  /** WHICH RECONNECT SESSION (2026-08-28). The phase is three Sessions and a Checkpoint now — r1 the mirror, r2
+   *  the Doors, r3 the Drift Quiz + Legacy Letter, checkpoint the transition. Defaults to r2 so an unparameterised
+   *  mount gets the Doors, which is what this component used to be. */
+  session?: ReconnectSession;
   /** REPORT-ONLY. Fires when the arc's beat changes, so the workspace header can show the Science Check for where
    *  the member actually IS (Greg wrote three for this one session). Deliberately a pure notification — it reads
    *  state and changes nothing about the turn, because this is the live capture loop and it does not get logic
@@ -89,7 +99,7 @@ export default function ReconnectChat({
   const keepReconnectScience = (stage: string | undefined) => {
     if (!stage) return; // an unmapped asset has no beat to file against — never invent one
     setScienceSeen((seen) => (seen.includes(stage) ? seen : [...seen, stage]));
-    void keepScienceAction(memberId, 'reconnect', teachingSourceLabel('reconnect', stage), null, stage)
+    void keepScienceAction(memberId, 'reconnect', teachingSourceLabel(sessionKeyFor(session), stage), null, stage)
       .catch((e) => console.error('[teaching] reconnect keep failed', e));
     notifyArtifactCommitted();
   };
@@ -123,7 +133,7 @@ export default function ReconnectChat({
       setPending(true);
       // W-15 — resume an in-flight session first (a refresh/crash mid-excavation no longer loses the work); only start
       // fresh when there's nothing saved.
-      const resumed = await loadReconnectSessionAction(memberId);
+      const resumed = await loadReconnectSessionAction(memberId, session);
       if (resumed.ok && resumed.session && resumed.session.messages.length > 0) {
         setMessages(resumed.session.messages);
         setState(resumed.session.state);
@@ -132,7 +142,7 @@ export default function ReconnectChat({
         setPending(false);
         return;
       }
-      const r = await startReconnectAction(memberId);
+      const r = await startReconnectAction(memberId, session);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Reconnect.');
       setMessages(agentBubbles(r.reply));
@@ -150,7 +160,7 @@ export default function ReconnectChat({
     // A NEW ATTEMPT CLEARS THE OLD FAILURE. Without this the banner was permanent: it survived every subsequent
     // successful turn, so the only way out was a refresh. Donna hit exactly that writing her Legacy Letter.
     setError(null);
-    const r = await reconnectTurnAction(memberId, state, history, text);
+    const r = await reconnectTurnAction(memberId, state, history, text, session);
     setPending(false);
     if (!r.ok || !r.reply || !r.state) {
       setExpects(null);
@@ -231,7 +241,7 @@ export default function ReconnectChat({
       )}
       <div className="chat" ref={chatRef}>
         {/* ① The frame — Reconnect's is the PHASE summary, because the arc spans three assets rather than one. */}
-        <TeachingFrame sessionKey="reconnect" />
+        <TeachingFrame sessionKey={sessionKeyFor(session)} />
         {/* ③ Understand — ONE card per asset, INTERLEAVED where it was earned.
 
             THIS USED TO RENDER AFTER EVERY MESSAGE and it scrambled the thread (Donna, 2026-08-17). Reconnect is
@@ -254,18 +264,18 @@ export default function ReconnectChat({
             The rule now lives in lib/teaching/card-placement.ts with tests, because the inline version had none
             and that is precisely how the second case survived the first fix. */}
         {placement.leading.map((a) => (
-          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
+          <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
         ))}
         {messages.map((m, i) => (
           <Fragment key={i}>
             {(placement.before.get(i) ?? []).map((a) => (
-              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
+              <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
             <div className={`bubble ${m.role}`}>
               {m.role === 'agent' ? <RichText text={m.text} /> : memberDisplay(m.text)}
             </div>
             {(placement.after.get(i) ?? []).map((a) => (
-              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
+              <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
           </Fragment>
         ))}

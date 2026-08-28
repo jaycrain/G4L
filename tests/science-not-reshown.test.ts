@@ -29,12 +29,12 @@ async function freshDb(): Promise<{ db: Db; memberId: string }> {
 
 test('a science read she already acknowledged is reported as seen, by stage', async () => {
   const { db, memberId } = await freshDb();
-  assert.deepEqual(await keptScienceStages(db, memberId, 'reconnect'), [], 'nothing seen before she starts');
+  assert.deepEqual(await keptScienceStages(db, memberId, 'r2'), [], 'nothing seen before she starts');
 
-  await keepSessionScience(db, memberId, 'reconnect', 'the Doors · Reconnect', null, 'doors');
-  await keepSessionScience(db, memberId, 'reconnect', 'the IDQ · Reconnect', null, 'drift');
+  await keepSessionScience(db, memberId, 'r2', 'the Doors · Reconnect', null, 'doors');
+  await keepSessionScience(db, memberId, 'r2', 'the IDQ · Reconnect', null, 'drift');
 
-  const seen = (await keptScienceStages(db, memberId, 'reconnect')).sort();
+  const seen = (await keptScienceStages(db, memberId, 'r2')).sort();
   assert.deepEqual(seen, ['doors', 'drift'], 'both come back as stages, which is how the chat keys its cards');
   // The third has not been reached, so it must NOT be suppressed — the failure that matters is hiding science she
   // never saw, which is worse than showing one twice.
@@ -46,16 +46,16 @@ test('the stages are per CARD, not per session — Reconnect files three separat
   // while the other two silently reported success. That is why the ref carries the stage.
   const { db, memberId } = await freshDb();
   for (const s of ['doors', 'drift', 'ceremony']) {
-    await keepSessionScience(db, memberId, 'reconnect', `x · ${s}`, null, s);
+    await keepSessionScience(db, memberId, 'r2', `x · ${s}`, null, s);
   }
-  assert.equal((await keptScienceStages(db, memberId, 'reconnect')).length, 3, 'three reads, three stages');
+  assert.equal((await keptScienceStages(db, memberId, 'r2')).length, 3, 'three reads, three stages');
 });
 
 test('another session\'s science does not leak into Reconnect\'s seen-set', async () => {
   const { db, memberId } = await freshDb();
-  await keepSessionScience(db, memberId, 'reconnect', 'the Doors · Reconnect', null, 'doors');
+  await keepSessionScience(db, memberId, 'r2', 'the Doors · Reconnect', null, 'doors');
   await keepSessionScience(db, memberId, 'w1', 'Disinformation Audit · Rewire', null, null);
-  assert.deepEqual(await keptScienceStages(db, memberId, 'reconnect'), ['doors'], 'the LIKE prefix is anchored to the session');
+  assert.deepEqual(await keptScienceStages(db, memberId, 'r2'), ['doors'], 'the LIKE prefix is anchored to the session');
 });
 
 test('a read failure SHOWS the card rather than hiding it', async () => {

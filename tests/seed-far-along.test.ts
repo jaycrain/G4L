@@ -59,9 +59,10 @@ test('seed-far-along.sql runs cleanly and lands the demo member mid-Rebuild', as
   assert.equal(rings.find((r) => r.phase === 'reconnect')!.fill, 1);
   assert.equal(rings.find((r) => r.phase === 'rewire')!.fill, 1);
 
-  // Revisit list: the completed sessions, Reconnect collapsed to one.
+  // Revisit list: the completed sessions. Reconnect no longer collapses to one — its Sessions are separately
+  // reviewable, which is the point of the 2026-08-28 split.
   const keys = completedReviewSessions(fc).map((r) => r.key);
-  for (const k of ['reconnect', 'w1', 'w2', 'w3', 'b1', 'b2']) assert.ok(keys.includes(k), `${k} reviewable`);
+  for (const k of ['r2', 'w1', 'w2', 'w3', 'b1', 'b2']) assert.ok(keys.includes(k), `${k} reviewable`);
 
   // The W1 review has the seeded true lines.
   const w1 = await readArtifact(db, mid, 'w1');

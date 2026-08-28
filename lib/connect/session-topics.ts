@@ -59,7 +59,8 @@ export const SESSION_TOPICS: SessionTopic[] = [
       + 'Other people\'s answers here are often the useful part.',
   },
   {
-    sessionKey: 'reconnect',
+    // Keyed to R2 — the Doors are their own Session now. It was 'reconnect' when the phase was one Session.
+    sessionKey: 'r2',
     title: 'Which door did you walk through, and when did you notice?',
     body:
       'Most people can name the moment the distance opened, or the year they realized it already had. If you want '

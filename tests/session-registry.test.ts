@@ -29,8 +29,10 @@ test('registry · every checkpoint is B→E (administered read → ceremony)', (
   for (const s of SESSION_REGISTRY.filter((x) => x.kind === 'checkpoint')) {
     assert.deepEqual(s.segments, ['B', 'E'], `${s.id} is B→E`);
   }
-  // one checkpoint per non-Reconnect phase (Reconnect folds its checkpoint into the single arc)
-  assert.equal(SESSION_REGISTRY.filter((x) => x.kind === 'checkpoint').length, 3);
+  // ONE PER PHASE, ALL FOUR (2026-08-28). Reconnect used to fold its checkpoint into the single arc, which is
+  // why this said three — the checkpoint existed as a STAGE but never as a Session a member finished and
+  // returned from. r4 is B→E like the rest: the administered grit read, then the ceremony.
+  assert.equal(SESSION_REGISTRY.filter((x) => x.kind === 'checkpoint').length, 4);
 });
 
 test('registry · B1 is A+B (Jay 7/13 — draw-out why wraps the SDT instrument)', () => {
@@ -56,9 +58,12 @@ test('registry · canvas mapping is fixed per type', () => {
   assert.equal(CANVAS_FOR_TYPE.F, 'plan');
 });
 
-test('registry · Reconnect is one arc; the other phases are 3 sessions + a checkpoint', () => {
-  assert.equal(sessionsForPhase('reconnect').length, 1, 'Reconnect = one continuous arc');
-  for (const p of PHASES.filter((x) => x !== 'reconnect')) {
+test('registry · EVERY phase is 3 sessions + a checkpoint — including Reconnect', () => {
+  // THIS TEST IS THE CHANGE (2026-08-28). It used to carve Reconnect out as "one continuous arc", which is the
+  // shape that gave the rawest phase in the product no boundaries: no close, no return to the dashboard, no ring
+  // movement, no "2 of 3". Greg's spec, our own summaries canon and two testers all described three Sessions and
+  // a checkpoint; only the runtime disagreed. Now nothing is carved out, and the loop below is the whole rule.
+  for (const p of PHASES) {
     const sessions = sessionsForPhase(p);
     assert.equal(sessions.filter((s) => s.kind === 'session').length, 3, `${p} has 3 sessions`);
     assert.equal(sessions.filter((s) => s.kind === 'checkpoint').length, 1, `${p} has 1 checkpoint`);

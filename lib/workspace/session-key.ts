@@ -4,7 +4,11 @@ import { CURRICULUM } from '../curriculum/registry.ts';
 // testable. The keys ARE the session-registry ids, so the registry (label, phase, segments) resolves straight off them.
 
 export const SESSION_KEYS = [
-  'reconnect',
+  // RECONNECT IS THREE SESSIONS AND A CHECKPOINT (2026-08-28), like every other phase. It was a single
+  // 'reconnect' key for one 65-minute arc — the reason it had no boundaries anywhere, and the reason the
+  // workspace, the Program page and the forecast all had a Reconnect special case. r1 is the IDQ and comes
+  // FIRST, per Greg's spec ("the first assessment"; R2 "works well after the Identity Distance Questionnaire").
+  'r1', 'r2', 'r3', 'r4',
   'w1', 'w2', 'w3', 'rewire-checkpoint',
   'b1', 'b2', 'b3', 'b4',
   'c1', 'c2', 'c3', 'c4',
@@ -16,12 +20,16 @@ export function isSessionKey(x: string): x is SessionKey {
 }
 
 export type ChatArc = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
-export type ChatSession = 'w1' | 'w2' | 'w3' | 'b1' | 'b2' | 'b3' | 'c1' | 'c2' | 'c3' | 'checkpoint';
+export type ChatSession = 'r1' | 'r2' | 'r3' | 'w1' | 'w2' | 'w3' | 'b1' | 'b2' | 'b3' | 'c1' | 'c2' | 'c3' | 'checkpoint';
 
 // Which chat client (arc) + which session prop drives a given workspace key. Reconnect is one continuous arc (no prop);
 // the phase checkpoints all map to the client's 'checkpoint' session.
 export function chatDispatch(key: SessionKey): { arc: ChatArc; session?: ChatSession } {
-  if (key === 'reconnect') return { arc: 'reconnect' };
+  // EXPLICIT, NOT A PREFIX TEST. `key[0] === 'r'` also matches 'rewire-checkpoint', which routed Rewire's
+  // checkpoint into the Reconnect arc and made the line below it dead code. The other phases can use a prefix
+  // because no other key starts with w/b/c; Reconnect cannot, because 'rewire-*' shares its letter.
+  if (key === 'r4') return { arc: 'reconnect', session: 'checkpoint' };
+  if (key === 'r1' || key === 'r2' || key === 'r3') return { arc: 'reconnect', session: key };
   if (key === 'rewire-checkpoint') return { arc: 'rewire', session: 'checkpoint' };
   if (key === 'b4') return { arc: 'rebuild', session: 'checkpoint' };
   if (key === 'c4') return { arc: 'reclaim', session: 'checkpoint' };
@@ -37,7 +45,16 @@ export function keyFromForecast(
   phase: string,
   current: { id?: string; route?: string; kind?: string } | null,
 ): SessionKey | null {
-  if (phase === 'reconnect') return 'reconnect';
+  if (phase === 'reconnect') {
+    // Which Reconnect Session is lit. The forecast carries the asset id or route; fall back to r1, which is the
+    // phase's first Session — a member with no signal has not started, and r1 is where starting means.
+    const id = (current?.id ?? '').toUpperCase();
+    const route = current?.route ?? '';
+    if (id.includes('CHK') || route.endsWith('/r4') || id.includes('R4')) return 'r4';
+    if (id.includes('DFT') || id.includes('WIN') || route.endsWith('/r3')) return 'r3';
+    if (id.includes('FDR') || route.endsWith('/r2')) return 'r2';
+    return 'r1';
+  }
   const src = `${current?.route ?? ''} ${current?.id ?? ''}`;
   const m = src.match(/\b(w[123]|b[123]|c[123]|checkpoint)\b/);
   const tok = m?.[1];

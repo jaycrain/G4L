@@ -26,7 +26,10 @@ export default async function Page({ params }: { params: Promise<{ memberId: str
   if (!(await authorizeMember(memberId))) redirect('/login');
   return (
     <main className="reconnect-page">
-      <ReconnectChat memberId={memberId} mobile={mobileEnabled()} />
+      {/* The legacy direct route. Reconnect is four Sessions now and the workspace drives them by key; this page
+          survives as the entry point a member reaches from an old link or the phase card, so it opens on R1 — the
+          first Session, the mirror. Anything mid-phase comes through /workspace/{id}/{r1|r2|r3|r4}. */}
+      <ReconnectChat memberId={memberId} mobile={mobileEnabled()} session="r1" />
     </main>
   );
 }

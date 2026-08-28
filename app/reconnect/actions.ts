@@ -297,8 +297,16 @@ async function reconnectHarvestOffers(db: Db, memberId: string, prev: ConvState,
  */
 export type ReconnectSession = 'r1' | 'r2' | 'r3' | 'checkpoint';
 
-/** The Session's arc. Defaults to r2 so an un-parameterised caller gets the Doors, which is what it used to be. */
-export const reconnectArcFor = (session: ReconnectSession): ArcConfig =>
+/**
+ * The Session's arc. Defaults to r2 so an un-parameterised caller gets the Doors, which is what it used to be.
+ *
+ * NOT EXPORTED, and that is a Next.js constraint rather than a style choice: this file is 'use server', where
+ * every export must be an async function. Exporting a synchronous helper made the whole module fail to compile —
+ * "Server Actions must be async functions" — and took every workspace route with it. The type suite is blind to
+ * it (tsc is happy, the tests import the arcs directly), so it only appeared on a real request. Any caller
+ * outside this file should import the ARCS from lib/agent/reconnect.ts, which is where they live.
+ */
+const reconnectArcFor = (session: ReconnectSession): ArcConfig =>
   session === 'r1' ? RECONNECT_R1_ARC
     : session === 'r3' ? RECONNECT_R3_ARC
     : session === 'checkpoint' ? RECONNECT_CHECKPOINT_ARC

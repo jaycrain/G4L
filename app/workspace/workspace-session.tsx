@@ -50,7 +50,7 @@ function SessionConversation({
   onReconnectStage?: (stage: string | null) => void;
 }) {
   const { arc, session } = chatDispatch(sessionKey);
-  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} onStage={onReconnectStage} />;
+  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} session={session as 'r1' | 'r2' | 'r3' | 'checkpoint'} onStage={onReconnectStage} />;
   if (arc === 'rewire') return <RewireChat memberId={memberId} session={session as 'w1' | 'w2' | 'w3' | 'checkpoint'} />;
   if (arc === 'rebuild') return <RebuildChat memberId={memberId} session={session as 'b1' | 'b2' | 'b3' | 'checkpoint'} />;
   return <ReclaimChat memberId={memberId} session={session as 'c1' | 'c2' | 'c3' | 'checkpoint'} />;

@@ -23,11 +23,12 @@ test('every Session key resolves without throwing — gates teach nothing, the r
   }
 });
 
-test('the nine 1:1 Sessions bracket the work — frame and understand both resolve', () => {
-  // Phase 1 ships these nine. Reconnect is deliberately excluded from the first release: it carries the live
-  // capture loop, and inserting four render beats into the most fragile arc we have is a separate change.
-  const oneToOne = SESSION_KEYS.filter((k) => sessionAsset(k) && k !== 'reconnect');
-  assert.equal(oneToOne.length, 9, 'nine Sessions map 1:1 to an asset');
+test('the twelve 1:1 Sessions bracket the work — frame and understand both resolve', () => {
+  // NOW TWELVE (2026-08-28). It was nine because Reconnect was ONE session across three assets and could not map
+  // 1:1 — the exclusion was a consequence of the arc's shape, not a decision about the science. Splitting the
+  // phase into r1/r2/r3 makes each Reconnect Session its own asset, exactly like W1 or B2.
+  const oneToOne = SESSION_KEYS.filter((k) => sessionAsset(k));
+  assert.equal(oneToOne.length, 12, 'twelve Sessions map 1:1 to an asset');
   for (const k of oneToOne) {
     const t = teachingFor(k);
     assert.ok(t.frame, `${k} frames the work`);
@@ -36,31 +37,23 @@ test('the nine 1:1 Sessions bracket the work — frame and understand both resol
   }
 });
 
-test('Reconnect shows each asset\'s science ONCE, at that asset\'s last beat', () => {
-  // Reconnect is one arc across three Science Checks, and its seven beats collapse onto three assets: entry and
-  // doors both resolve R1, and measurement/window/checkpoint/ceremony all resolve R3. Rendering per BEAT would
-  // show the same card up to four times in one Session — the product visibly losing track of what it already
-  // told them. Keyed to the ASSET, shown at its LAST beat, so the science closes the activity rather than
-  // interrupting it. This is why Reconnect was held out of the teaching layer's first release.
-  const teaches = (stage: string) => !!teachingFor('reconnect', stage).understand;
+test('each Reconnect Session resolves its OWN science — the per-beat workaround is retired', () => {
+  // WHAT THIS REPLACES. Reconnect used to be one arc across three Science Checks, so the card had to be keyed to
+  // the asset and shown at that asset's LAST beat — otherwise the same card rendered up to four times in one
+  // Session, the product visibly losing track of what it had already told them. That whole mechanism existed to
+  // work around the single arc. With three Sessions there is nothing to work around: each Session shows its own
+  // card at its own threshold, like every other Session in the product.
+  for (const [key, asset] of [['r1', 'r1'], ['r2', 'r2'], ['r3', 'r3']] as const) {
+    const t = teachingFor(key);
+    assert.ok(t.frame, `${key} frames the work`);
+    assert.ok(t.understand?.points.length, `${key} has points to understand`);
+    assert.equal(sessionAsset(key), asset, `${key} is ${asset}`);
+  }
 
-  assert.equal(teaches('entry'), false, 'entry is mid-R1 — the activity is not finished');
-  assert.equal(teaches('doors'), true, "doors closes R1's work");
-  assert.equal(teaches('drift'), true, 'drift is R2');
-  assert.equal(teaches('measurement'), false, 'measurement is mid-R3');
-  assert.equal(teaches('window'), false, 'window is mid-R3');
-  assert.equal(teaches('checkpoint'), false, 'checkpoint is mid-R3');
-  assert.equal(teaches('ceremony'), true, "ceremony closes R3's work");
-
-  // Exactly three cards across the whole arc, and all three distinct.
-  const ledes = ['entry', 'doors', 'drift', 'measurement', 'window', 'checkpoint', 'ceremony']
-    .map((b) => teachingFor('reconnect', b).understand?.lede)
-    .filter(Boolean);
-  assert.equal(ledes.length, 3, 'three cards across seven beats');
+  // Three distinct cards across the phase, one per Session — the property the old test protected, kept.
+  const ledes = (['r1', 'r2', 'r3'] as const).map((k) => teachingFor(k).understand?.lede).filter(Boolean);
+  assert.equal(ledes.length, 3, 'three cards across the phase');
   assert.equal(new Set(ledes).size, 3, 'and no member meets the same one twice');
-
-  // The frame still opens the whole arc, on every beat.
-  assert.ok(teachingFor('reconnect', 'entry').frame, 'the frame is not gated');
 });
 
 test('the kept read defaults to the lede, and a chosen line replaces it', () => {
@@ -107,7 +100,7 @@ test('Reconnect cards PERSIST as the arc moves on, and never appear early', () =
   assert.deepEqual(seen('nonsense-beat'), [], 'an unmapped beat shows nothing rather than guessing');
 });
 
-test('Reconnect files THREE reads, one per asset — they cannot collide on one key', async () => {
+test('Reconnect files THREE reads, one per SESSION — they cannot collide on one key', async () => {
   // RECONNECT'S "Got it" WAS A NO-OP while the card promised "we'll keep the takeaway in your Playbook" — the
   // button did nothing and nothing was filed (Donna, 2026-08-18: "the button itself wasn't working"). Wiring it
   // exposed a second fault underneath: keepSessionScience keyed its idempotency check on the SESSION, and
@@ -122,9 +115,13 @@ test('Reconnect files THREE reads, one per asset — they cannot collide on one 
     .query(`insert into member_profile (display_name, email) values ('R','r@x.test') returning member_id`);
   const m = rows[0]!.member_id;
 
-  for (const stage of ['doors', 'drift', 'ceremony']) {
-    const r = await keepSessionScience(db, m, 'reconnect', 'Reconnect', null, stage);
-    assert.equal(r.ok, true, `${stage} filed`);
+  // UPDATED 2026-08-28: the three reads now arrive from three SESSIONS rather than three beats of one. The fault
+  // this test exists for is unchanged and still worth pinning — an idempotency key that cannot tell them apart
+  // files the first and silently drops the other two — but the thing that must differ is now the session key,
+  // which is the honest shape. The stage is passed through as it was.
+  for (const [key, stage] of [['r1', 'measurement'], ['r2', 'doors'], ['r3', 'legacy']] as const) {
+    const r = await keepSessionScience(db, m, key, 'Reconnect', null, stage);
+    assert.equal(r.ok, true, `${key} filed`);
   }
   const kept = await (db as never as { query: (s: string, p: unknown[]) => Promise<{ rows: unknown[] }> })
     .query(`select id from playbook_entry where member_id=$1 and source_kind='science'`, [m]);

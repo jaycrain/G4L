@@ -109,12 +109,20 @@ export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
 // PHASE summary (the intake as a whole); checkpoints (rewire-checkpoint · b4 · c4) are measurement gates with no
 // "why this matters" of their own.
 const SESSION_ASSET: Partial<Record<SessionKey, AssetId>> = {
+  // RECONNECT IS 1:1 NOW TOO (2026-08-28). r1/r2/r3 have had authored, Greg-voiced summaries in this file since
+  // it was written — they were unreachable because Reconnect was a single session key with no threshold of its
+  // own, so it fell through to the PHASE summary below. Splitting the phase into Sessions is what finally lets a
+  // member see "why this matters" for the mirror, the Doors and the Drift Quiz separately, which is what the
+  // authored copy was always for.
+  r1: 'r1', r2: 'r2', r3: 'r3',
   w1: 'w1', w2: 'w2', w3: 'w3',
   b1: 'b1', b2: 'b2', b3: 'b3',
   c1: 'c1', c2: 'c2', c3: 'c3',
 };
 
-const SESSION_PHASE: Partial<Record<SessionKey, PhaseKey>> = { reconnect: 'reconnect' };
+// The phase summary is now the CHECKPOINT's threshold — r4 recaps the whole of Reconnect, which is exactly what
+// a phase summary says. The three Sessions each have their own asset summary above.
+const SESSION_PHASE: Partial<Record<SessionKey, PhaseKey>> = { r4: 'reconnect' };
 
 /** The "why this matters" for a session threshold: the matching asset for a 1:1 session, the phase summary for the
  *  Reconnect intake, null for checkpoints. */

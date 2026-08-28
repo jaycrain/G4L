@@ -33,7 +33,24 @@ const PLAYBOOK = (id: string) => `/playbook/${id}`;
 const DASHBOARD = (id: string) => `/dashboard/${id}`;
 
 export const WHERE_IT_LIVES: Record<SessionKey, WhereItLives> = {
-  reconnect: {
+  // One entry per Reconnect Session now. Each names what THAT Session produced rather than the whole phase — the
+  // single line was written when Reconnect was one arc and had to cover all three at once.
+  r1: {
+    line: 'Your starting ID Score is on your dashboard. Every later reading is measured against it.',
+    href: DASHBOARD,
+    cta: 'Open your dashboard',
+  },
+  r2: {
+    line: 'Your Doors are on your dashboard, and you can change them any time.',
+    href: DASHBOARD,
+    cta: 'Open your dashboard',
+  },
+  r3: {
+    line: 'Your Legacy Letter is in your Playbook. Open it a year from now and see how far the distance closed.',
+    href: PLAYBOOK,
+    cta: 'Open your Playbook',
+  },
+  r4: {
     line: 'Your Reclaim List, your Doors and your starting ID Score are on your dashboard — that is the ground everything else builds on.',
     href: DASHBOARD,
     cta: 'Open your dashboard',

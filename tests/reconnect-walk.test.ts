@@ -27,7 +27,12 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyReconnectTurn, reconnectOpening } from '../lib/agent/reconnect.ts';
+import {
+  applyReconnectTurn, reconnectOpening, reconnectR1Opening, reconnectR3Opening, reconnectCheckpointOpening,
+  RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC, RECONNECT_CHECKPOINT_ARC,
+} from '../lib/agent/reconnect.ts';
+import { expectsForState, type ArcConfig } from '../lib/agent/onboarding-staged.ts';
+import type { Collected } from '../lib/agent/onboarding.ts';
 import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
 import { CHECKPOINT_GRIT_ITEMS } from '../lib/grinta/survey/instrument.ts';
 import { claimsGateOutcome } from '../lib/agent/gate-claims.ts';
@@ -51,19 +56,49 @@ const TUESDAY =
  * The `expects` union is a contract between the engine and the browser, and every failure listed above lived in
  * that seam. So this deliberately has no script: it looks at the surface in front of it and responds to that.
  */
+/**
+ * THE WALK IS FOUR SESSIONS NOW (2026-08-28), chained in the order a member takes them: R1 the mirror, R2 the
+ * Doors, R3 the Drift Quiz + Legacy Letter, then the Checkpoint. It used to be one continuous arc, so the harness
+ * opened once and ran until the ceremony — with each Session ending, that stopped after the first close.
+ *
+ * Chaining rather than asserting per Session is deliberate: what these tests protect is that the PHASE is
+ * completable and that both instruments are delivered whole, and a boundary is exactly the kind of place where a
+ * member gets stranded. Walking the seams is the only way to catch that.
+ */
+const SESSIONS: { arc: ArcConfig; open: (c: Collected) => Turn }[] = [
+  { arc: RECONNECT_R1_ARC, open: reconnectR1Opening },
+  { arc: RECONNECT_R2_ARC, open: reconnectOpening },
+  { arc: RECONNECT_R3_ARC, open: reconnectR3Opening },
+  { arc: RECONNECT_CHECKPOINT_ARC, open: reconnectCheckpointOpening },
+];
+
 function walk(model: (state: ConvState, turn: number) => ModelTurn, maxTurns = 120) {
-  const opening = reconnectOpening(COMMITTED);
-  const history: ConvMessage[] = [{ role: 'agent', text: opening.reply }];
-  let state = opening.state;
-  let expects: Expectation | null = opening.expects ?? null;
+  const history: ConvMessage[] = [];
   const seen = new Set<string>();
   // Scale items are tracked PER STAGE. Reconnect administers TWO instruments — the 24-item IDQ at `measurement`
   // and the 6-item grit checkpoint — and a flat count conflates them: my first version asserted 24 and saw 30,
   // which looked exactly like a bug in the instrument and was a bug in the assertion.
   const scaleByStage: Record<string, number[]> = {};
-  const turns: Turn[] = [opening];
-  if (expects) seen.add(expects.kind);
+  const turns: Turn[] = [];
+  let state: ConvState = { stage: '', collected: COMMITTED } as ConvState;
+  let expects: Expectation | null = null;
 
+  for (const { arc, open } of SESSIONS) {
+    const opening = open(COMMITTED);
+    history.push({ role: 'agent', text: opening.reply });
+    turns.push(opening);
+    state = opening.state;
+    // The opening's own expectation, or the one its stage implies — an administered Session must arrive with its
+    // chips, which is how the harness knows to answer with a number rather than prose.
+    expects = opening.expects ?? expectsForState(arc, opening.state) ?? null;
+    if (expects) seen.add(expects.kind);
+    const done = runSession(arc, model);
+    if (!done) break;
+  }
+  return { state, turns, seen, scaleByStage };
+
+  /** One Session, to its close. Returns false if it stalled — the caller stops rather than walking on blind. */
+  function runSession(arc: ArcConfig, m: (s: ConvState, t: number) => ModelTurn): boolean {
   for (let i = 0; i < maxTurns; i++) {
     let msg: string;
     if (expects?.kind === 'doors_board') {
@@ -84,15 +119,16 @@ function walk(model: (state: ConvState, turn: number) => ModelTurn, maxTurns = 1
       msg = [TUESDAY, 'That’s the whole of it.', 'Yes, that’s right.', 'It cost me a lot of confidence.'][i % 4]!;
     }
 
-    const turn = applyReconnectTurn(state, history, msg, model(state, i));
+    const turn = applyReconnectTurn(state, history, msg, m(state, i), arc);
     turns.push(turn);
     history.push({ role: 'member', text: msg }, { role: 'agent', text: turn.reply });
     state = turn.state;
     expects = turn.expects ?? null;
     if (expects) seen.add(expects.kind);
-    if (turn.complete || state.stage === 'ceremony') break;
+    if (turn.complete || state.stage === 'ceremony') return true;
   }
-  return { state, turns, seen, scaleByStage };
+  return false; // stalled — maxTurns without a close
+  }
 }
 
 /**

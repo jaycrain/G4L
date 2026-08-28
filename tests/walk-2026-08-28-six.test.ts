@@ -51,29 +51,12 @@ test('the queue card uses --grey, and --grey is actually neutral', () => {
   assert.equal(r === g || Math.abs(r - b) <= 2, true, `--grey must be neutral; got #${grey}`);
 });
 
-// ── the break at doors → measurement ──────────────────────────────────────────────────────────────────────────
-test('the break names what changes, and does not grade the work she just did', () => {
-  const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8');
-  const beat = src.match(/const DOORS_BREAK = \(([\s\S]*?)\);/)![1];
-  assert.match(beat, /excavation done/, 'it names the boundary');
-  assert.match(beat, /ten minutes/, 'and says what the next thing costs — the expectations half of the problem');
-  // "that was the hard part" praises her effort. Encouragement is not praise, but a verdict on the work is.
-  assert.doesNotMatch(beat, /hard part|well done|great work|proud/i, 'names the change, never appraises her');
-});
-
-test('leaving at the break is offered as a real choice, not a lockout', () => {
-  const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8');
-  assert.match(src, /const DOORS_BREAK_CHOICE = '[^']*pick this up later[^']*'/,
-    "Greg's word for what to avoid is 'lockout' — this offers, never blocks");
-  assert.match(src, /Your place is saved either way/, 'and says the leaving costs nothing, which was already true');
-});
-
-test('BOTH routes out of the Doors work reach the break — not just one', () => {
-  const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8');
-  const hits = [...src.matchAll(/breakOffered\?: boolean \}\)\.breakOffered = true/g)];
-  assert.equal(hits.length, 2,
-    'the draw-out path and the confirm path both hand into measurement; a guard on one is the gap this file keeps relearning');
-});
+// ── THE BREAK IS GONE, REPLACED BY A REAL SESSION BOUNDARY ────────────────────────────────────────────────────
+// This morning's in-conversation break lived at doors → measurement and was standing in for a Session boundary.
+// Reconnect is three Sessions and a Checkpoint now, so the seam IS the ending: R2 closes, the member is returned
+// to the dashboard, the ring moves and R3 is teed up. The behaviour those three tests protected — a member can
+// stop here, and stopping costs nothing — is now asserted in tests/reconnect-receive-handoff.test.ts against the
+// Session close, and by the four-boundary fixtures in tests/reconnect-sessions.test.ts.
 
 // ── 5 · the Doors confirm is a tap, like drift and window ─────────────────────────────────────────────────────
 test('every drawout confirm in Reconnect offers chips — the Doors one was the last without', () => {

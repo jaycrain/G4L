@@ -65,7 +65,11 @@ test('the artifact is named, not gestured at', () => {
     c1: /Reclaim List/i,
     c2: /Bigger World Audit/i,
     c3: /Quality Days/i,
-    reconnect: /Reclaim List|Doors|ID Score/i,
+    // Each Reconnect Session names ITS OWN artifact now — the single line had to cover all three at once.
+    r1: /ID Score/i,
+    r2: /Doors/i,
+    r3: /Legacy Letter/i,
+    r4: /Reclaim List|Doors|ID Score/i,
   };
   for (const [k, re] of Object.entries(NAMED)) {
     assert.match(whereItLives(k as never).line, re, `${k}: name the thing she made`);

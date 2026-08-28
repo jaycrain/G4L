@@ -1096,7 +1096,12 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
   // before conversation, so the Companion draws out what she marked instead of fishing for it. Emitted only
   // while the board is still unanswered: once she submits, `boardDone` is set and the stage becomes the ordinary
   // draw-out, or the board would reappear under every subsequent turn of that conversation.
-  if (arc.id === 'reconnect' && stageId === 'doors' && !complete && !collected.boardDone) {
+  // ANY RECONNECT ARC, not the exact string 'reconnect'. The phase was split into per-Session arcs on
+  // 2026-08-28 ('reconnect-r1' … 'reconnect-checkpoint'), and an exact match meant the board simply stopped
+  // rendering — the Doors Session opened with the framing and no board under it, which the end-to-end walk
+  // caught immediately ("the member was NEVER handed the Doors board"). A stage that belongs to one phase should
+  // be matched by the phase, not by one arc's name.
+  if (arc.id.startsWith('reconnect') && stageId === 'doors' && !complete && !collected.boardDone) {
     return doorsBoardExpectation(collected.doors ?? []);
   }
   return scaleExpects(arc, stageId, complete, answered);

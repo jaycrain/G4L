@@ -17,13 +17,15 @@ function forecast(phases: ForecastPhase[]): Forecast {
   return { phases, current: null, daily: [] };
 }
 
-test('only DONE sessions are reviewable; Reconnect collapses to one; checkpoints/measurements excluded', () => {
+test('only DONE sessions are reviewable; Reconnect contributes its own; checkpoints/measurements excluded', () => {
+  // RECONNECT NO LONGER COLLAPSES (2026-08-28). Its assets used to map onto ONE 'reconnect' key because the phase
+  // was one Session, so two done assets deduped to a single reviewable entry. Each is its own Session now and
+  // each is separately reviewable — which is the point of the split.
   const fc = forecast([
     phase('reconnect', [
-      item('RCN-EXC', 'done'), // a granular Atlas session
-      item('RCN-DOORS', 'done'), // another → both map to the single 'reconnect' key
-      item('RCN-IDQ', 'done', 'measurement'), // excluded (not a session)
-      item('RCN-CHK', 'done', 'checkpoint'), // excluded
+      item('RCN-FDR', 'done'), // the Doors → r2
+      item('RCN-DFT', 'done'), // the Drift Quiz → r3
+      item('RCN-CHK', 'done', 'checkpoint'), // excluded — a gate, not a session
     ]),
     phase('rewire', [
       item('RWR-W1', 'done', 'session', '/rewire/{memberId}/w1'),
@@ -33,8 +35,10 @@ test('only DONE sessions are reviewable; Reconnect collapses to one; checkpoints
   ]);
   const rev = completedReviewSessions(fc);
   const keys = rev.map((r) => r.key);
-  assert.deepEqual(keys, ['reconnect', 'w1', 'w2'], 'reconnect once, w1+w2 done, w3 not done, no measurement/checkpoint');
-  assert.equal(rev[0]!.label, 'Reconnect', 'label from the redesign session-registry');
+  assert.deepEqual(keys, ['r2', 'r3', 'w1', 'w2'],
+    "Reconnect's done Sessions each review separately; w3 not done; no measurement/checkpoint");
+  // The label is the SESSION's now, not the phase's — 'Reconnect' was the label when the phase was one session.
+  assert.equal(rev[0]!.label, 'The Doors', 'label from the redesign session-registry');
 });
 
 test('nothing done → empty (a fresh member has nothing to revisit)', () => {

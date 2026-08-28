@@ -194,8 +194,7 @@ test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the 
   const after = applyReconnectTurn(done.state, [], 'It means I stopped blaming myself for all of it.', { text: '' });
   assert.equal(after.state.stage, 'doors', 'her answer lands on the break, which holds the stage for one turn');
   assert.match(after.reply, /excavation done/i, 'the seam is named');
-  const on = applyReconnectTurn(after.state, [], 'keep going', { text: '' });
-  assert.equal(on.state.stage, 'measurement', 'and carrying on hands into the measurement block (§2c stub)');
+  assert.equal(after.complete, true, 'the Doors Session ENDS — it no longer runs on into the questionnaire');
   const dispute = applyReconnectTurn(base, [], "no, that's not it at all", { text: '', replyIntent: 'dispute' });
   assert.equal(dispute.state.awaitingConfirm, false, 'a dispute reopens');
   assert.equal(dispute.state.stage, 'doors', 'stays in the Doors beat');
@@ -316,15 +315,12 @@ test('reconnect revision · a disputed add is dropped, humbly — the named set 
 test('reconnect measurement · Doors done hands into the administered check-in (warm open + scale, not a survey wall)', () => {
   const atDoors: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['grind'] } };
   const asked = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
-  const atBreak = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
-  // The break sits between them now — and carries NO structured surface, because "keep going, or pick this up
-  // later?" is neither a rating nor a board. That was a real bug on the way in: the walk test counted 25 asks
-  // for a 24-item instrument because the break turn was emitting the IDQ's chips underneath it.
-  assert.equal(atBreak.expects, undefined, 'the break offers no chips');
-  const turn = applyReconnectTurn(atBreak.state, [], 'keep going', { text: '' });
-  assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement once she carries on');
-  assert.match(turn.reply, /Identity Distance/i, 'framed warmly (the ID Score), not a survey wall');
-  assert.match(turn.reply, /1 to 5|not at all/i, 'gives the 1–5 scale');
+  // THE DOORS NO LONGER HAND INTO THE QUESTIONNAIRE AT ALL. R1 is the questionnaire and it comes FIRST now
+  // (Greg's spec); R2 is the Doors and it CLOSES. What this test asserted — a warm framed handoff rather than a
+  // survey wall — is now asserted of R1's own opener, in tests/reconnect-sessions.test.ts.
+  const done = applyReconnectTurn(asked.state, [], 'It means it wasn’t all my fault.', { text: '' });
+  assert.equal(done.complete, true, 'the Doors Session closes');
+  assert.match(done.reply, /excavation done/i, 'naming what was done');
 });
 
 test('reconnect measurement · a 1–5 answer records in order and delivers the next item, OFF the depth kernel', () => {
@@ -354,7 +350,7 @@ test('reconnect measurement · the 24th response completes the baseline and hand
   const almost: ConvState = { stage: 'measurement', administeredResponses: Array(TOTAL_ITEMS - 1).fill(3), collected: { doors: ['grind'] } };
   const turn = applyReconnectTurn(almost, [], '5', { text: '' });
   assert.equal((turn.state.administeredResponses ?? []).length, TOTAL_ITEMS, 'all 24 captured');
-  assert.equal(turn.state.stage, 'drift', 'hands into §2d Visioning — the Drift beat');
+  assert.equal(turn.complete, true, 'the 24th answer CLOSES R1 — the Drift Quiz is its own Session now');
   assert.match(turn.reply, /baseline/i, 'the close names the baseline (never a bare number; the ACTION writes it)');
   assert.match(turn.reply, /inventory|cost/i, 'and opens the Drift beat (the generic close appends the drift opener)');
 });
@@ -534,7 +530,7 @@ test('legacy · confirm commits the letter and hands into the Checkpoint', () =>
   const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {}, legacyDraft: 'the letter', administeredResponses: [1, 2, 3] };
   const turn = applyReconnectTurn(st, [], 'yes, save it', { text: '', replyIntent: 'done' });
   assert.equal(turn.state.legacyLetter?.body, 'the letter', 'committed for the action to persist');
-  assert.equal(turn.state.stage, 'checkpoint', 'hands into the §2e Checkpoint');
+  assert.equal(turn.complete, true, 'the letter CLOSES R3 — the Checkpoint is its own Session');
   assert.equal(turn.state.administeredResponses?.length ?? 0, 0, 'the accumulator is reset for the grit instrument');
   assert.equal(turn.state.legacyDraft, undefined, 'the draft is cleared once committed');
   // The DATE is stamped by the action in the member's timezone — computing it in this pure engine would use
@@ -547,7 +543,7 @@ test('legacy · a beat that never drafted moves on QUIETLY — it never claims a
   const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {} };
   const turn = applyReconnectTurn(st, [], 'I would rather skip this', { text: '', replyIntent: 'done' });
   assert.equal(turn.state.legacyLetter, undefined, 'nothing stored');
-  assert.equal(turn.state.stage, 'checkpoint', 'not stranded in the beat');
+  assert.equal(turn.complete, true, 'the letter CLOSES R3 — the Checkpoint is its own Session');
   assert.doesNotMatch(turn.reply, /saved|your letter/i, 'a missing letter is recoverable; a false claim of one is not');
 });
 
@@ -770,6 +766,9 @@ test('tapping "That’s mine" COMMITS — it does not redraft the letter back at
   // The tap, not prose. This is the turn where Jay typed "That's great" and got the whole letter again.
   const turn = applyReconnectTurn(atLegacy, [], serializeBeatConfirm('done', 'legacy'), { text: '' } as never);
 
-  assert.notEqual(turn.state.stage, 'legacy', 'a clean acceptance moves off the letter beat');
+  // "MOVES OFF THE LETTER BEAT" now means the SESSION ends, not that the stage advances to the checkpoint —
+  // R3 closes here and the Checkpoint is its own Session. The fault this test exists for is unchanged: a clean
+  // acceptance must not redraft the letter back at her.
+  assert.equal(turn.complete, true, 'a clean acceptance closes R3');
   assert.doesNotMatch(turn.reply, /Read it back\. What's not right/, 'it must not ask for a revision they declined');
 });

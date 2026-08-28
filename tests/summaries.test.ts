@@ -24,14 +24,21 @@ test('causality discipline held — every full uses probabilistic "research sugg
   assert.deepEqual(asserted, [], 'no deterministic/guarantee language');
 });
 
-test('sessionSummary resolves every session key — 1:1 → asset, reconnect → phase, checkpoints → null', () => {
+test('sessionSummary resolves every session key — 1:1 → asset, r4 → phase, checkpoints → null', () => {
   for (const k of SESSION_KEYS) {
     const r = sessionSummary(k); // must never throw for any real key
     if (k.endsWith('checkpoint') || k === 'b4' || k === 'c4') assert.equal(r, null, `${k} is a gate, no summary`);
     else assert.ok(r && r.short && r.full, `${k} resolves a summary`);
   }
-  // reconnect uses the phase-level summary (it spans R1–R3)
-  assert.equal(sessionSummary('reconnect')?.short, PHASE_SUMMARIES.reconnect.short);
+  // RECONNECT'S THREE ARE 1:1 NOW (2026-08-28). r1/r2/r3 have had authored, Greg-voiced summaries in this file
+  // since it was written; they were unreachable because Reconnect was ONE session key and fell through to the
+  // phase summary. This is the change that finally puts a "why this matters" on the mirror, the Doors and the
+  // Drift Quiz separately — which is what the authored copy was always for.
+  assert.equal(sessionSummary('r1')?.short, ASSET_SUMMARIES.r1.short);
+  assert.equal(sessionSummary('r2')?.short, ASSET_SUMMARIES.r2.short);
+  assert.equal(sessionSummary('r3')?.short, ASSET_SUMMARIES.r3.short);
+  // The PHASE summary is r4's — the checkpoint recaps all of Reconnect, which is what a phase summary says.
+  assert.equal(sessionSummary('r4')?.short, PHASE_SUMMARIES.reconnect.short);
   // a 1:1 session uses its asset
   assert.equal(sessionSummary('b1')?.short, ASSET_SUMMARIES.b1.short);
 });

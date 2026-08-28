@@ -46,15 +46,14 @@ export interface SessionDef {
 
 // Every session + checkpoint, in phase order. Grounded in the real arc stageOrders (verified 7/13).
 export const SESSION_REGISTRY: SessionDef[] = [
-  // ── Reconnect — ONE continuous arc; the ring fills by INTERNAL BEAT (not 3 discrete sessions). ──
-  {
-    id: 'reconnect',
-    phase: 'reconnect',
-    label: 'Reconnect',
-    kind: 'session',
-    segments: ['D', 'B', 'A', 'B', 'E'], // Doors(D) → IDQ+Grinta(B) → Visioning(A) → Checkpoint(B) → Threshold(E)
-    note: 'one arc; ring advances by internal beat (Doors / measure / Vision / checkpoint)',
-  },
+  // ── Reconnect — 3 sessions + checkpoint, like every other phase (2026-08-28) ──
+  // It was ONE entry with five segments and a note saying "the ring advances by internal beat" — which is the
+  // line that made Reconnect the only phase without Session boundaries. The ring now fills per Session, and the
+  // member returns to the dashboard between them. R1 is the mirror and comes FIRST, per Greg's spec.
+  { id: 'r1', phase: 'reconnect', label: 'The Mirror', kind: 'session', segments: ['B'] },
+  { id: 'r2', phase: 'reconnect', label: 'The Doors', kind: 'session', segments: ['D'] },
+  { id: 'r3', phase: 'reconnect', label: 'The Drift Quiz', kind: 'session', segments: ['A'] },
+  { id: 'r4', phase: 'reconnect', label: 'Reconnect Checkpoint', kind: 'checkpoint', segments: ['B', 'E'] },
 
   // ── Rewire — 3 sessions + checkpoint ──
   { id: 'w1', phase: 'rewire', label: 'Disinformation Audit', kind: 'session', segments: ['A'] },

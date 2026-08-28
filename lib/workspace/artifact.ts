@@ -29,7 +29,12 @@ const FRAME_FOOT = 'This is a measure, not a test — an honest read at your own
 
 // Static frame (title + lede) per session. Slots are filled by the reader below (empty = the frame stands alone).
 const META: Record<SessionKey, { title: string; lede: string; foot?: string }> = {
-  reconnect: { title: 'Who you’re reclaiming', lede: 'What Reconnect brings into focus — in your words. It becomes the ground the whole program works from.' },
+  // ONE FRAME PER RECONNECT SESSION (2026-08-28). The single entry described the whole phase, because the whole
+  // phase was one session; each Session now has its own canvas naming what THAT Session produces.
+  r1: { title: 'Your starting line', lede: 'The distance between where you are and the person you know yourself to be — measured once, honestly, so everything after has something to move against.', foot: FRAME_FOOT },
+  r2: { title: 'The Doors you walked through', lede: 'The life events that opened the distance. Naming them is what turns a fog into a story you can work with.' },
+  r3: { title: 'The spark, and the letter', lede: 'What the drift has cost, and the ordinary Tuesday you are writing yourself toward a year from now.' },
+  r4: { title: 'Who you’re reclaiming', lede: 'What Reconnect brings into focus — in your words. It becomes the ground the whole program works from.' },
   w1: { title: 'The lines that beat the old voice', lede: 'Each excuse you turned into a truer line lands here — reach for one when the old voice gets loud.' },
   w2: { title: 'The picture you’re building', lede: 'The you a year from now, vivid enough the old voice can’t argue with it. It fills in your own words.' },
   w3: { title: 'Your way back in', lede: 'The move you reach for after a false start — not to avoid the slip, but to clip back in fast.' },
@@ -82,7 +87,10 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
   const base = (slots: ArtifactSlot[], visual?: SessionVisual): Artifact => ({ title: m.title, lede: m.lede, slots, foot: m.foot ?? FOOT, ...(visual && { visual }) });
 
   switch (key) {
-    case 'reconnect': {
+    case 'r1':
+    case 'r2':
+    case 'r3':
+    case 'r4': {
       const dash = await getDashboard(db, memberId);
       const doors = dash?.doors.map((d) => d.displayName) ?? [];
       const items = dash?.reclaimItems.map((i) => i.text) ?? [];
