@@ -115,6 +115,27 @@ export function memberDisplay(text: string): string {
 }
 
 /** The machine formats this file claims to handle. The guard test asserts the source declares no others. */
+/**
+ * THE MEMBER'S BUBBLE, or null when the turn renders to nothing.
+ *
+ * Some member turns are ACTS rather than words — tapping the Doors board, picking a chip. memberDisplay maps
+ * those to the empty string on purpose: the Companion echoes the choice in its very next line, so printing the
+ * wire string (or the choice twice) is noise. What it cannot do from here is stop the CALLER wrapping that
+ * empty string in a bubble, which paints a bare grey pill with nothing in it.
+ *
+ * Onboarding learned this on Donna's ruling (2026-08-27) and fixed it inline. Reconnect did not, and Jay met the
+ * same empty pill on the Doors board in R2 a day later — the fix existed, with its reason written above it, in a
+ * file the other chat never read. So the rule lives here now, next to the function that creates the condition.
+ * [[one-fact-many-sites]]
+ *
+ * Returns null (not '') so a caller must handle it explicitly — `if (x)` would also swallow a legitimate empty
+ * turn, and this file has already been bitten once by truthiness standing in for a null check.
+ */
+export function memberBubble(text: string): string | null {
+  const shown = memberDisplay(text);
+  return shown === '' ? null : shown;
+}
+
 export function handledFormats(): string[] {
   return FORMATS.map((f) => f.id);
 }

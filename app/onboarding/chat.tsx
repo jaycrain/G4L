@@ -9,7 +9,7 @@ import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction,
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import GapConfirm from './gap-confirm.tsx';
-import { memberDisplay } from '../../lib/agent/member-display.ts';
+import { memberDisplay, memberBubble } from '../../lib/agent/member-display.ts';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
@@ -433,8 +433,10 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           // A TURN THAT RENDERS TO NOTHING PAINTS NO BUBBLE. The Doors board's receipt was removed on Donna's
           // ruling (2026-08-27) and now displays as the empty string; without this, her turn would leave a bare
           // grey box on screen. The turn itself is untouched in the stored transcript — it is her act.
-          const shown = m.role === 'member' ? memberDisplay(m.text) : m.text;
-          if (m.role === 'member' && shown === '') return null;
+          // Through memberBubble, which is this same rule hoisted next to memberDisplay — it was inline here
+          // and only here, so Reconnect's Doors board painted the identical empty pill a day later.
+          const shown = m.role === 'member' ? memberBubble(m.text) : m.text;
+          if (m.role === 'member' && shown === null) return null;
           return (
             <div key={i} className={`bubble ${m.role}`}>
               {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats)

@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { showComposer } from '../../lib/chat/composer.ts';
 import RichText from '../rich-text.tsx';
-import { memberDisplay } from '../../lib/agent/member-display.ts';
+import { memberBubble } from '../../lib/agent/member-display.ts';
 import { serializeBeatConfirm, type BeatConfirmIntent } from '../../lib/agent/beat-confirm.ts';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction, type ReconnectSession } from './actions.ts';
 import type { SessionKey } from '../../lib/workspace/session-key.ts';
@@ -253,13 +253,20 @@ export default function ReconnectChat({
       <div className="chat" ref={chatRef}>
         {/* ① The frame — Reconnect's is the PHASE summary, because the arc spans three assets rather than one. */}
         <TeachingFrame sessionKey={sessionKeyFor(session)} />
-        {messages.map((m, i) => (
-          <Fragment key={i}>
-            <div className={`bubble ${m.role}`}>
-              {m.role === 'agent' ? <RichText text={m.text} /> : memberDisplay(m.text)}
-            </div>
-          </Fragment>
-        ))}
+        {messages.map((m, i) => {
+          // A TURN THAT RENDERS TO NOTHING PAINTS NO BUBBLE. Tapping the Doors board is an ACT, not words — the
+          // Companion echoes the choice in its next line, so memberDisplay maps it to '' deliberately. Wrapping
+          // that in a bubble is what put a bare grey pill in Jay's R2 thread.
+          const shown = m.role === 'member' ? memberBubble(m.text) : m.text;
+          if (m.role === 'member' && shown === null) return null;
+          return (
+            <Fragment key={i}>
+              <div className={`bubble ${m.role}`}>
+                {m.role === 'agent' ? <RichText text={m.text} /> : shown}
+              </div>
+            </Fragment>
+          );
+        })}
         {/* ③ Understand — after the close, before the member can leave. One per Session, never re-offered. */}
         {done && !seenThisSession && (
           <TeachingUnderstand sessionKey={sessionKeyFor(session)} onAcknowledge={() => keepReconnectScience(session)} />

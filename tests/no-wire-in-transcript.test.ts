@@ -71,8 +71,13 @@ test('EVERY chat surface humanises — one file was the half-fix that let this s
     // on the nested braces in `<RichText text={m.text} />` — a failing probe reporting a healthy product. What
     // actually matters is not the shape of the render, it is that the surface routes member text through the one
     // resolver at all. That is a question a substring can answer and a regex kept getting wrong.
-    assert.match(src, /import \{ memberDisplay \}/, `${rel}: does not import the resolver at all`);
-    assert.match(src, /memberDisplay\(/, `${rel}: imports the resolver but never renders through it`);
+    assert.match(src, /from '[^']*lib\/agent\/member-display\.ts'/, `${rel}: does not import the resolver at all`);
+    // memberBubble, specifically — it IS memberDisplay plus the "renders to nothing → paint no bubble" rule.
+    // Requiring the wrapper covers both failures at once: the wire string reaching the transcript, and the bare
+    // grey pill left behind when a turn is an ACT (tapping the Doors board) rather than words. That second one
+    // was fixed inline in onboarding on 2026-08-27 and met again in Reconnect the next day, which is the same
+    // half-fix this test's own header is about — one of two FILES, not one of two lines.
+    assert.match(src, /memberBubble\(/, `${rel}: renders member text without the bubble rule`);
   }
 
   // Onboarding additionally has TWO member-bubble writes — the optimistic one and the post-reply rebuild. The
@@ -83,4 +88,37 @@ test('EVERY chat surface humanises — one file was the half-fix that let this s
   for (const b of bubbles) {
     assert.match(b, /memberDisplay\(text\)/, `a member bubble writes the RAW text: ${b}`);
   }
+});
+
+// ── A TURN THAT RENDERS TO NOTHING PAINTS NO BUBBLE ──────────────────────────────────────────────────────────
+//
+// Jay, R2, 2026-08-28: a small empty grey pill in the thread, between "mark the ones that are yours" and the
+// Companion reading his marks back.
+//
+// It is the Doors board submission. Tapping the board is an ACT, not words — the Companion echoes the choice in
+// its very next line — so memberDisplay maps it to the empty string on purpose. What it cannot do is stop the
+// caller wrapping that empty string in a bubble.
+//
+// Onboarding hit this first and fixed it INLINE, with the reason written above it: "without this, her turn would
+// leave a bare grey box on screen." Reconnect has its own bubble list in its own file and never read that
+// comment. The rule lives beside memberDisplay now, so the next surface gets it by importing.
+import { memberBubble } from '../lib/agent/member-display.ts';
+
+test('an ACT renders to no bubble; words always render', () => {
+  // The Doors board wire line — displayed as nothing, so no pill.
+  const board = '[board] door:body=2 door:grind=3';
+  assert.equal(memberDisplay(board), '', 'the board receipt is deliberately blank');
+  assert.equal(memberBubble(board), null, 'and so must paint no bubble at all');
+
+  // Anything the member actually said still renders, including short and odd answers.
+  for (const said of ['4', 'no', "that's the whole of it", 'I disappeared for a while.']) {
+    assert.equal(memberBubble(said), said, `swallowed something she said: "${said}"`);
+  }
+});
+
+test('null, not empty string — so a caller cannot skip a real turn by accident', () => {
+  // memberDisplay returning '' is meaningful and `if (shown)` would treat a legitimate blank the same as a
+  // missing one. This file has already been bitten once by truthiness standing in for a null check.
+  assert.strictEqual(memberBubble('[board] door:body=2'), null);
+  assert.notStrictEqual(memberBubble('4'), null);
 });
