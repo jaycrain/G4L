@@ -151,3 +151,43 @@ test('the footer reserve includes the safe-area inset the footer itself pads by'
   assert.match(decl, /env\(safe-area-inset-bottom/,
     'the bar grows by the inset, so the reserve must too — or the notch eats whatever sits above it');
 });
+
+// THE PHONE PROPORTIONS ARE KEYED TO THE COLUMN, NOT TO THE CHAT-TRACK BREAKPOINT.
+//
+// --onbwel-copy-h and --onbwel-icon-h lived in `@media (max-width: 1000px)` — the breakpoint that decides which
+// CHAT SURFACE renders, which has nothing to do with how text wraps. The content column is capped at
+// --onbwel-measure (640px), so above roughly 740px the copy wraps exactly as it does on a desktop.
+//
+// The cost of using the wrong one: an iPad on phone proportions. Measured at 820px the tallest slide's body is
+// 221px — identical to desktop — against a zone sized 316px for a 393px phone. 95px of dead air, which is Jay's
+// "it barely fits".
+//
+// The sibling guard above enumerates the VALUES and passed straight through this, because the values were right
+// and the query was wrong. That is why this asserts the breakpoint.
+test('phone-only proportions live below the column breakpoint, not the track breakpoint', () => {
+  const block = CSS.match(/@media \(max-width: 740px\) \{[\s\S]*?\n\}/)![0];
+  assert.match(block, /--onbwel-copy-h/, 'the copy zone is a wrapping concern');
+  assert.match(block, /--onbwel-icon-h/, 'and so is a fixed-height mark in a narrow column');
+
+  // And they must NOT also be set at the track breakpoint, which would shadow this one for 740–1000px.
+  //
+  // BOUNDED TO EACH BLOCK. The first version of this used `@media \(max-width: 1000px\)[\s\S]*?--onbwel-copy-h`,
+  // which is non-greedy but not block-aware: it ran happily across a dozen unrelated rules to find the variable
+  // in the 740px query below, and reported a violation that did not exist. A regex that can cross a closing
+  // brace is not asking the question it looks like it is asking.
+  for (const m of CSS.matchAll(/@media \(max-width: 1000px\) \{/g)) {
+    const body = CSS.slice(m.index!, CSS.indexOf('\n}', m.index!));
+    assert.doesNotMatch(body, /--onbwel-(copy-h|icon-h)/,
+      'a second home for these puts tablets back on phone proportions');
+  }
+});
+
+test('the phone overrides are positioned AFTER the :root they shadow', () => {
+  // A media query does not outrank a later rule of the same specificity — position still decides. The first
+  // attempt placed this block 1,300 lines above :root, so the defaults won and the phone silently kept desktop
+  // proportions while every test still passed.
+  assert.ok(
+    CSS.indexOf('@media (max-width: 740px)') > CSS.indexOf('--onbwel-copy-h: 232px'),
+    'the override must come after the default, or it does nothing',
+  );
+});

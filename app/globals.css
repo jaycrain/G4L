@@ -3218,6 +3218,27 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    Nobody caught it because the redesign was reviewed on a desktop, where the top-level rule wins. Same shape as
    every other "one fact, two sites" defect in this file — the fix is not a third copy, it is that the mobile rule
    now only says what is genuinely different on a phone (padding, alignment) and inherits the colour. */
+/* PLACED AFTER :root ON PURPOSE. This first went in before an unrelated 1000px query 1,300 lines up —
+   earlier in the file than the :root it overrides, so the defaults won and the phone silently kept desktop
+   proportions. A media query does not outrank a later rule of the same specificity; position still decides. */
+/* ── PHONE PROPORTIONS — keyed to the COLUMN, not to the chat-track breakpoint ────────────────────────────────
+   The content column is capped at --onbwel-measure (640px), so once the viewport clears roughly 640px plus the
+   gutters, the copy wraps EXACTLY as it does on a desktop and these two numbers stop being right.
+   1000px is the breakpoint for which chat surface renders — it has nothing to do with text wrapping, and using
+   it for these put an iPad on phone proportions: measured at 820px, the tallest slide's body is 221px, the same
+   as desktop, while the zone was the phone's 316px. 95px of dead air, which is Jay's "it barely fits".
+   740px is where the column stops being narrower than the measure. Below it, phone numbers; above it, desktop's. */
+@media (max-width: 740px) {
+  :root {
+    /* Measured at 393px: the tallest slide's body is 304px, because a narrow column wraps to more lines. */
+    --onbwel-copy-h: 316px;
+    /* And the same narrowness makes a fixed-height mark loom: 90px reads fine against a wide column and
+       dominates this one. Donna's icon-box rule is untouched — one fixed height, variable width, equal visual
+       weight — only the number changes. */
+    --onbwel-icon-h: 45px;
+  }
+}
+
 @media (max-width: 1000px) {
   /* The copy zone is TALLER on a phone, sized to slide 4 — the longest body plus the two member bubbles, which
      is the slide that needs the most space at this width (Donna: allow for it, "white space is ok"). Desktop
@@ -3232,12 +3253,6 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
      report. A variable overridden in a media query is the same "one fact, two sites" shape as everything else
      that has bitten this file. */
   :root {
-    --onbwel-copy-h: 316px;
-    /* THE ART AT HALF HEIGHT ON MOBILE (Jay, 2026-08-28: "the top images are oversized proportionally").
-       90px reads fine against a 1440px column and dominates a 393px one — the mark is the same size while
-       everything around it got narrower. 45px restores the proportion. The icon BOX rule is untouched, so
-       Donna's "one fixed height, variable width, equal visual weight" still holds; only the number changes. */
-    --onbwel-icon-h: 45px;
   }
   /* .onbwel-d-hero and .onbwel-d-cta rules REMOVED — dead since slide 1 was unified into the shared shell on
      2026-08-28; neither class is rendered any more. Leaving them looked like mobile had a layout of its own. */
