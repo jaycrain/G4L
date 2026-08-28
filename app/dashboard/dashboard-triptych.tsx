@@ -59,6 +59,19 @@ export default function DashboardTriptych({
     window.addEventListener('g4l:show-pane', onShow);
     return () => window.removeEventListener('g4l:show-pane', onShow);
   }, []);
+  // ARRIVE AT THE TOP, so the hero is whole (Jay, 2026-08-28: "Returning to the Dashboard after a
+  // Checkpoint/Session should show the Hero unpinned").
+  //
+  // The hero condenses to a strip once it reaches the sticky line, which is right while you are reading down the
+  // page and wrong the moment you arrive. Coming back from a Session the browser restores the previous scroll
+  // position, so the first thing a member saw after finishing the Drift Quiz was "Nice work — the Reconnect
+  // Checkpoint is next" collapsed into a bar — the one screen in the product whose whole job is to tell them
+  // what they just did and what is next.
+  //
+  // On MOUNT only. A member who scrolls during a visit is left alone; this is about where a visit begins.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   // Remember the last pane across a subpage round-trip (Jay): leave "What's Next" → tap a See-more → ← Dashboard should
   // land you back on "What's Next", not reset to center. Restored AFTER mount (not the initial state) so SSR and the
   // first client render both start on 'center' — no hydration mismatch. Session-scoped; a fresh tab starts at center.

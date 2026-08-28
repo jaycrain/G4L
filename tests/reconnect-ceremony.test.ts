@@ -15,7 +15,11 @@ test('§2f ceremony · reveals the score radar, the Grinta movement, the Playboo
   const score = beats.find((b) => b.reveal?.kind === 'score')!.reveal as { idScore: number };
   assert.equal(score.idScore, 62, 'the baseline ID Score rides the radar reveal');
   const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
-  assert.equal(grintaBeat.text, 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.', 'Jay’s verbatim reveal line');
+  // NAMED IN FULL from 2026-08-28, at Jay's instruction on his walk: "This should reference the full instrument
+  // name, Grinta Index." It read "your Grinta, your grit", which describes a quality he happens to have; the
+  // Grinta Index is a measured thing on its own /5 scale and this is the moment it first moves. Still pinned
+  // verbatim — the point of this assertion is that authored copy cannot drift, not that it can never change.
+  assert.equal(grintaBeat.text, 'You just did the work in Reconnect — and your Grinta Index, your grit, went up because of it.', 'Jay’s verbatim reveal line');
   const grinta = grintaBeat.reveal as { composite: number; changePct: number; reconnect: number; reconnectChangePct: number };
   assert.equal(grinta.composite, 3.33);
   assert.equal(grinta.changePct, 11, 'the Index delta (headline) rides the reveal');

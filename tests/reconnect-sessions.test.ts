@@ -166,3 +166,32 @@ test('R2 opening still snapshots the Doors she walked in with', () => {
   const t = reconnectOpening({ ...COMMITTED, doors: ['grind', 'body'] });
   assert.deepEqual(t.state.doorsAtEntry, ['grind', 'body']);
 });
+
+// ── THE MIRROR SHOWS YOU THE MIRROR ──────────────────────────────────────────────────────────────────────────
+//
+// Jay, on the ceremony's score card: "This should be included in R1 too."
+//
+// The radar and the number lived ONLY in the Reconnect ceremony — three Sessions after the reading is taken. So
+// the Session whose entire product IS the ID Score closed on a sentence about it ("I've got your baseline now.
+// You'll see it take shape on your dashboard") and sent the member off to go find their own number.
+//
+// It is the same card, from the same scorer, not a lookalike — the reading a member is shown must never be
+// computed by a second path from the one that stored it.
+test('the completing IDQ turn carries the reading it just took', () => {
+  const actions = readFileSync(new URL('../app/reconnect/actions.ts', import.meta.url), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  assert.match(actions, /scoreIdq\(/, 'scored by the instrument\'s own function, not a display-side copy');
+  assert.match(actions, /reveal\?: IdqReveal/, 'and returned to the client on the turn it is created');
+  // Once only. A reveal left on the module would re-show a reading the member has already seen.
+  assert.match(actions, /lastReveal = null;/, 'the reveal is consumed by the turn that produced it');
+});
+
+test('R1 renders the reading above the science card', () => {
+  const chat = readFileSync(new URL('../app/reconnect/reconnect-chat.tsx', import.meta.url), 'utf8');
+  const code = chat.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.match(code, /done && reveal &&/, 'shown at the close, and only when there is a reading');
+  assert.match(code, /<IdqRadar/, 'the same radar the ceremony uses');
+  assert.ok(code.indexOf('<IdqRadar') < code.indexOf('<TeachingUnderstand'),
+    'the reading he just made comes before the science explaining why it was worth making');
+});

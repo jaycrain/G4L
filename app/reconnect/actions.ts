@@ -1,6 +1,7 @@
 'use server';
 
 import { memberTurn } from '../../lib/agent/member-display.ts';
+import { scoreIdq } from '../../lib/idq/scoring.ts';
 import { RECONNECT_SESSION_ASSETS } from '../../lib/workspace/session-key.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
@@ -76,6 +77,10 @@ async function persistRevision(db: Db, memberId: string, prev: ConvState, turn: 
 // TOTAL_ITEMS. Best-effort (a write failure never breaks the turn; the responses stay in state to retry).
 // Returns a personalized CLOSE (M3) to OVERRIDE the engine's generic close when measurement completes this turn, or
 // null (not a completion turn, or the model close failed → the generic close stands).
+/** The baseline made visible — the same shape the ceremony's score card renders. Null on any turn but the last. */
+export type IdqReveal = { dimensions: Record<string, number>; idScore: number };
+let lastReveal: IdqReveal | null = null; // set by persistMeasurement, read once by the turn action below
+
 async function persistMeasurement(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<string | null> {
   try {
     const before = prev.administeredResponses?.length ?? 0;
@@ -83,6 +88,13 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
     if (before < TOTAL_ITEMS && after.length >= TOTAL_ITEMS) {
       const responses = after.slice(0, TOTAL_ITEMS);
       const idq = await submitIdq(db, memberId, responses); // frozen instrument: validate + score + baseline row (sequence_no=0)
+      // THE MIRROR SHOWS YOU THE MIRROR (Jay, 2026-08-28: "This should be included in R1 too"). The radar + score
+      // card existed only in the Reconnect ceremony, three Sessions later — so the Session whose entire product
+      // IS the reading closed on prose about it and sent the member to the dashboard to go find the number.
+      // Scored from the same responses by the same pure function the instrument uses; nothing is recomputed
+      // differently for display.
+      const shown = scoreIdq(responses as never);
+      lastReveal = { dimensions: shown.dimensions as unknown as Record<string, number>, idScore: shown.idScore };
       // Founder Agent auto-trigger — the baseline welcome note into Jay's review queue. The v3.0 baseline is written
       // HERE (not the legacy /idq action), so without this the redesign never queued a draft. Draft-only, graceful.
       if (idq.ok) await maybeTriggerDraft(db, memberId, { kind: 'idq', sequenceNo: idq.sequenceNo });
@@ -467,7 +479,7 @@ export async function reconnectTurnAction(
   // R3 each end on their own — and with no signal for it the client could not tell when to show the "Why it
   // works" card, which is how it ended up deriving that from beat order instead and showing two of them on
   // question 1. The server already knows; it just was not saying.
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[]; complete?: boolean }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[]; complete?: boolean; reveal?: IdqReveal }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   // GOVERNANCE — ESCALATE TO A HUMAN. The engine already short-circuits this turn to the 988 protocol
@@ -498,7 +510,9 @@ export async function reconnectTurnAction(
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
     const finalReply = closeOverride ?? turn.reply;
     await persistArcSession(db, memberId, history, message, finalReply, turn, session); // W-15 — save the transcript for resume (or clear at ceremony)
-    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals, complete: turn.complete };
+    const reveal = lastReveal;
+    lastReveal = null; // one turn only — a stale reveal on a later turn would re-show a reading already seen
+    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals, complete: turn.complete, reveal: reveal ?? undefined };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

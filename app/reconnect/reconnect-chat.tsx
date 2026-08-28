@@ -31,6 +31,7 @@ import { DOORS } from '../../lib/doors.ts';
 // OWN bubble, one job each, never a single crammed bubble.
 const agentBubbles = (text: string): ConvMessage[] =>
   text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
+import IdqRadar from '../dashboard/idq-radar.tsx';
 import ReconnectCeremony from './reconnect-ceremony.tsx';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 
@@ -68,6 +69,8 @@ export default function ReconnectChat({
   // THE SESSION IS OVER — reported by the engine, not inferred from which beat we are on. Every other arc has
   // had this; Reconnect derived it from beat order because it used to be one continuous conversation.
   const [done, setDone] = useState(false);
+  // THE BASELINE, SHOWN WHERE IT IS MADE. Only R1 produces one, and only on its final turn.
+  const [reveal, setReveal] = useState<{ dimensions: Record<string, number>; idScore: number } | null>(null);
   // Stages whose science card she ALREADY acknowledged in an earlier sitting — never re-offered. Empty on a
   // fresh start, which is correct: nothing has been seen yet.
   const [scienceSeen, setScienceSeen] = useState<string[]>([]);
@@ -186,6 +189,7 @@ export default function ReconnectChat({
     setState(r.state);
     setExpects(r.expects ?? null);
     if (r.complete) setDone(true);
+    if (r.reveal) setReveal(r.reveal);
     // Keeper OFFERS from this turn — she keeps what she wants; the rest evaporate.
     if (r.proposals?.length) setOffers((o) => [...o, ...r.proposals!]);
     notifyArtifactCommitted(); // push the workspace canvas to re-read now (identity/doors/list land on the left)
@@ -267,6 +271,17 @@ export default function ReconnectChat({
             </Fragment>
           );
         })}
+        {/* THE MIRROR'S OWN REVEAL — the radar and the number, at the moment they exist. The same card the
+            Reconnect ceremony shows three Sessions later; it had never been shown here, so the Session that
+            PRODUCES the ID Score closed on a sentence about it. Above the science card deliberately: the reading
+            is the thing he just made, the science is why it was worth making. */}
+        {done && reveal && (
+          <section className="cer-score" aria-label="Your starting ID Score">
+            <p className="teach-lede">Here it is, by the numbers — your starting line.</p>
+            <IdqRadar current={reveal.dimensions as never} size={192} labelSize={16} withLabels />
+            <span className="cer-chip score">ID Score {Math.round(reveal.idScore)}</span>
+          </section>
+        )}
         {/* ③ Understand — after the close, before the member can leave. One per Session, never re-offered. */}
         {done && !seenThisSession && (
           <TeachingUnderstand sessionKey={sessionKeyFor(session)} onAcknowledge={() => keepReconnectScience(session)} />

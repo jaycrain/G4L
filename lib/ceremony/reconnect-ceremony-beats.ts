@@ -48,7 +48,11 @@ export const RECONNECT_CEREMONY_COPY = {
   // 3b — reveal: the Grinta movement (§2e). Branches on the Checkpoint delta — a DOWN-move is expected and healthy
   // (per Greg: a more realistic self-appraisal often reads LOWER; the reflection matters more than the number), so it
   // must never read as failure. Jay's lines, approved.
-  grinta: 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.',
+  // THE INSTRUMENT HAS A NAME (Jay, 2026-08-28). "your Grinta, your grit" reads as a quality he happens to have;
+  // the Grinta Index is a measured thing on its own /5 scale, and this is the moment it first moves. Naming it
+  // in full here is what makes the number below it a reading rather than a compliment — and it is the name the
+  // dashboard, the Playbook and the Companion all use.
+  grinta: 'You just did the work in Reconnect — and your Grinta Index, your grit, went up because of it.',
   grintaDown:
     "You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line. That is what a clearer look does to a first estimate, and it is the foundation everything else builds on.",
   grintaFlat:
