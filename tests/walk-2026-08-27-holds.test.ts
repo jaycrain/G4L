@@ -84,19 +84,36 @@ test('candidates offered on the member\'s FIRST thin answer are held back for on
   assert.equal(t.state.collected?.identityNoun, undefined, 'and nothing is named');
 });
 
-test('the second answer gets the chooser — a floor, not a wall', () => {
+// THE FLOOR MOVED FROM ONE TURN TO TWO on 2026-08-28, so this now expects the chooser on the THIRD answer.
+//
+// The 8/27 ruling was one turn, in answer to "it felt a little rushed … seems like I had a couple more turns the
+// last time". On the next walk the same note came back — "identity suggestions came too abruptly too" — so one
+// turn was enough to stop a handle being offered off a single thin line and not enough to feel like a
+// conversation. A couple of turns is what he asked for, twice, in those words.
+//
+// Deliberately re-pointed rather than deleted: the property it guards is unchanged and still the important one —
+// the floor is a FLOOR. Every escape below still outranks it (the front-loader test that follows is the proof).
+test('the chooser arrives after a couple of turns — a floor, not a wall', () => {
   const first = applyStagedTurn(IDENTITY_START, [], 'I used to race bikes.', {
     text: 'Tell me more.',
     identityCandidates: ['Racer'],
   } as never);
   const history: ConvMessage[] = [{ role: 'member', text: 'I used to race bikes.' }, { role: 'agent', text: first.reply }];
+
   const second = applyStagedTurn(first.state, history,
     'Crit racing every weekend, chasing summits, I was the one who dragged everyone out at 5am.', {
       text: 'I can see him.',
       identityCandidates: ['Racer', 'Cyclist'],
     } as never);
+  assert.equal(second.expects, undefined, 'still drawing out on the second answer');
+  history.push({ role: 'member', text: '…' }, { role: 'agent', text: second.reply });
 
-  assert.deepEqual(second.expects, { kind: 'identity_pick', candidates: ['Racer', 'Cyclist'] });
+  const third = applyStagedTurn(second.state, history,
+    'It was the whole shape of my week — who I trained with, who I was on a Saturday.', {
+      text: 'That is a life, not a hobby.',
+      identityCandidates: ['Racer', 'Cyclist'],
+    } as never);
+  assert.deepEqual(third.expects, { kind: 'identity_pick', candidates: ['Racer', 'Cyclist'] });
 });
 
 test('a front-loader is NOT held back — a rich first answer passes the floor immediately', () => {

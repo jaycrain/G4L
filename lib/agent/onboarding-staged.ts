@@ -240,10 +240,10 @@ function identityPickIsSkip(raw: string): boolean {
 }
 // Accept the tapped/coined handle and bridge straight into the gap — the pick is definitive (Jay: accept it as the
 // answer, don't re-ask). Warm and brief, then the gap draw-out opens FROM the named person (gapBridge).
-function identityPickAck(c: Collected): string {
+function identityPickAck(c: Collected, history: ConvMessage[]): string {
   const label = identityLabel(c.identityNoun) || 'that person';
   const Label = label.charAt(0).toUpperCase() + label.slice(1); // sentence-start ("The Athlete")
-  return `${Label} it is.\n\n${gapBridge(c)}`;
+  return `${Label} it is.\n\n${gapBridge(c, history)}`;
 }
 
 // The breathe-floor probe (Increment 1a): when a name lands but the person hasn't been drawn out yet,
@@ -261,11 +261,27 @@ function identityProbe2(c: Collected): string {
   return `Even one small moment is enough — a specific morning, a feeling in your body — when you were most ${label}. What did being ${label} give you that you don't feel now? Even a little thing; there's no wrong answer.`;
 }
 
+// HAVE WE ALREADY TAUGHT DOORS? One definition, read by both gap openers. It was inline in gapOpen only, which
+// is how the bridge path could re-teach what the other path had just said. [[one-fact-many-sites]]
+function taughtDoorsCount(history: ConvMessage[]): number {
+  return history.filter((h) => h.role === 'agent'
+    && /what we call Doors|caused that version of you|pulled you away from/i.test(h.text)).length;
+}
+function taughtDoors(history: ConvMessage[]): boolean { return taughtDoorsCount(history) > 0; }
+
 // §4 — Stage 2 (how the gap opened): introduces "Doors" at first use, personalized to their handle.
-function gapOpen(c: Collected, history: ConvMessage[] = []): string {
+// `history` IS REQUIRED, AND THAT IS THE WHOLE FIX. It defaulted to `[]`, and not one of the nine call sites
+// ever passed it — so `asked` was always 0 and the ladder below never ran a single time in production. The
+// Doors paragraph was re-emitted in full, word for word, at members who had just read it. Jay caught it on a
+// walk: the same 70-word teaching twice on one screen, the second time immediately after he had answered it.
+//
+// The guard was written, reviewed and correct. It was wired to a parameter nobody supplied, and a default value
+// is how a guard goes quiet without anyone deleting it. Required, the compiler now asks the question the code
+// review didn't. [[one-fact-many-sites]]
+function gapOpen(c: Collected, history: ConvMessage[]): string {
   // CAT-20: re-asked cold, this used to repeat verbatim. The Doors teaching is only owed ONCE — after that, ask
   // again in fewer words rather than replaying the whole paragraph at someone who already heard it.
-  const asked = history.filter((h) => h.role === 'agent' && /what we call Doors|caused that version of you|pulled you away from/i.test(h.text)).length;
+  const asked = taughtDoorsCount(history);
   if (asked >= 2) return `Take it wherever it starts. What was going on for you when the distance opened?`;
   if (asked === 1) return `Whenever you're ready — what's been happening that pulled you away from ${identityRef(c)}?`;
   return (
@@ -280,8 +296,14 @@ function gapOpen(c: Collected, history: ConvMessage[] = []): string {
 // its own momentum (Scott's "natural connection") — turn the person they just painted into the how-did-you-
 // lose-her question, not a cold topic switch. Still introduces "Doors" at first use (terminology governance).
 // Falls back to the standalone gapOpen when identity was skipped (no name to bridge from).
-function gapBridge(c: Collected): string {
-  if (!c.identityNoun) return gapOpen(c);
+function gapBridge(c: Collected, history: ConvMessage[]): string {
+  if (!c.identityNoun) return gapOpen(c, history);
+  // THE BRIDGE TEACHES DOORS TOO — "an accumulation of what we call Doors" — so it owes the same debt as
+  // gapOpen and, before this, could replay the teaching to someone who had already had it from the other path.
+  // One member, two functions, one lesson: whoever gets there second asks in fewer words.
+  if (taughtDoors(history)) {
+    return `Then let's find out what happened. So how did it go — what pulled you away from yourself? Take me through it.`;
+  }
   // SECOND PERSON (Cowork + Jay, 2026-08-14). This carried the Identity handle THREE times in one paragraph
   // ("what happened to the Athlete … the distance from the Athlete … pulled you away from the Athlete") — the
   // densest instance in the product of a member being discussed in the third person to their face. They claimed
@@ -1648,7 +1670,7 @@ const identityStage: StageDef = {
     if (b.collected.identitySkipped) {
       // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
       b.stage = 'gap';
-      b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+      b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
     } else if (b.collected.identityNoun && b.pendingIdentityPick && b.pendingIdentityPick.length > 0) {
       // CAT-54 (1) — WE ALREADY HAVE THEIR ANSWER. In walk 3 the model recorded identityNoun="Sovereign" from the
       // member's second reply while the pick branch below rejected that same message, and the engine's rejection
@@ -1657,7 +1679,7 @@ const identityStage: StageDef = {
       // A set handle is the end of this beat, full stop. [[member-words-outrank-model-guess]]
       b.pendingIdentityPick = undefined;
       b.stage = 'gap';
-      b.reply = identityPickAck(b.collected);
+      b.reply = identityPickAck(b.collected, b.history);
     } else if (b.pendingIdentityPick && b.pendingIdentityPick.length > 0) {
       // TAP-TO-PICK RESOLVE: last turn we offered candidate handles as chips; this message IS the member's pick
       // (a tapped chip, a coined word, or the "not sure yet" affordance). Engine-authoritative, verbatim — the model
@@ -1667,7 +1689,7 @@ const identityStage: StageDef = {
         b.collected.identitySkipped = true;
         b.pendingIdentityPick = undefined;
         b.stage = 'gap';
-        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
       } else {
         // A tapped CHIP matches a candidate exactly (pre-vetted) → take it as-is; a COINED word goes through the
         // validity gate so junk (emoji, a whole sentence, a bare article) re-prompts instead of becoming a label. (CAT-10)
@@ -1688,7 +1710,7 @@ const identityStage: StageDef = {
             b.collected.identitySkipped = true;
             b.pendingIdentityPick = undefined;
             b.stage = 'gap';
-            b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+            b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
           } else {
             b.reply = IDENTITY_PICK_REPROMPT;
             b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
@@ -1697,7 +1719,7 @@ const identityStage: StageDef = {
           b.collected.identityNoun = displayIdentityNoun(handle); // verbatim (article stripped, natural case)
           b.pendingIdentityPick = undefined;
           b.stage = 'gap';
-          b.reply = identityPickAck(b.collected); // accept + bridge into the gap — the pick was definitive
+          b.reply = identityPickAck(b.collected, b.history); // accept + bridge into the gap — the pick was definitive
         }
       }
     } else if (b.collected.identityNoun) {
@@ -1736,7 +1758,14 @@ const identityStage: StageDef = {
       // ONE TURN IS A FLOOR, NOT A TARGET, and the escapes stay in charge: a front-loader whose first answer is
       // already rich passes it, a member with a stored past self passes it, and someone deflecting is never
       // trapped by it. It only stops a name being offered off a single thin line.
-      const drawnOut = (s.identityTurns ?? 0) >= 1
+      // TWO TURNS, NOT ONE. The floor shipped at 1 on 8/27 in answer to "it felt a little rushed … seems like I
+      // had a couple more turns the last time", and on 8/28 the same walk produced the same note: "identity
+      // suggestions came too abruptly". One turn was enough to stop a handle being offered off a single thin
+      // line, and not enough to feel like a conversation. His own words for what it should feel like are "a
+      // couple more turns", so the floor is a couple.
+      // Still a FLOOR, not a target — every escape below still outranks it, so a member who arrives with a rich
+      // first answer, a stored past self, or who pushes past is never held here.
+      const drawnOut = (s.identityTurns ?? 0) >= 2
         || stageMaterialRich('identity', b.collected)
         || !!b.collected.athleticPast
         || memberPushedPast('identity', b.memberMessage, b.collected);
@@ -1747,7 +1776,15 @@ const identityStage: StageDef = {
       }
       b.pendingIdentityPick = candidates;
       b.expects = { kind: 'identity_pick', candidates };
-      b.reply = b.modelText || IDENTITY_PICK_OFFER;
+      // THE OFFER SENTENCE IS OWED EVERY TIME, and `b.modelText || IDENTITY_PICK_OFFER` meant it was owed only
+      // when the model said NOTHING — which almost never happens. So in practice the chips appeared under
+      // whatever reflection the model had just written, with nothing saying what they were or that the member
+      // could write their own. Jay: "identity suggestions came too abruptly."
+      //
+      // receiveThen is the pattern this file already uses for exactly this seam: the model keeps the reflection
+      // (its trailing question stripped, so there aren't two asks), the ENGINE keeps the structural line. The
+      // authored copy is not a fallback for a silent model — it is the frame the chips hang on.
+      b.reply = receiveThen(b.modelText, IDENTITY_PICK_OFFER);
     } else {
       // Gather. Never-strand a member who won't name a PAST self: offer the "find it later" skip after a couple
       // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
@@ -1756,7 +1793,7 @@ const identityStage: StageDef = {
       if (s.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.athleticPast && !b.collected.identityNoun) {
         b.collected.identitySkipped = true;
         b.stage = 'gap';
-        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
       } else {
         // CAT-20: rotate the skip offer by how often we've already made it — the same paragraph twice reads as a
         // broken loop to a terse member (the whole-reply guard misses it, since withQuestion varies the lead).
@@ -1780,7 +1817,7 @@ const identityStage: StageDef = {
         b.collected.identityNoun = undefined;
         b.stage = 'gap';
         b.awaitingConfirm = false;
-        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
         return;
       }
       b.awaitingConfirm = false;
@@ -1789,7 +1826,7 @@ const identityStage: StageDef = {
       // Not a correction → advance into the gap stage (bridge from the named identity, not a cold switch).
       b.stage = 'gap';
       b.awaitingConfirm = false;
-      b.reply = gapBridge(b.collected);
+      b.reply = gapBridge(b.collected, b.history);
     }
   },
 };
@@ -1797,7 +1834,7 @@ const identityStage: StageDef = {
 const gapStage: StageDef = {
   id: 'gap',
   mode: 'drawout',
-  opener: (c) => gapBridge(c),
+  opener: (c) => gapBridge(c, []),
   offersSubstance: (message) => shouldCaptureStagedGap(message) || message.trim().length >= 20,
   forceProgress(b) {
     // Bound the gap-elaboration loop: a real gap is captured but she keeps elaborating → move on to Reclaim.
@@ -1911,7 +1948,7 @@ const gapStage: StageDef = {
       }
     } else {
       // Still gathering a real fade — keep the model's question, else hold the gap open.
-      b.reply = withQuestion(b.modelText, gapOpen(b.collected));
+      b.reply = withQuestion(b.modelText, gapOpen(b.collected, b.history));
     }
   },
   confirm(b) {

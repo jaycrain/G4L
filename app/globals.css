@@ -162,11 +162,10 @@ input:not([type]):focus-visible, textarea:focus-visible, select:focus-visible {
   border-color: var(--teal-text);
 }
 
-/* Password field with show/hide (eye) toggle */
+/* Password field with show/hide (eye) toggle. The .pw-toggle rule itself lives ONCE, further down with the
+   other password-field styles — it was defined here AND there, and the later copy won for both wrappers. */
 .pw-wrap { position: relative; }
 .pw-wrap input { padding-right: 2.6rem; }
-.pw-toggle { position: absolute; top: 50%; transform: translateY(-50%); right: 0.5rem; margin: 0; padding: 0.25rem; background: none; border: none; border-radius: 6px; color: var(--navy); opacity: 0.55; cursor: pointer; display: inline-flex; }
-.pw-toggle:hover { background: none; color: var(--teal-text); opacity: 1; }
 
 button, .btn {
   display: inline-block;
@@ -368,7 +367,19 @@ button:disabled:hover, .btn:disabled:hover { filter: none; }
 /* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */
 .pw-field { position: relative; display: flex; align-items: center; }
 .pw-field input { flex: 1; padding-right: 4rem; }
-.pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal-text); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
+/* THE ONE .pw-toggle RULE, serving both wrappers (.pw-wrap's eye and .pw-field's Show/Hide).
+   There were two. The first carried the vertical centring; this one, later in the file and of equal
+   specificity, won for BOTH surfaces and had no vertical positioning at all — so the button fell to its static
+   position and then took `margin-top: 1.5rem` from the global `button` rule on top of that. Jay: "center the
+   show/hide function vertically in the composer." It was sitting below the field it belongs inside, on every
+   password field in the product, not just the one he screenshotted. [[one-fact-many-sites]]
+   `margin: 0` is load-bearing — without it the global button margin is back and so is the offset. */
+.pw-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%); margin: 0;
+  display: inline-flex; align-items: center;
+  background: none; border: none; color: var(--teal-text);
+  font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px;
+}
 .pw-toggle:hover { text-decoration: underline; }
 /* AI disclosure — its own framed beat at the top of the gate (governance: members always know it's AI). */
 .ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal-text); border-radius: 8px; background: var(--wash); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
