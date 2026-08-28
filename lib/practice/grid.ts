@@ -470,12 +470,19 @@ async function w2Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     const { latestImageKeeper, imageHook } = await import('./store.ts');
     const hook = imageHook(await latestImageKeeper(db, memberId));
     // Their words when we have them; the practice itself when we do not. Never an empty grid.
-    return commitmentBackedRows(db, memberId, 'w2_image', window, [
-      { slot: 'picture', label: hook ? `Five minutes: ${hook}` : 'Five minutes with your picture' },
-    ]);
+    // NAMED FOR THE PRACTICE, NOT THE PICTURE (Jay, 2026-08-28). The row read "Five minutes: Big Sugar gravel
+    // race", which describes an event he is attending rather than a practice he is doing — and gave the grid no
+    // way to say which Session the week came from. It is the Visualization Workshop's practice; the row says so.
+    //
+    // A GridRow is label-only, so the picture does not ride along here. It is not lost — the daily nudge still
+    // says his image back to him and the image itself is in the Playbook — but the note above is now half true:
+    // the grid names the PRACTICE and the nudge names the PICTURE. They describe the same act rather than the
+    // same words, which is the trade Jay chose; if they ever do drift, this is the seam to look at.
+    void hook;
+    return commitmentBackedRows(db, memberId, 'w2_image', window, [{ slot: 'picture', label: 'Visualization' }]);
   } catch (err) {
     console.error(`w2Rows failed for member=${memberId}:`, err);
-    return commitmentBackedRows(db, memberId, 'w2_image', window, [{ slot: 'picture', label: 'Five minutes with your picture' }]);
+    return commitmentBackedRows(db, memberId, 'w2_image', window, [{ slot: 'picture', label: 'Visualization' }]);
   }
 }
 

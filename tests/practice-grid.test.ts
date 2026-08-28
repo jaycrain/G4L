@@ -171,7 +171,10 @@ test('W2 gets ONE row — we tell them five minutes a day, so they can mark the 
   await startPracticeWeek(db, memberId, 'w2_image');
   const rows = (await weekGrid(db, memberId))!.rows;
   assert.equal(rows.length, 1, 'one practice, one row — not none, and not a list it does not have');
-  assert.match(rows[0]!.label, /Five minutes/i, 'the row names the practice the close asked for');
+  // NAMED FOR THE SESSION'S PRACTICE (Jay, 2026-08-28). It read "Five minutes: Big Sugar gravel race" — his own
+  // image line — which describes an event he is attending rather than a practice he is doing, and left the grid
+  // with no way to say which Session the week came from. "Visualization" is the Workshop's practice.
+  assert.equal(rows[0]!.label, 'Visualization', 'the row names the practice, not the picture inside it');
   assert.equal(rows[0]!.done, 0, 'a fresh week starts unmarked');
 });
 
