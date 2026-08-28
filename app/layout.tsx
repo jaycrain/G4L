@@ -33,10 +33,25 @@ const barlow = Barlow({
   variable: '--font-barlow',
 });
 
-// The mobile home billboard's all-caps signature style (Mobile slice 1). Loaded but unused until the mobile home renders.
+/**
+ * THE DISPLAY FACE — 600 · 800 · 900.
+ *
+ * THE RULE ABOVE APPLIES HERE TOO, and it took four days to learn that twice. The note on Barlow says "do not
+ * write a weight the face does not carry" and was written on 2026-08-21 after five rules asked for a 500 that did
+ * not exist. On 8/27 Donna asked for the intro headlines in SemiBold, I set `.onbwel-head` and `.onbwel-d-head` to
+ * 600 — and this list carried only 800 and 900, so every one of them kept rendering at 800. The CSS was correct
+ * and completely inert, and nothing anywhere said so.
+ *
+ * Note the direction differs from the Barlow case and it matters when you are diagnosing by eye: CSS font matching
+ * for a desired weight ABOVE 500 walks UP first (600 → 700 → 800), which is why this failed HEAVY. The 500 bug
+ * failed light. Same fault, opposite symptom.
+ *
+ * tests/a-weight-must-exist.test.ts now reads both lists out of this file and refuses any font-weight in
+ * globals.css that its own family cannot render.
+ */
 const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
-  weight: ['800', '900'],
+  weight: ['600', '800', '900'],
   variable: '--font-condensed',
 });
 
