@@ -21,7 +21,7 @@
 // load-bearing, not deferrable), and the handoff into the confirmation card. The flow is now END-TO-END
 // behind the flag — the first live-eval gate.
 
-import { looksLikeMachineLine } from './member-display.ts';
+import { looksLikeMachineLine, memberDisplay } from './member-display.ts';
 import { sentenceStart } from '../content/member-words.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
@@ -323,6 +323,17 @@ const GAP_MORE_VARIANTS = [
 // out: nextFollowUp returns null and the caller stops asking rather than starting again at the top.
 function gapMore(history: ConvMessage[]): string | null {
   return nextFollowUp(GAP_MORE_VARIANTS, history);
+}
+// AFTER A TAP OF "THERE'S MORE" — they have already told us there is more, so this only opens the door. No thanks
+// (nothing was given yet) and no "was there more?" (that is the question they just answered). Same rotation
+// discipline as GAP_MORE_VARIANTS so a member who taps twice is not read the same line twice.
+const GAP_GO_ON_VARIANTS = [
+  'Go on — what else was going on?',
+  "I'm listening. What else was part of it?",
+  'Tell me the rest of it.',
+];
+function gapGoOn(history: ConvMessage[]): string | null {
+  return nextFollowUp(GAP_GO_ON_VARIANTS, history);
 }
 
 // DECISION E FORK (v2.1, Increment 2) — supersedes the Jun-26 admit-at-floor + `note_no_fade`. A "no obvious
@@ -1684,6 +1695,32 @@ const identityStage: StageDef = {
       // language. Hand them to the client as a tap-to-pick chooser (chips + write-your-own); the member's pick names
       // it next turn (resolved above). The model's prose frames the invite; fall back to a warm default.
       const candidates = (b.model.identityCandidates ?? []).map((w) => w.trim()).filter(Boolean).slice(0, 4);
+      // THE OFFER HAS A FLOOR NOW (Jay's walk, 2026-08-27: "it felt a little rushed … seems like I had a couple
+      // more turns the last time").
+      //
+      // Nothing gated this branch: the chips rendered the instant the model returned candidates, so how many turns
+      // a member got before being handed a name for themselves was the model's unconstrained judgement — the same
+      // prompt giving four turns one night and one the next. That is also why it read as a regression when the
+      // code had not changed.
+      //
+      // The engine's breathe floor was already written for this stage and is UNREACHABLE on this path: it lives in
+      // the `identityNoun` branch above, and the pick sets identityNoun and advances to 'gap' in one step, so it
+      // has not run since tap-to-pick shipped on 7/29. Rather than reroute the resolve — which would put a confirm
+      // after a tap the prompt deliberately treats as final — the floor moves to where the decision actually is:
+      // don't OFFER yet.
+      //
+      // ONE TURN IS A FLOOR, NOT A TARGET, and the escapes stay in charge: a front-loader whose first answer is
+      // already rich passes it, a member with a stored past self passes it, and someone deflecting is never
+      // trapped by it. It only stops a name being offered off a single thin line.
+      const drawnOut = (s.identityTurns ?? 0) >= 1
+        || stageMaterialRich('identity', b.collected)
+        || !!b.collected.athleticPast
+        || memberPushedPast('identity', b.memberMessage, b.collected);
+      if (!drawnOut) {
+        s.identityTurns = (s.identityTurns ?? 0) + 1;
+        b.reply = withQuestion(b.modelText, identityProbe(b.collected));
+        return;
+      }
       b.pendingIdentityPick = candidates;
       b.expects = { kind: 'identity_pick', candidates };
       b.reply = b.modelText || IDENTITY_PICK_OFFER;
@@ -1939,6 +1976,22 @@ const gapStage: StageDef = {
       if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
         b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
+      } else if (parseGapConfirmChoice(b.memberMessage) === 'more') {
+        // A TAP OF "THERE'S MORE" IS NOT A QUESTION TO RE-ASK (Jay's walk, 2026-08-27).
+        //
+        // He tapped it and got GAP_MORE_VARIANTS[0] back verbatim: "Thank you for that. Was there more around that
+        // same stretch … or is that the heart of how it opened?" — offering him the same choice he had just made,
+        // and thanking him for a tap that carried no content.
+        //
+        // Those variants are RIGHT for the typed path, where a member has just given a new chapter and "was there
+        // more, or is that the heart of it?" is a fair question about what they wrote. Here the surface already
+        // asked it once, properly, with the answer as a button — and he pressed the button. The only thing left to
+        // do is get out of the way. He praised that screen in the same breath, so nothing about it changes; this is
+        // purely the turn after.
+        //
+        // The model's prose still leads when it has some, because it may have something warm to say. The engine
+        // only guarantees the beat ends by INVITING the story rather than re-litigating whether there is one.
+        b.reply = withQuestion(b.modelText, gapGoOn(b.history));
       } else {
         b.reply = withQuestion(b.modelText, gapMore(b.history));
       }
@@ -2850,9 +2903,16 @@ identity), capture it with its tool anyway — never lose it — but keep asking
 you'll bring it back at its stage.
 
 IDENTITY STAGE: open on who they were when they felt most like themselves — a past self of ANY kind (never
-assume athletic). Draw it out, reflect a specific detail back, and once you have a real feel for that person,
-call offer_identity_words with 2–4 candidate words FROM THEIR OWN LANGUAGE — your prose warmly invites them to
-tap one or write their own, framed as a changeable HANDLE, not a verdict.
+assume athletic). EXPLORE it; do not just receive it. Their first answer is a headline ("I used to race bikes")
+— have a CONVERSATION, not a form: ask what that person was actually like, what a good day looked like, what
+they were known for, what it felt like. DEPTH is the goal, not moving on. A name offered off one thin line is a
+label you handed them; a name offered after you can SEE that person is one they recognize.
+BEFORE you offer any candidates, call set_past_self with who they were at their best IN THEIR OWN WORDS — the
+specifics, not a summary. That text is the raw material Identity Excavation works from later in Reconnect, and
+it is theirs; if you skip it, it is gone.
+Once you can genuinely picture that person, call offer_identity_words with 2–4 candidate words FROM THEIR OWN
+LANGUAGE — your prose warmly invites them to tap one or write their own, framed as a changeable HANDLE, not a
+verdict.
 EVERY CANDIDATE MUST BE A NOUN — A PERSON THEY WERE, NOT A QUALITY THEY HAD. "the Runner", "the Swimmer",
 "the Builder", "the Maker", "the Friend Who Always Called". NEVER adjectives: not "Untamed", not "Sovereign",
 not "Alive", not "Fearless". The whole program is about reclaiming an IDENTITY — someone you can go be again
@@ -3108,9 +3168,27 @@ export async function liveTurnStaged(
     maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
+  // THE MODEL READS WHAT THE MEMBER SAW, NOT THE WIRE (2026-08-27).
+  //
+  // This mapped `m.text` straight through, so every tap in onboarding reached the model as machine syntax —
+  // `[gap-confirm] more keep:grind`, `[board] door:body=2 …`, `__identity_skip__`. It had to infer meaning from a
+  // format nothing in its prompt describes, at exactly the beats that carry the most: which Doors are hers,
+  // whether her story is finished, whether she is ready to be named.
+  //
+  // memberDisplay is the same mapping the chat bubble and the stored transcript already use. This is the fourth
+  // place it was needed and the last one that did not have it — the live bubble got it in August, the transcript
+  // this morning, and the MODEL, which is the reader whose misunderstanding actually changes what a member is
+  // asked next, was still being handed the raw line.
+  //
+  // The ENGINE still parses the raw `memberMessage` for its own decisions (parseGapConfirmChoice and friends run
+  // on the wire string, above) — a tap must stay a fact where it is acted on. Only the model's view is humanised.
+  const asRead = (t: string) => memberDisplay(t);
   const messages = [
-    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
-    { role: 'user' as const, content: memberMessage },
+    ...history.map((m) => ({
+      role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user',
+      content: m.role === 'agent' ? m.text : asRead(m.text),
+    })),
+    { role: 'user' as const, content: asRead(memberMessage) },
   ];
   // onboarding capture → Opus by default (Sonnet stalled in testing), Sonnet fail-safe if Opus errors. See capture-model.ts.
   const res = await captureCreate((model) => client.messages.create({

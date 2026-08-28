@@ -9,6 +9,7 @@ import { openCheckin, sendCheckin, loadCheckin, logPlayRerun } from './checkin-a
 import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
 import { rerunAsk } from '../../lib/playbook/runnable.ts';
 import RedesignRing from './redesign-ring.tsx';
+import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
 
 // Triptych center — the NAVY Companion hero, the dashboard's default landing (Jay: "the entire center panel navy, the
@@ -35,7 +36,6 @@ export default function TriptychCenter({
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [nudge, setNudge] = useState<{ id: string; text: string } | null>(null);
-  const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingRef = useRef(false);
   useEffect(() => {
@@ -86,11 +86,21 @@ export default function TriptychCenter({
     });
   }, [memberId]);
 
-  // The Session info (hero) is pinned, so the thread just always follows the newest message.
-  useEffect(() => {
-    const el = chatRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pending]);
+  // ANCHOR THE TOP OF THE NEWEST REPLY, don't slam to the bottom.
+  //
+  // This was `el.scrollTop = el.scrollHeight` — always the bottom — under the reasoning that "the hero is pinned,
+  // so the thread just follows the newest message". That reasoning predates useChatAutoscroll, which exists
+  // precisely because following-to-the-bottom shows a member the END of a long reply and makes them scroll up to
+  // read it (Donna's walk item #12). It was wired into all four Session chats and never onto the Companion's own
+  // home surface.
+  //
+  // Jay hit it coming out of onboarding, where the thread's first message is a long multi-paragraph welcome — the
+  // worst case for this — and used the hook's own word: "the Hero opened pinned" (2026-08-27).
+  //
+  // Options rather than defaults because this thread's markup is .rmsg/.member, not .chat/.bubble — the same
+  // reason they were added for the Founder Console. The onScroll handler below is untouched: hero-collapse reads
+  // scrollTop independently of who set it.
+  const chatRef = useChatAutoscroll([messages, pending], { bubble: '.rmsg', mine: 'member' });
   // hasSent = the member has sent a message THIS visit — drives the MOBILE hero collapse (per-visit, Jay: full hero every
   // visit, tuck to a strip only once they start typing today, so the thread gets the small screen).
   const [hasSent, setHasSent] = useState(false);
