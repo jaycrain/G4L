@@ -437,7 +437,12 @@ export async function reconnectTurnAction(
   history: ConvMessage[],
   message: string,
   session: ReconnectSession = 'r2',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[] }> {
+  // `complete` IS THE SESSION'S CLOSE, and the client needs it. Reconnect used to be one arc whose only ending
+  // was the ceremony, so the client watched for that stage and nothing else. Split into Sessions, R1 and R2 and
+  // R3 each end on their own — and with no signal for it the client could not tell when to show the "Why it
+  // works" card, which is how it ended up deriving that from beat order instead and showing two of them on
+  // question 1. The server already knows; it just was not saying.
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[]; complete?: boolean }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   // GOVERNANCE — ESCALATE TO A HUMAN. The engine already short-circuits this turn to the 988 protocol
@@ -468,7 +473,7 @@ export async function reconnectTurnAction(
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
     const finalReply = closeOverride ?? turn.reply;
     await persistArcSession(db, memberId, history, message, finalReply, turn, session); // W-15 — save the transcript for resume (or clear at ceremony)
-    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals };
+    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals, complete: turn.complete };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

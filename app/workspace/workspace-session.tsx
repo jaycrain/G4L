@@ -6,7 +6,6 @@ import { readArtifactAction, readSessionTrackerAction } from './actions.ts';
 import { useRouter } from 'next/navigation';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
-import { reconnectStageTitle } from '../../lib/content/explore.ts';
 import { whereItLives } from '../../lib/content/where-it-lives.ts';
 import { hasHandoff } from '../../lib/content/session-tracker.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
@@ -77,12 +76,10 @@ export default function WorkspaceSession({
   nudge?: PostSessionNudge | null;
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
-  // RECONNECT RESOLVES ITS SCIENCE CHECK BY BEAT. Greg wrote three (r1/r2/r3) for what the member experiences as
-  // ONE session, so keyed by session id it found nothing and the button silently never drew — the content was
-  // there the whole time. The nine other sessions are 1:1 with an asset and resolve normally. Still tracked here
-  // because the HEADER TITLE follows the beat (reconnectStageTitle); the teaching cards resolve their own content.
-  const [reconnectStage, setReconnectStage] = useState<string | null>(null);
-  const isReconnect = chatDispatch(sessionKey).arc === 'reconnect';
+  // (Removed 2026-08-28: `reconnectStage` + `isReconnect`. They existed because Reconnect was ONE session over
+  //  three assets, so the header had to name the current BEAT rather than the session. Each Session is its own
+  //  page now and wayfinding.positionLabel names it correctly, so the beat was tracked for a reader that no
+  //  longer exists — and the map it fed still said `measurement: 'The Drift Quiz'`.)
   const bodyRef = useRef<HTMLDivElement>(null);
   // (Removed 2026-08-16: a wheel/touchmove listener that collapsed the framing panel on first scroll. It existed
   //  because the panel was PINNED in this header and had to get out of the conversation's way. The panel now lives
@@ -190,7 +187,15 @@ export default function WorkspaceSession({
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">
                     Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}
-                    <span className="ws-way-ss">{isReconnect ? reconnectStageTitle(reconnectStage) : wayfinding.positionLabel}</span>
+                    {/* RECONNECT IS NOT SPECIAL ANY MORE (2026-08-28). This read
+                        `isReconnect ? reconnectStageTitle(reconnectStage) : wayfinding.positionLabel`, because
+                        Reconnect used to be ONE page running an eight-stage arc across three assets — the header
+                        had to name the sub-activity, since positionLabel could only say "Reconnect".
+                        Split into three Sessions, each with its own page, positionLabel already says exactly the
+                        right thing ("The Mirror · Session 1 of 3") and the stage map is actively wrong: it still
+                        carries `measurement: 'The Drift Quiz'` from the old grouping, so Jay's walk opened the
+                        IDQ under the title of a Session three steps away. Every phase uses one rule now. */}
+                    <span className="ws-way-ss">{wayfinding.positionLabel}</span>
                   </div>
                   <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
                 </div>
@@ -236,7 +241,7 @@ export default function WorkspaceSession({
               <p className="ws-built-foot">Saved in your Playbook — there whenever you want it.</p>
             </div>
           ) : (
-            <SessionConversation memberId={memberId} sessionKey={sessionKey} onReconnectStage={setReconnectStage} />
+            <SessionConversation memberId={memberId} sessionKey={sessionKey} />
           )}
         </div>
       </div>

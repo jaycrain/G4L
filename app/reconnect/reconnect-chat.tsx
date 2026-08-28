@@ -15,14 +15,12 @@ import ScaleChips from '../components/scale-chips.tsx';
 import DoorsBoard from './doors-board.tsx';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
 import { keepScienceAction } from '../workspace/actions.ts';
-import { reconnectTaughtSoFar, teachingSourceLabel } from '../../lib/content/teaching.ts';
-import { placeTeachingCards } from '../../lib/teaching/card-placement.ts';
+import { teachingSourceLabel } from '../../lib/content/teaching.ts';
 import KeeperOffer from '../components/keeper-offer.tsx';
 import type { KeeperProposal } from '../../lib/agent/harvest.ts';
 
 // Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
 // stage it closed at, not the member's current one.
-const LAST_BEAT: Record<string, string> = { r1: 'doors', r2: 'drift', r3: 'ceremony' };
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
@@ -67,6 +65,9 @@ export default function ReconnectChat({
   // The conversation has reached its end, so the held keepers may be offered. Set when the arc hands to the
   // ceremony — the last authored beat before she leaves — not on any earlier "looks finished" guess.
   const [closing, setClosing] = useState(false);
+  // THE SESSION IS OVER — reported by the engine, not inferred from which beat we are on. Every other arc has
+  // had this; Reconnect derived it from beat order because it used to be one continuous conversation.
+  const [done, setDone] = useState(false);
   // Stages whose science card she ALREADY acknowledged in an earlier sitting — never re-offered. Empty on a
   // fresh start, which is correct: nothing has been seen yet.
   const [scienceSeen, setScienceSeen] = useState<string[]>([]);
@@ -95,36 +96,33 @@ export default function ReconnectChat({
   // Reconnect has no hand-home to hold, so what it gates is the acknowledgment itself; what it must do is FILE
   // the read, which is the thing the member was told would happen.
   //
-  // Keyed by STAGE, so the three cards file as three reads rather than colliding on one session key.
+  // KEYED BY SESSION. It was keyed by BEAT, "so the three cards file as three reads rather than colliding on one
+  // session key" — true when all three lived in one conversation. Each Session is its own arc and its own card
+  // now, so the session key IS the natural key and the three reads stay three.
   const keepReconnectScience = (stage: string | undefined) => {
-    if (!stage) return; // an unmapped asset has no beat to file against — never invent one
+    if (!stage) return; // nothing to file against — never invent one
     setScienceSeen((seen) => (seen.includes(stage) ? seen : [...seen, stage]));
     void keepScienceAction(memberId, 'reconnect', teachingSourceLabel(sessionKeyFor(session), stage), null, stage)
       .catch((e) => console.error('[teaching] reconnect keep failed', e));
     notifyArtifactCommitted();
   };
 
-  // A card she has already read is not re-offered. `reconnectTaughtSoFar` answers "how far has she got",
-  // which is not the same question as "what has she seen" — and on a resume the difference is every card
-  // she met in the previous sitting piling up after the Legacy Letter.
-  const taught = reconnectTaughtSoFar(state?.stage).filter((a) => !scienceSeen.includes(LAST_BEAT[a] ?? ''));
-  const [cardAt, setCardAt] = useState<Record<string, number>>({});
-  useEffect(() => {
-    const missing = taught.filter((a) => cardAt[a] === undefined);
-    if (missing.length) {
-      setCardAt((prev) => ({ ...prev, ...Object.fromEntries(missing.map((a) => [a, messages.length])) }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taught.join(','), messages.length]);
-
-  // WHERE EACH CARD RENDERS. `awaitingAnswer` is the half the first fix missed: when a structured control is
-  // pending it sits BELOW the whole thread, so a card at the final message splits the question from its answer.
-  const placement = placeTeachingCards({
-    taught,
-    cardAt,
-    messageCount: messages.length,
-    awaitingAnswer: expects?.kind === 'scale' || expects?.kind === 'doors_board',
-  });
+  // ONE CARD, AT THE CLOSE — the same rule as Rewire, Rebuild and Reclaim.
+  //
+  // What was here derived which cards to show from how far through the BEAT ORDER the member had got, placed
+  // each one at the message where it was earned, and moved any that would land between a question and its answer
+  // control. All of that existed for a shape that no longer exists: Reconnect as ONE conversation spanning three
+  // assets, accumulating three science cards in a single thread.
+  //
+  // Split into Sessions, each one maps 1:1 to its asset — teachingFor already takes the 1:1 branch and ignores
+  // the beat entirely. The leftover machinery still read the OLD order, in which `measurement` came fourth
+  // rather than first, so a member on question 1 of the IDQ was scored as having finished the Doors AND the
+  // Drift Quiz: two cards, both rendering the current session's content, before he had answered anything.
+  // (Jay's walk, 2026-08-28.)
+  //
+  // Donna's two placement fixes are not lost — they are answered by construction. There is one card and it comes
+  // after the close, so it cannot sit between a question and the control that answers it.
+  const seenThisSession = scienceSeen.includes(session);
 
   useEffect(() => {
     if (started.current) return;
@@ -175,6 +173,7 @@ export default function ReconnectChat({
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     setExpects(r.expects ?? null);
+    if (r.complete) setDone(true);
     // Keeper OFFERS from this turn — she keeps what she wants; the rest evaporate.
     if (r.proposals?.length) setOffers((o) => [...o, ...r.proposals!]);
     notifyArtifactCommitted(); // push the workspace canvas to re-read now (identity/doors/list land on the left)
@@ -242,43 +241,17 @@ export default function ReconnectChat({
       <div className="chat" ref={chatRef}>
         {/* ① The frame — Reconnect's is the PHASE summary, because the arc spans three assets rather than one. */}
         <TeachingFrame sessionKey={sessionKeyFor(session)} />
-        {/* ③ Understand — ONE card per asset, INTERLEAVED where it was earned.
-
-            THIS USED TO RENDER AFTER EVERY MESSAGE and it scrambled the thread (Donna, 2026-08-17). Reconnect is
-            the only arc that accumulates several of these across one conversation, so it was the only one that
-            showed the fault: a card earned when R1 closed sat below every later message, new turns painted ABOVE
-            it, and on an administered turn the question sat above the card while the chips answering it sat
-            below. Her words: "questions appear above the field meant to answer them."
-
-            Each card is now placed after the message that was last on screen when its beat closed, so the thread
-            reads in the order it happened. `cardAt` is captured the first time an asset appears in
-            reconnectTaughtSoFar — the render is derived, the POSITION is a fact about when it arrived, and only
-            the component watching the conversation can know it.
-
-            NOTHING IS GATED HERE. The other three arcs hold the hand-home until the member acknowledges; Reconnect
-            has no hand-home (it flows into the ceremony) and it carries the live capture loop, so a required tap
-            mid-arc would interrupt the one conversation we have standing orders not to disturb. */}
-        {/* ROUND TWO (Donna, 2026-08-19). The fix above handled cards vs MESSAGES and never considered cards vs
-            the ANSWER CONTROL, which renders at the bottom of this thread — so a card earned at the final message
-            still landed between the question and its scale, and she reported the same sentence a second time.
-            The rule now lives in lib/teaching/card-placement.ts with tests, because the inline version had none
-            and that is precisely how the second case survived the first fix. */}
-        {placement.leading.map((a) => (
-          <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
-        ))}
         {messages.map((m, i) => (
           <Fragment key={i}>
-            {(placement.before.get(i) ?? []).map((a) => (
-              <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
-            ))}
             <div className={`bubble ${m.role}`}>
               {m.role === 'agent' ? <RichText text={m.text} /> : memberDisplay(m.text)}
             </div>
-            {(placement.after.get(i) ?? []).map((a) => (
-              <TeachingUnderstand key={a} sessionKey={sessionKeyFor(session)} stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
-            ))}
           </Fragment>
         ))}
+        {/* ③ Understand — after the close, before the member can leave. One per Session, never re-offered. */}
+        {done && !seenThisSession && (
+          <TeachingUnderstand sessionKey={sessionKeyFor(session)} onAcknowledge={() => keepReconnectScience(session)} />
+        )}
         {/* KEEPER OFFERS — HELD UNTIL THE CLOSE, then handed over together.
             
             They used to render the instant a turn produced one, which put a card in the middle of a sentence.

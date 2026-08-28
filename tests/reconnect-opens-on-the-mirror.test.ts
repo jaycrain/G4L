@@ -91,3 +91,40 @@ test('the mobile tab track is tall enough for the tap-target floor it inherits',
   const btn = CSS.match(/\.tri-seg-btn \{([^}]*)\}/)![1]!;
   assert.doesNotMatch(btn, /min-height/, 'exempting the tabs would shrink a primary phone target below 44px');
 });
+
+// ── "RECONNECT IS SPECIAL" MACHINERY, RETIRED ────────────────────────────────────────────────────────────────
+//
+// Jay's R1 walk showed the IDQ under the title "The Drift Quiz", with the same "Why it works" card rendered
+// twice before he had answered question 1.
+//
+// One cause. Reconnect used to be ONE page running an eight-stage arc across three assets, so three things were
+// special-cased for it: the header derived its title from the current BEAT (positionLabel could only say
+// "Reconnect"), the teaching layer resolved science by beat, and the cards were interleaved into the thread at
+// the message where each was earned. The Session split made Reconnect ordinary — three Sessions, each 1:1 with
+// its asset, each its own page — and all three survived it reading the PRE-SPLIT beat order, in which
+// `measurement` came fourth rather than first.
+//
+// So on question 1 of the first Session the header showed a Session three steps away, and the layer scored him
+// as having finished the Doors and the Drift Quiz.
+//
+// The fix was deletion, not remapping: every phase now uses one rule.
+test('the workspace header uses one rule for every phase', () => {
+  const src = readCss(new URL('../app/workspace/workspace-session.tsx', import.meta.url), 'utf8');
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  assert.doesNotMatch(code, /reconnectStageTitle\(/,
+    'a beat-derived title for one phase is how the IDQ got labelled "The Drift Quiz"');
+  assert.match(code, /wayfinding\.positionLabel/, 'positionLabel already says "The Mirror · Session 1 of 3"');
+});
+
+test('Reconnect shows ONE science card, after its close, like every other arc', () => {
+  const src = readCss(new URL('../app/reconnect/reconnect-chat.tsx', import.meta.url), 'utf8');
+  const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+
+  // Exactly one render site, gated on the engine's own close — not on how far through a beat order we are.
+  assert.equal((code.match(/<TeachingUnderstand/g) ?? []).length, 1, 'one card per Session');
+  assert.match(code, /done && !seenThisSession/, 'shown at the close, and never twice');
+
+  // The multi-card machinery must not come back with it.
+  assert.doesNotMatch(code, /placeTeachingCards|reconnectTaughtSoFar/,
+    'these derive cards from beat order, which is what showed two of them on question 1');
+});
