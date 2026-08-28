@@ -3108,16 +3108,18 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    shared grid — 4px and 9px, invisible to the eye and exactly the kind of drift Donna's spec exists to remove.
    Pinned bottom-left on the same gutter: same position on screen, no longer part of the maths. */
 .onbwel-d-signin {
-  /* ABOVE THE FIXED FOOTER, on the same reserve the CTA uses. `bottom: clamp(20px, 4vh, 40px)` put it 20–40px
-     off the bottom, which clears a one-line footer and is completely hidden by a wrapped one: at 393px the
-     copyright runs to three lines and the bar is 50px tall, so the whole "Already a member? Log in" sat behind
-     it (Jay, 2026-08-28 — "still hidden on mobile and iPad").
-     This is the CTA's footer bug in a second element. I reserved room for the button and left the one thing
-     underneath it still pinned to the viewport edge — so keying both to --onbwel-foot-clear is the fix, not
-     another hand-picked offset. */
-  position: absolute; left: var(--onbwel-gutter); bottom: calc(var(--onbwel-foot-clear) + 18px); margin: 0;
-  color: var(--muted-grey); font-size: 14px;
+  /* IN THE FLOW, under the CTA. This was absolutely positioned so it could not add height to slide 1's block
+     and push its headline off the shared grid — and that bought three separate collisions: behind a one-line
+     footer, behind a wrapped one, and finally ON TOP OF THE BUTTON on a desktop, because an element pinned a
+     fixed distance from the bottom will meet an in-flow element whenever the content happens to end there.
+     A fixed offset cannot know where the CTA landed. Being the next thing after it can.
+     The alignment it was protecting is kept by .onbwel-signin-spacer, which reserves the same height on slides
+     2–5 — exactly the trick .onbwel-dots-spacer already uses for the dots slide 1 does not show. */
+  margin: 14px 0 0; color: var(--muted-grey); font-size: 14px;
 }
+/* Slides 2–5 show no log-in line but reserve its height, so all five blocks are the same height and the shared
+   headline/button grid holds. Mirrors .onbwel-d-signin's box exactly — if that changes, this follows it. */
+.onbwel-signin-spacer { height: 21px; margin-top: 14px; }
 .onbwel-d-signin a { color: var(--teal-text); font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
 .onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }

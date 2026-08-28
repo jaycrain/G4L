@@ -71,12 +71,28 @@ test('slide 1 shows no dots but reserves their space', () => {
   assert.equal(mb(spacer), mb(dotsRow), 'and carry the same margin');
 });
 
-test('the slide-1-only furniture is out of the vertical flow', () => {
-  // The log-in line exists only on slide 1. In flow, it made slide 1's centered block taller than the others'
-  // and pushed its headline and button off the grid by 4 and 9 pixels.
+test('the log-in line and the spacer that stands in for it are the same box', () => {
+  // The log-in line exists only on slide 1, so in flow it makes slide 1's centered block taller than the others
+  // and pushes its headline and button off the shared grid.
+  //
+  // THE OLD ANSWER WAS TO TAKE IT OUT OF FLOW, and that is what this test used to assert. It bought three
+  // collisions — behind a one-line footer, behind a wrapped one, and finally on top of the button — because an
+  // element pinned a fixed distance from the bottom cannot know where the flow put the CTA.
+  //
+  // The answer now is the same one the dots already use: keep it in flow and reserve its height on the slides
+  // that do not show it. That is what these two rules have to agree about, forever.
   const signin = CSS.match(/\.onbwel-d-signin \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(signin, /position:\s*absolute/, 'in flow, it moves the shared grid');
-  assert.match(signin, /var\(--onbwel-gutter\)/, 'and it still sits on the shared left edge');
+  const spacer = CSS.match(/\.onbwel-signin-spacer \{([^}]*)\}/)?.[1] ?? '';
+  assert.doesNotMatch(signin, /position:\s*absolute/, 'out of flow, it collides with what the flow put there');
+
+  const px = (b: string, prop: string) => b.match(new RegExp(prop + ':\\s*(-?[\\d.]+px)'))?.[1];
+  // .onbwel-d-signin's `margin: 14px 0 0` and the spacer's `margin-top: 14px` are the same top margin written
+  // two ways, so compare the resolved value rather than the shorthand.
+  const signinTop = px(signin, 'margin-top') ?? signin.match(/margin:\s*([\d.]+px)/)?.[1];
+  assert.equal(px(spacer, 'margin-top'), signinTop, 'the spacer must carry the same top margin');
+  assert.equal(px(spacer, 'height'), '21px',
+    "and stand exactly as tall as one line of the log-in text — if that rule's font-size or line-height " +
+    'changes, this number is what has to change with it');
 });
 
 test("Donna's progress mark is the PNG she sent, not the old partial ring", () => {

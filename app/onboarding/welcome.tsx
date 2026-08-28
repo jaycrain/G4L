@@ -217,6 +217,9 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
           )}
           </div>
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
+          {/* Reserves the height of slide 1's log-in line, which these slides do not show — so all five blocks
+              are the same height and the shared grid holds. Same reason as the dots spacer above. */}
+          <div className="onbwel-signin-spacer" aria-hidden="true" />
           {/* The forecast beat now states the 20 minutes itself, in context, so the old blanket reassurance under
               the final CTA would say it twice. */}
         </div>
@@ -239,8 +242,12 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
   // ONE SHELL FOR ALL FIVE (Donna's spec, 2026-08-27). Slide 1 used to be its own container with its own padding,
   // its own centering and its own headline scale, which is why every other slide sat ~246px to its right and a
   // few pixels off vertically. It renders through .onbwel / .onbwel-wrap now, exactly like the beats; the only
-  // slide-1-only pieces are the wordmark and the log-in line, both positioned OUT OF FLOW so they cannot move the
-  // shared grid.
+  // slide-1-only pieces are the wordmark and the log-in line.
+  //
+  // THE WORDMARK IS OUT OF FLOW. THE LOG-IN LINE IS NOT, ANY MORE — it was, for the same reason, and being pinned a
+  // fixed distance from the bottom of the viewport is what put it behind the footer twice and then directly on top
+  // of the button. It sits in flow under the CTA now and keeps off the shared grid the way the dots do: the other
+  // four slides reserve its height with .onbwel-signin-spacer.
   return (
     <div className="onbwel onbwel-first">
       {/* eslint-disable-next-line @next/next/no-img-element */}

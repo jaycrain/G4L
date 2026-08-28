@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 const CSS = readFileSync(new URL('../app/globals.css', import.meta.url), 'utf8');
+const WRAP = CSS.match(/\.onbwel-wrap \{[\s\S]*?\}/)![0];
 
 /** Every declaration block whose selector list mentions the given class. */
 function blocksFor(selector: string): string[] {
@@ -126,14 +127,20 @@ test('the mobile copy zone is TALLER than desktop, because the copy wraps to mor
 // The same bug as the CTA, in the element directly beneath it. I reserved room for the button and left this one
 // measured from the viewport instead — which is why both are keyed to the same variable now rather than to two
 // hand-picked offsets that can drift apart.
-test('the log-in line clears the fixed footer, on the same reserve as the CTA', () => {
-  // COMMENTS STRIPPED FIRST. The rule documents the value it replaced — `bottom: clamp(20px, 4vh, 40px)` — and
-  // the first version of this assertion matched that quotation, failing on its own explanation. A guard that
-  // reads prose is a guard that punishes writing any down.
+test('the log-in line clears the footer by being IN THE FLOW, under the CTA', () => {
+  // IT NO LONGER MEASURES ITSELF AGAINST ANYTHING. Three versions of this element were pinned a chosen distance
+  // from the bottom of the viewport — `clamp(20px, 4vh, 40px)`, then the footer reserve, then the reserve plus
+  // 18px — and each one cleared the footer and then collided with something else, because an element at a fixed
+  // offset from the bottom will eventually meet an in-flow element that ended up there too. The last version
+  // landed ON TOP OF THE BUTTON on a desktop.
+  //
+  // In flow it inherits .onbwel-wrap's padding-bottom, which already carries the footer reserve for the CTA —
+  // so the clearance is the same fact, computed once, for both elements. There is no offset left to drift.
   const rule = CSS.match(/\.onbwel-d-signin \{[\s\S]*?\}/)![0].replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.match(rule, /bottom:\s*calc\(var\(--onbwel-foot-clear\)/,
-    'measured from the footer reserve, never from the viewport edge');
-  assert.doesNotMatch(rule, /bottom:\s*clamp/, 'a viewport-relative offset cannot know how tall the footer wrapped');
+  assert.doesNotMatch(rule, /position:\s*absolute|bottom:/,
+    'pinned to the bottom, it will collide with whatever the flow put there');
+  assert.match(WRAP, /padding:[^;]*var\(--onbwel-foot-clear\)/,
+    'and the reserve it now relies on must still be on the wrap that contains it');
 });
 
 // THE FOOTER RESERVE MUST KNOW ABOUT THE NOTCH.
