@@ -74,3 +74,33 @@ test('the copy zone is sized to real content, not a round number', () => {
   assert.ok(h >= 221, `must fit the tallest slide's content (221px); got ${h}px`);
   assert.ok(h <= 260, `${h}px reintroduces the dead space the measurement removed`);
 });
+
+// A LAYOUT VARIABLE OVERRIDDEN IN A MEDIA QUERY MUST BE FOUND WHEN THE BASE ONE CHANGES.
+//
+// v3.5.2 "fixed" the oversized copy zone by changing :root — and mobile kept the old 380px, because a
+// `@media (max-width: 1000px)` block overrode it. The result read correctly in a desktop browser AND on an iPad
+// (both above the breakpoint) and wrongly on a phone, which is precisely the report that came back: "looks good
+// in browser, on iPad, but not on the phone."
+//
+// Every override of an --onbwel-* variable is enumerated here. The point is not the numbers; it is that changing
+// the base value forces a decision about each override rather than silently missing it.
+test('every --onbwel- variable override is accounted for', () => {
+  const overrides = [...CSS.matchAll(/--onbwel-([a-z-]+):\s*([^;]+);/g)].map((m) => `${m[1]}=${m[2].trim()}`);
+  // gutter, measure, icon-h, copy-h, foot-clear at :root — plus copy-h once for mobile. A NEW entry here means
+  // somebody added an override; read it and decide, do not just bump the count.
+  assert.deepEqual(
+    overrides,
+    ['gutter=8vw', 'measure=640px', 'icon-h=90px', 'copy-h=232px', 'foot-clear=52px', 'copy-h=316px'],
+    'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
+  );
+});
+
+test('the mobile copy zone is TALLER than desktop, because the copy wraps to more lines', () => {
+  const all = [...CSS.matchAll(/--onbwel-copy-h:\s*(\d+)px/g)].map((m) => Number(m[1]));
+  assert.equal(all.length, 2, 'one base value and one mobile override');
+  const [base, mobile] = all;
+  // Measured at 393px: slide 4's body is 304px there against 221px at desktop. A mobile value SMALLER than the
+  // base would mean somebody copied the desktop number across without re-measuring.
+  assert.ok(mobile! > base!, `mobile (${mobile}px) must exceed desktop (${base}px) — narrow columns wrap taller`);
+  assert.ok(mobile! >= 304, `must fit the tallest mobile slide (304px); got ${mobile}px`);
+});

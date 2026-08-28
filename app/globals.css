@@ -3209,10 +3209,18 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   /* The copy zone is TALLER on a phone, sized to slide 4 — the longest body plus the two member bubbles, which
      is the slide that needs the most space at this width (Donna: allow for it, "white space is ok"). Desktop
      fits inside 300px; narrow columns wrap more, so the same content needs more room. */
-  :root { --onbwel-copy-h: 380px; }
-  .onbwel-d-hero { min-height: 100dvh; justify-content: flex-start;
-    padding: calc(env(safe-area-inset-top, 0px) + 116px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px); }
-  .onbwel-d-cta { margin-top: 26px; }
+  /* MOBILE'S COPY ZONE, measured the same way desktop's was: the tallest slide at 393px is slide 4 at 304px
+     (the copy wraps to more lines than on a wide screen, so mobile genuinely needs MORE than desktop's 232px).
+     It was 380px, which left 178px of dead air on slide 1 and pushed the CTA under the fixed footer.
+
+     THIS IS WHY THE FIX LOOKED DONE AND WASN'T. I changed the :root value, verified desktop and a phone in the
+     dev preview, and shipped — while this override quietly kept mobile at the old number. It reads correctly in
+     a desktop browser and on an iPad (both above the breakpoint) and wrongly on a phone, which is exactly the
+     report. A variable overridden in a media query is the same "one fact, two sites" shape as everything else
+     that has bitten this file. */
+  :root { --onbwel-copy-h: 316px; }
+  /* .onbwel-d-hero and .onbwel-d-cta rules REMOVED — dead since slide 1 was unified into the shared shell on
+     2026-08-28; neither class is rendered any more. Leaving them looked like mobile had a layout of its own. */
 }
 
 /* ============ Login photo-hero (returning member) — shares the onboarding hero photo + scrim (Jay 2026-07-26) ======= */
