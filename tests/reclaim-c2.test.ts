@@ -27,9 +27,13 @@ test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summa
   // reflection questions between them (V4 interleaves on purpose). So the walk answers the ratings AND the three
   // reflections per domain, then the five cross-domain sort questions. The header assertions still pin that
   // each domain announces itself at the right item.
-  let t = reclaimC2Opening();
+  // Past the engagement doorway (2026-08-28) — see tests/no-session-opens-on-an-assessment.test.ts.
+  const doorway = reclaimC2Opening();
+  assert.equal(doorway.state.stage, 'audit-open');
+  assert.match(doorway.reply, /world can get bigger/i, 'the frame');
+
+  let t = applyReclaimC2Turn(doorway.state, [], 'The mornings, mostly.');
   assert.equal(t.state.stage, 'audit-physical');
-  assert.match(t.reply, /world to get BIGGER/i, 'the frame');
   assert.match(t.reply, /Physical —/i, 'the first domain header');
   assert.ok(t.reply.includes(AUDIT_ITEMS[0]!.prompt), 'item 0 verbatim');
 
@@ -64,7 +68,7 @@ test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summa
 });
 
 test('C2 arc · a number over 10 is re-prompted (scale fidelity), not recorded', () => {
-  const t = reclaimC2Opening();
+  const t = applyReclaimC2Turn(reclaimC2Opening().state, [], 'The mornings.');
   const bad = applyReclaimC2Turn(t.state, [], '15');
   assert.equal((bad.state.administeredResponses ?? []).length, 0, '15 is off a 1–10 scale');
   assert.match(bad.reply, /1 to 10/i, 're-prompts');

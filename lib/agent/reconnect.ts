@@ -25,7 +25,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } 
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -143,7 +143,10 @@ export function reconnectOpening(committed: Collected): Turn {
  * state via expectsForState — the one owner, so resume and a live turn cannot disagree.
  */
 export function reconnectR1Opening(committed: Collected): Turn {
-  return { reply: idqOpen(), state: { stage: 'measurement', collected: committed }, complete: false };
+  // OPENS ON THE DOORWAY, NOT THE INSTRUMENT — so the member's first act is to say something, not tap a number.
+  // No `expects` here on purpose: the 1–5 chips belong to the measurement stage, and rendering them under an open
+  // question is how the doorway would turn back into the assessment it exists to precede.
+  return { reply: engagementOpening(mirrorEngageConfig, committed), state: { stage: 'mirror-open', collected: committed }, complete: false };
 }
 
 /**
@@ -172,7 +175,8 @@ export function reconnectR3Opening(committed: Collected): Turn {
 
 /** R4 — THE CHECKPOINT. Its own Session, exactly as RWR-CHK / RBLD-B4 / RCL-C4 are, with the ceremony after it. */
 export function reconnectCheckpointOpening(committed: Collected): Turn {
-  return { reply: checkpointOpener(), state: { stage: 'checkpoint', collected: committed }, complete: false };
+  // Opens on the doorway; the 1–5 chips belong to the instrument, one turn later.
+  return { reply: engagementOpening(reconnectCheckpointEngage, committed), state: { stage: 'checkpoint-open', collected: committed }, complete: false };
 }
 
 // --- the live read: reconstruct the COMMITTED captures from member_profile (never the transcript) -----------
@@ -1082,13 +1086,49 @@ const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
  */
 function idqOpen(): string {
   return (
-    "Let's start with the mirror.\n\n" +
-    'These are short statements about where you are right now. Tell me how true each one feels — 1 for not at ' +
-    'all, 5 for completely. Some of them will be uncomfortable. That is the point: it means you are being ' +
-    'honest.\n\nWhat comes out is your Identity Distance Score — the starting line we measure everything else ' +
-    `against.\n\nFirst a few about your body.\n\n${itemStem(0)}`
+    'Here we go. Tell me how true each one feels — 1 for not at all, 5 for completely.\n\n' +
+    `First a few about your body.\n\n${itemStem(0)}`
   );
 }
+
+/**
+ * R1's OPENING BEAT — Greg's Stage 1, the doorway in front of the mirror.
+ *
+ * Everything below the first line used to be the top of idqOpen(), one paragraph above question 1. Jay,
+ * 2026-08-28: "If the Session is leading with an assessment, something's missing." It was — this. Greg's R1 runs
+ * opening → rating → closure and we shipped the rating; the frame existed, but a member met it on the way to the
+ * chips, which is not the same as being told something before they start.
+ *
+ * The two contracts Greg makes load-bearing both sit here, before any rating is collected: rate from your CURRENT
+ * PERSPECTIVE, not what you want to be true (R1-05), and the IDQ is a MEASURING STICK, not a one-time grade
+ * (R1-41). The discomfort line is his approved relationship-building line (R1-27), kept close to verbatim. The
+ * old copy's "what comes out is your Identity Distance Score" is dropped from the open — naming the number on the
+ * way in is what makes it read as a grade.
+ *
+ * WHAT THE QUESTION IS FOR. Not more capture — onboarding just took the identity, the Doors and the list, and
+ * asking again is the repetition Jay has flagged twice. It asks what they EXPECT the mirror to say, which is the
+ * one thing the instrument cannot tell us and the close needs: a member who expected the body to be the low one
+ * and finds it is not has learned something, and the Companion can only say so if it asked first. That is what
+ * R1's checklist means by capturing hopes and fears as prior module context (R1.md:517, item 5).
+ */
+const MIRROR_FRAME =
+  'Before the mirror, one thing about how to read it.\n\n' +
+  'This is a measuring stick. You take it again in a few months, and again after that — what it is for is the ' +
+  'distance between readings. Today is the first one.\n\n' +
+  'So answer from where you actually are right now, rather than where you mean to be. That is the whole ' +
+  'contract.\n\n' +
+  'Some of it will be uncomfortable work — thanks for being willing to look at it.';
+
+const MIRROR_ENGAGE_Q = 'Before we start: which part of this do you expect to read hardest?';
+
+const mirrorEngageConfig: EngagementConfig = {
+  id: 'mirror-open',
+  next: 'measurement',
+  frame: () => MIRROR_FRAME,
+  question: () => MIRROR_ENGAGE_Q,
+  handIn: () => idqOpen(),
+};
+const mirrorEngageStage: StageDef = engagementStage(mirrorEngageConfig);
 // Authored cluster transitions at the four dimension boundaries (items 6/12/18) — the only warmth between items, so it
 // stays a check-in, not a form. Non-boundary items deliver the verbatim stem alone.
 const IDQ_CLUSTER_LEAD: Record<number, string> = {
@@ -1421,6 +1461,12 @@ const measurementStage: StageDef = administeredStage({
 // it back. Note this also brings the copy in line with our own voice rule, which already bans exactly this
 // reassurance-tic ("no grade here", "not a test") in checkpoint-guide.ts — declare what a thing IS.
 // Grinta is still deliberately NOT named here; the number surfaces in the Ceremony, which follows immediately.
+// The doorway's frame. Reconnect's Checkpoint was the one of the four with NO recap at all — it opened "A quick
+// check-in before we close" and went straight to item 1, closing the phase that holds the mirror, the Doors and
+// the Window without ever naming them. Written to match the shape Rewire, Rebuild and Reclaim already had.
+const CHECKPOINT_RECAP =
+  'You did the real work of Reconnect — you took an honest measure of where you are, named the Doors that opened ' +
+  'the distance, and put down the day you want back.';
 const CHECKPOINT_OPEN =
   'A quick check-in before we close. Six short statements about what this work is making you think about. ' +
   "You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment. " +
@@ -1523,8 +1569,8 @@ function handIntoDoors(modelText: string | undefined, c: Collected): string {
  */
 export const RECONNECT_R1_ARC: ArcConfig = {
   id: 'reconnect-r1',
-  stageOrder: ['measurement'],
-  stages: { measurement: measurementStage },
+  stageOrder: ['mirror-open', 'measurement'],
+  stages: { 'mirror-open': mirrorEngageStage, measurement: measurementStage },
   onComplete: () => '',
 };
 export const RECONNECT_R2_ARC: ArcConfig = {
@@ -1539,10 +1585,20 @@ export const RECONNECT_R3_ARC: ArcConfig = {
   stages: { drift: driftStage, window: windowStage, legacy: legacyStage },
   onComplete: () => '',
 };
+const reconnectCheckpointEngage = checkpointEngagement({
+  next: 'checkpoint',
+  recap: CHECKPOINT_RECAP,
+  handIn: () => checkpointOpener(),
+});
+
 export const RECONNECT_CHECKPOINT_ARC: ArcConfig = {
   id: 'reconnect-checkpoint',
-  stageOrder: ['checkpoint', 'ceremony'],
-  stages: { checkpoint: checkpointStage, ceremony: reconnectCeremonyStage },
+  stageOrder: ['checkpoint-open', 'checkpoint', 'ceremony'],
+  stages: {
+    'checkpoint-open': engagementStage(reconnectCheckpointEngage),
+    checkpoint: checkpointStage,
+    ceremony: reconnectCeremonyStage,
+  },
   onComplete: () => CEREMONY_LEAD,
 };
 

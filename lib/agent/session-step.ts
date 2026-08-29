@@ -50,17 +50,35 @@ export type SessionPosition = { step: number; of: number; unit: 'item' | 'stage'
  * progress; a conversational arc counts STAGES. Both come back with their denominator, because "step 9" means
  * nothing on its own and a bare number in a report is how a measure gets misread later.
  */
+/**
+ * The instrument's length, when this Session HAS exactly one instrument — else 0 ("not measured in items").
+ *
+ * ONE DEFINITION, because the numerator and the denominator are the same fact. sessionPosition() and
+ * sessionTotals() each carried their own copy of "is this an item-counted Session", and a rule stated twice is a
+ * rule with one wrong copy waiting. [[one-fact-many-sites]]
+ */
+function instrumentLength(arc: ArcConfig): number {
+  const admin = arc.stageOrder.filter((s) => arc.stages[s]?.mode === 'administered');
+  return admin.length === 1 ? (arc.stages[admin[0]!]?.scale?.itemCount ?? 0) : 0;
+}
+
 export function sessionPosition(assetId: string, state: ConvState, turns = 0): SessionPosition | null {
   const arc = ARCS[assetId];
   if (!arc) return null;
   const idx = stageStep(arc, state.stage);
   if (idx < 1) return null;
-  const stage = arc.stages[arc.stageOrder[idx - 1]!];
-  // Items only where the instrument IS the whole Session. In a multi-stage arc an item count and a stage index
-  // would fight over the same column, and the stage is the coarser, safer answer.
-  if (arc.stageOrder.length === 1 && stage?.mode === 'administered' && stage.scale?.itemCount) {
-    return { step: state.administeredResponses?.length ?? 0, of: stage.scale.itemCount, unit: 'item' };
-  }
+  // Items wherever the Session HAS exactly one instrument — not only where the instrument is the whole arc.
+  //
+  // This read `stageOrder.length === 1` until the engagement doorway landed (2026-08-28). B1 and B2 are one
+  // instrument each and were correctly counted in items; giving them Greg's Stage-1 Engagement made them
+  // two-stage arcs, which under the old test would have flipped them to "stage 1 of 2" — the precise lie the
+  // docstring above was written to prevent, reintroduced by a fix to something else entirely.
+  //
+  // One instrument is what makes an item count unambiguous, so that is what the rule tests. C2 has four
+  // administered stages and stays on stages; the Checkpoints have one and now count their six items, which is
+  // strictly more than the "1 of 2" they reported before.
+  const items = instrumentLength(arc);
+  if (items) return { step: state.administeredResponses?.length ?? 0, of: items, unit: 'item' };
   // A SINGLE-STAGE COACHING ARC HAS NEITHER — B3, C1 and C3 run one open-ended conversation, so a stage index is
   // 1 from the first reply to the last and measures nothing. Their honest unit is TURNS TAKEN, with no
   // denominator: the Session ends when the coach gate closes, not at a known count. `of: 0` says "unbounded" out
@@ -73,14 +91,10 @@ export function sessionPosition(assetId: string, state: ConvState, turns = 0): S
 export function sessionTotals(): Record<string, { of: number; unit: SessionPosition['unit'] }> {
   const out: Record<string, { of: number; unit: SessionPosition['unit'] }> = {};
   for (const [id, arc] of Object.entries(ARCS)) {
-    const first = arc.stages[arc.stageOrder[0]!];
-    if (arc.stageOrder.length === 1) {
-      out[id] = first?.mode === 'administered' && first.scale?.itemCount
-        ? { of: first.scale.itemCount, unit: 'item' }
-        : { of: 0, unit: 'turn' }; // unbounded — a coaching conversation has no item count to be short of
-      continue;
-    }
-    out[id] = { of: arc.stageOrder.length, unit: 'stage' };
+    const items = instrumentLength(arc);
+    if (items) { out[id] = { of: items, unit: 'item' }; continue; }
+    // unbounded — a coaching conversation has no item count to be short of
+    out[id] = arc.stageOrder.length === 1 ? { of: 0, unit: 'turn' } : { of: arc.stageOrder.length, unit: 'stage' };
   }
   return out;
 }

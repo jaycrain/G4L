@@ -9,10 +9,15 @@ import { buildReclaimCeremonyBeats, RECLAIM_CEREMONY_RESOLVE_LABEL, type Reclaim
 // scoring (reuses scoreCheckpointStrand target 'reclaim'), and the branched capstone ceremony → the Loop.
 
 test('C4 checkpoint arc · warm frame → 6 administered items → hands into the ceremony', () => {
-  let t = reclaimCheckpointOpening();
+  // THE DOORWAY FIRST (2026-08-28) — the instrument arrives one turn later. See
+  // tests/no-session-opens-on-an-assessment.test.ts.
+  const doorway = reclaimCheckpointOpening();
+  assert.equal(doorway.state.stage, 'checkpoint-open');
+  assert.match(doorway.reply, /real work of Reclaim/i, 'the frame in');
+
+  let t = applyReclaimCheckpointTurn(doorway.state, [], 'My weekends belong to me again.');
   assert.equal(t.state.stage, 'checkpoint');
-  assert.match(t.reply, /real work of Reclaim/i, 'the frame in');
-  assert.ok(t.reply.includes(grintaStem(CHECKPOINT_CHALLENGE_ITEMS[0]!)), 'plus the first item, verbatim');
+  assert.ok(t.reply.includes(grintaStem(CHECKPOINT_CHALLENGE_ITEMS[0]!)), 'then the first item, verbatim');
   for (let i = 0; i < CHECKPOINT_CHALLENGE_ITEMS.length; i++) {
     assert.equal(t.state.stage, 'checkpoint', 'still administering');
     t = applyReclaimCheckpointTurn(t.state, [], '4');
@@ -23,7 +28,7 @@ test('C4 checkpoint arc · warm frame → 6 administered items → hands into th
 });
 
 test('C4 checkpoint arc · a non-number is re-prompted (instrument fidelity), not advanced', () => {
-  const t = reclaimCheckpointOpening();
+  const t = applyReclaimCheckpointTurn(reclaimCheckpointOpening().state, [], 'Quite a lot.');
   const bad = applyReclaimCheckpointTurn(t.state, [], 'very true');
   assert.equal(bad.state.stage, 'checkpoint', 'a non-Likert answer does not advance');
   assert.match(bad.reply, /1 to 5/i, 're-prompts');

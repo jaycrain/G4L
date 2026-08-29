@@ -8,7 +8,7 @@
 // Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the v2.3 flip.
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
-import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { isMemberContent, isDeclineReply } from './member-turn.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
@@ -1250,9 +1250,14 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
 // IDQ/§2e read) on the shared administeredStage() factory, then a hold into the ceremony (the reveal overlay fires
 // from the chat). The ACTION scores the Commitment component (Ave1→Ave2) + writes the Checkpoint grinta_reading + sets
 // the rewire_checkpoint_passed gate. Items VERBATIM (CHECKPOINT_COMMITMENT_ITEMS). Copy: R4 doc (frame is ours).
+// SPLIT IN TWO (2026-08-28). This was one paragraph: the recap, then the framing, then item 1 — so the Checkpoint
+// told the member what they had done and immediately asked for six numbers. Jay, walking it: "This is
+// underdeveloped for a Checkpoint." The recap is now the doorway's frame, with CHECKPOINT_ENGAGE_Q between it and
+// the instrument, so the phase gets closed in the member's words before it gets closed in ours.
+const W3_CHECKPOINT_RECAP =
+  'You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol.';
 const W3_CHECKPOINT_OPEN =
-  "You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close " +
-  "the Phase, a quick read on where your commitment sits now. Six of these, one to five. They set your Rewire read " +
+  'Now a quick read on where your commitment sits. Six of these, one to five. They set your Rewire read ' +
   "— you'll see how it moved your Grinta Index at the close.";
 const W3_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what it means.";
 function rewireCheckpointDeliver(index: number): string {
@@ -1294,10 +1299,20 @@ const rewireCeremonyStage: StageDef = {
   },
 };
 
+const rewireCheckpointEngage = checkpointEngagement({
+  next: 'checkpoint',
+  recap: W3_CHECKPOINT_RECAP,
+  handIn: () => rewireCheckpointOpener(),
+});
+
 export const REWIRE_CHECKPOINT_ARC: ArcConfig = {
   id: 'rewire-checkpoint',
-  stageOrder: ['checkpoint', 'ceremony'],
-  stages: { checkpoint: rewireCheckpointStage, ceremony: rewireCeremonyStage },
+  stageOrder: ['checkpoint-open', 'checkpoint', 'ceremony'],
+  stages: {
+    'checkpoint-open': engagementStage(rewireCheckpointEngage),
+    checkpoint: rewireCheckpointStage,
+    ceremony: rewireCeremonyStage,
+  },
   onComplete: () => REWIRE_CEREMONY_LEAD,
 };
 
@@ -1306,7 +1321,9 @@ export function applyRewireCheckpointTurn(state: ConvState, history: ConvMessage
 }
 
 export function rewireCheckpointOpening(): Turn {
-  return { reply: rewireCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(REWIRE_CHECKPOINT_ARC, 'checkpoint', false) };
+  // Opens on the doorway. No `expects`: the 1–5 chips belong to the instrument, and putting them under an open
+  // question is how the doorway turns back into the assessment it exists to precede.
+  return { reply: engagementOpening(rewireCheckpointEngage), state: { stage: 'checkpoint-open', collected: {} }, complete: false };
 }
 
 // The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.

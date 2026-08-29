@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -403,6 +403,31 @@ function auditOpener(): string {
   return `${C2_OPEN}\n\n${auditDeliver(0)}`;
 }
 
+/**
+ * C2's OPENING BEAT. C2 is the longest instrument in the program — four domains × eight reads — and it opened on
+ * the first rating. Its reflect stages made it look like a conversation, but every one of them comes AFTER a
+ * block of numbers; nothing was asked before the first one.
+ *
+ * The question is the mirror-image of R1's. The IDQ asked where the distance is; the Audit asks where the world
+ * could get bigger, so the doorway asks where it already HAS — which is both the honest starting point for a
+ * Reclaim-phase instrument and the thing a member arriving at C2 most wants to say.
+ */
+const C2_ENGAGE_FRAME =
+  "In Reconnect the IDQ showed how far you'd drifted. This is the other side of it: where your world can get " +
+  'bigger, and which area to push on first.' + BEAT_SEP +
+  'It is the longest read in the program — four areas, a few quick numbers each. Worth doing in one sitting if ' +
+  'you have it.';
+const C2_ENGAGE_Q = 'Before the ratings: where has your world actually got bigger since you started?';
+
+const c2Engage = {
+  id: 'audit-open',
+  // Resolved lazily: rateAId is declared below this point, and the arc is what reads `next`.
+  get next() { return rateAId(AUDIT_DOMAINS[0]!); },
+  frame: () => C2_ENGAGE_FRAME,
+  question: () => C2_ENGAGE_Q,
+  handIn: () => auditOpener(),
+};
+
 // The RC-1 classification summary (member-facing, non-judgmental) — names the Primary focus + the Momentum Lever.
 function auditSummary(responses: number[], c?: Collected): string {
   const s = scoreAudit(responses);
@@ -740,6 +765,7 @@ function ratingsStage(d: AuditDomain, half: 'a' | 'b'): StageDef {
 }
 
 const C2_STAGE_ORDER: Stage[] = [
+  'audit-open',
   ...AUDIT_DOMAINS.flatMap((d) => [rateAId(d), gapStageId(d), rateBId(d), closeStageId(d)]),
   'sort',
 ];
@@ -748,6 +774,7 @@ export const RECLAIM_C2_ARC: ArcConfig = {
   id: 'reclaim-c2',
   stageOrder: C2_STAGE_ORDER,
   stages: Object.fromEntries([
+    ['audit-open', engagementStage(c2Engage)],
     ...AUDIT_DOMAINS.flatMap((d, i) => {
       const idx = AUDIT_DOMAINS.indexOf(d);
       const nextDomain = AUDIT_DOMAINS[i + 1];
@@ -784,8 +811,8 @@ export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function reclaimC2Opening(): Turn {
-  const first = rateAId(AUDIT_DOMAINS[0]!);
-  return { reply: auditOpener(), state: { stage: first, collected: {} }, complete: false, expects: scaleExpects(RECLAIM_C2_ARC, first, false) };
+  // Opens on the doorway; the 1–10 chips belong to the first rating block, one turn later.
+  return { reply: engagementOpening(c2Engage), state: { stage: 'audit-open', collected: {} }, complete: false };
 }
 
 export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -1066,11 +1093,14 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
 // pairwise) → a hold into the ceremony. The ACTION scores the Challenge component (Ave1→Ave2), writes the Checkpoint
 // grinta_reading, and sets reclaim_checkpoint_passed. The ceremony revisits the Legacy + invites the Community Success
 // Story → closes Cycle 1 (the Loop). No new migration — reuses grinta_reading. Items VERBATIM (RC-7 C-labels).
-const C4_CHECKPOINT_OPEN =
+// Split into recap (the doorway's frame) + the instrument's own framing on 2026-08-28, so CHECKPOINT_ENGAGE_Q
+// sits between them and the member closes the phase in their words before it closes in ours.
+const C4_CHECKPOINT_RECAP =
   "You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get " +
-  "bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits " +
-  "now — the pull toward what's possible. Six of these, one to five. They set your Reclaim read — you'll see how it " +
-  "moved your Grinta Index at the close.";
+  "bigger, and defined what makes a day yours.";
+const C4_CHECKPOINT_OPEN =
+  "Now a quick read on where your challenge sits — the pull toward what's possible. Six of these, one to five. " +
+  "They set your Reclaim read — you'll see how it moved your Grinta Index at the close.";
 const C4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function reclaimCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CHALLENGE_ITEMS[index]!);
@@ -1109,10 +1139,20 @@ const reclaimCeremonyStage: StageDef = {
   },
 };
 
+const reclaimCheckpointEngage = checkpointEngagement({
+  next: 'checkpoint',
+  recap: C4_CHECKPOINT_RECAP,
+  handIn: () => reclaimCheckpointOpener(),
+});
+
 export const RECLAIM_CHECKPOINT_ARC: ArcConfig = {
   id: 'reclaim-checkpoint',
-  stageOrder: ['checkpoint', 'ceremony'],
-  stages: { checkpoint: reclaimCheckpointStage, ceremony: reclaimCeremonyStage },
+  stageOrder: ['checkpoint-open', 'checkpoint', 'ceremony'],
+  stages: {
+    'checkpoint-open': engagementStage(reclaimCheckpointEngage),
+    checkpoint: reclaimCheckpointStage,
+    ceremony: reclaimCeremonyStage,
+  },
   onComplete: () => RECLAIM_CEREMONY_LEAD,
 };
 
@@ -1120,7 +1160,8 @@ export function applyReclaimCheckpointTurn(state: ConvState, history: ConvMessag
   return runArcTurn(RECLAIM_CHECKPOINT_ARC, state, history, memberMessage, model);
 }
 export function reclaimCheckpointOpening(): Turn {
-  return { reply: reclaimCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(RECLAIM_CHECKPOINT_ARC, 'checkpoint', false) };
+  // Opens on the doorway; the 1–5 chips belong to the instrument, one turn later.
+  return { reply: engagementOpening(reclaimCheckpointEngage), state: { stage: 'checkpoint-open', collected: {} }, complete: false };
 }
 // The Checkpoint is ADMINISTERED (deterministic Likert) — no model call needed; the action passes empty text.
 export function liveTurnReclaimCheckpoint(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {

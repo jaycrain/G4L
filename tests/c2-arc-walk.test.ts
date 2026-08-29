@@ -19,8 +19,12 @@ import type { ConvState, Turn } from '../lib/agent/onboarding.ts';
 const overTheWire = (s: ConvState): ConvState => JSON.parse(JSON.stringify(s)) as ConvState;
 
 function walk(answers: string[]): { turns: Turn[]; final: Turn } {
-  let t = reclaimC2Opening();
-  const turns: Turn[] = [t];
+  // THROUGH THE ENGAGEMENT DOORWAY FIRST (2026-08-28). C2 opens on one open question and the ratings begin on the
+  // next turn; the doorway itself is covered in tests/no-session-opens-on-an-assessment.test.ts. Folded into the
+  // walk helper rather than prepended to every fixture below, so the answer lists still read as the instrument.
+  const opening = reclaimC2Opening();
+  let t = applyReclaimC2Turn(overTheWire(opening.state as ConvState), [], 'The mornings, mostly.');
+  const turns: Turn[] = [opening, t];
   for (const a of answers) {
     t = applyReclaimC2Turn(overTheWire(t.state as ConvState), [], a);
     turns.push(t);
@@ -80,7 +84,9 @@ test('GREG’S ORDER: Q1,Q2 → Q3 → Q4,Q5,Q6 → Q7,Q8 — the gap sits INSID
   // text rather than a "is this a rating?" regex — the items don't all mention the scale, and a regex loose enough
   // to match them all would also match the reflections, which is a check that can't fail.
   const item = (n: number) => AUDIT_ITEMS[n]!.prompt;
-  const reply = (i: number) => turns[i]!.reply;
+  // OFF BY ONE SINCE THE DOORWAY (2026-08-28): turns[0] is now the engagement question and turns[1] is the
+  // instrument's opener. This indexes from the instrument, which is what the assertions below are about.
+  const reply = (i: number) => turns[i + 1]!.reply;
   const q = AUDIT_REFLECTION_PROMPTS.physical;
 
   assert.ok(reply(0).includes(item(0)), 'Q1 Current opens');

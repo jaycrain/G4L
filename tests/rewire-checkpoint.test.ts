@@ -13,10 +13,15 @@ import { CHECKPOINT_COMMITMENT_ITEMS } from '../lib/grinta/survey/instrument.ts'
 // component-foregrounded reveal.
 
 test('R4 checkpoint arc · warm frame → 6 administered items → hands into the ceremony', () => {
-  let t = rewireCheckpointOpening();
+  // THE DOORWAY FIRST (2026-08-28). The Checkpoint no longer opens on item 1 — it recaps the phase and asks what
+  // changed, and the instrument arrives on the next turn. See tests/no-session-opens-on-an-assessment.test.ts.
+  const doorway = rewireCheckpointOpening();
+  assert.equal(doorway.state.stage, 'checkpoint-open');
+  assert.match(doorway.reply, /real work of Rewire/i, 'the frame in');
+
+  let t = applyRewireCheckpointTurn(doorway.state, [], 'The self-talk, mostly.', { text: '' });
   assert.equal(t.state.stage, 'checkpoint');
-  assert.match(t.reply, /real work of Rewire/i, 'the frame in');
-  assert.match(t.reply, /mental traps/i, 'plus the first item, verbatim');
+  assert.match(t.reply, /mental traps/i, 'then the first item, verbatim');
   // answer all six with a Likert number
   for (let i = 0; i < CHECKPOINT_COMMITMENT_ITEMS.length; i++) {
     assert.equal(t.state.stage, 'checkpoint', 'still administering');
@@ -28,7 +33,7 @@ test('R4 checkpoint arc · warm frame → 6 administered items → hands into th
 });
 
 test('R4 checkpoint arc · a non-number is re-prompted (instrument fidelity), not advanced', () => {
-  let t = rewireCheckpointOpening();
+  const t = applyRewireCheckpointTurn(rewireCheckpointOpening().state, [], 'A fair bit.', { text: '' });
   const bad = applyRewireCheckpointTurn(t.state, [], 'kind of high', { text: '' });
   assert.equal(bad.state.stage, 'checkpoint', 'a non-Likert answer does not advance');
   assert.match(bad.reply, /1 to 5/i, 're-prompts for a number');

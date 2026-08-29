@@ -7,8 +7,16 @@ import { parseLikert } from '../lib/agent/onboarding-staged.ts';
 // B1 · What is Your Why? — the administered SDT arc (12 items, 1–7, activity→diet), the scale parameterization, and
 // Greg's SDT scoring. B1 stores but never displays (RB-1) — the arc closes on a forward-looking reflection, no number.
 
+// PAST THE ENGAGEMENT DOORWAY (2026-08-28). B1 now opens on Greg's Stage 1 — the Rewire→Rebuild shift and one open
+// question — and the instrument arrives on the next turn. The doorway itself is covered in
+// tests/no-session-opens-on-an-assessment.test.ts; these tests are about the instrument behind it.
+const pastDoorway = () =>
+  applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.', { text: '' } as never);
+
 test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items → forward-looking close', () => {
-  let t = rebuildB1Opening();
+  assert.match(rebuildB1Opening().reply, /Rewire was your head/i, 'the doorway names the shift into Rebuild');
+
+  let t = pastDoorway();
   assert.equal(t.state.stage, 'why');
   assert.match(t.reply, /a simple place to start/i, 'the warm frame is in');
   assert.match(t.reply, /1 \(not at all true for you\) to 7/i, 'the 1–7 scale is set, not 1–5');
@@ -29,7 +37,7 @@ test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items �
 });
 
 test('B1 arc · the domain transition frame fires when the diet items begin (index 6)', () => {
-  let t = rebuildB1Opening();
+  let t = pastDoorway();
   // answer the first 6 (activity) — the 6th answer should deliver the diet transition + prompt + first diet item.
   for (let i = 0; i < WHY_DOMAIN_SPLIT; i++) t = applyRebuildB1Turn(t.state, [], '4', { text: '' } as never);
   assert.match(t.reply, /Now the other half of it — eating/i, 'the domain transition frame');
@@ -38,7 +46,7 @@ test('B1 arc · the domain transition frame fires when the diet items begin (ind
 });
 
 test('B1 arc · a non-number (or out-of-scale) is re-prompted, not recorded — instrument fidelity', () => {
-  let t = rebuildB1Opening();
+  const t = pastDoorway();
   const bad = applyRebuildB1Turn(t.state, [], 'pretty true I guess', { text: '' } as never);
   assert.equal((bad.state.administeredResponses ?? []).length, 0, 'a non-Likert answer records nothing');
   assert.match(bad.reply, /1 to 7/i, 're-prompts for a 1–7');

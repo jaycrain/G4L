@@ -6,9 +6,20 @@ import { WHY_ITEM_COUNT, WHY_SCALE_MAX } from '../lib/rebuild/why-instrument.ts'
 // W-24 — the `expects` chip signal. An administered turn tells the client "the next answer is a fixed-scale pick" so
 // the surface can render tappable chips instead of a free-text number box (the mis-scaling fix). The invariant: chips
 // on every administered ASK (opener / item / re-prompt), NONE once the instrument completes (the close is prose).
+//
+// AND NONE ON THE ENGAGEMENT DOORWAY (2026-08-28), which is the other half of the same invariant: chips under an
+// open question would turn the doorway back into the assessment it exists to precede. That case is asserted in
+// tests/no-session-opens-on-an-assessment.test.ts; here the walk starts at the instrument, one turn in.
+const pastDoorway = () =>
+  applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.');
+
+test('the engagement doorway offers no chips — only the instrument behind it does', () => {
+  assert.equal(rebuildB1Opening().expects, undefined, 'an open question is answered in words');
+  assert.ok(pastDoorway().expects, 'and the instrument brings its scale with it');
+});
 
 test('B1 opener carries the scale chips signal — full scale + the instrument’s pole anchors', () => {
-  const t = rebuildB1Opening();
+  const t = pastDoorway();
   assert.ok(t.expects, 'the opener (item 0) expects a scale pick');
   assert.equal(t.expects!.kind, 'scale');
   assert.equal(t.expects!.min, 1);
@@ -21,7 +32,7 @@ test('B1 opener carries the scale chips signal — full scale + the instrument�
 });
 
 test('B1 progress · the chip signal advances index as items are answered', () => {
-  let t = rebuildB1Opening();
+  let t = pastDoorway();
   assert.equal(t.expects!.index, 1);
   t = applyRebuildB1Turn(t.state, [], '5');
   assert.equal(t.expects!.index, 2, 'after answering item 1, the cue reads Question 2');
@@ -31,7 +42,7 @@ test('B1 progress · the chip signal advances index as items are answered', () =
 });
 
 test('B1 mid-instrument · each answered item hands the NEXT item’s chips; the final item drops them', () => {
-  let t = rebuildB1Opening();
+  let t = pastDoorway();
   // Answer items 0..N-2 → each turn still expects a scale (the next item).
   for (let i = 0; i < WHY_ITEM_COUNT - 1; i++) {
     t = applyRebuildB1Turn(t.state, [], '5');
@@ -46,7 +57,7 @@ test('B1 mid-instrument · each answered item hands the NEXT item’s chips; the
 });
 
 test('B1 re-prompt · an out-of-scale answer re-prompts the SAME item and still expects the scale', () => {
-  const t0 = rebuildB1Opening();
+  const t0 = pastDoorway();
   const t1 = applyRebuildB1Turn(t0.state, [], 'pretty true'); // no digit → re-prompt, do not advance
   assert.ok(t1.expects, 're-prompt still expects a scale pick');
   assert.equal(t1.expects!.max, WHY_SCALE_MAX);

@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
-import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -59,6 +59,39 @@ function whyOpener(): string {
   return `${B1_OPEN}\n\n${whyDeliver(0)}`;
 }
 
+/**
+ * B1's OPENING BEAT — Greg's Stage 1, which his spec has specified since it was written.
+ *
+ * B1.md:257 declares a five-stage sequence — engagement → activity elicitation → eating elicitation → didactic
+ * informing → consolidation — and B1.md:264 spells the first one out: "Stage 1: Engagement — Present opening
+ * frame / Acknowledge the shift from [Rewire] to [Rebuild] / Set the stance: honest self-assessment, not a
+ * performance" (his camel-case house style normalised). We shipped stage 2 onward, so the Session opened on item
+ * 1 of a twelve-item instrument.
+ *
+ * This is the engagement beat only; the elicitation and didactic stages are still to come. It is worth landing on
+ * its own because the shift it names is real: a member arrives here straight out of Rewire's self-talk work.
+ *
+ * THE QUESTION DELIBERATELY ISN'T "why do you want to be active" — that framing prompt sat on item 0 and Donna
+ * had it cut, and the twelve items ask exactly that anyway. It asks for the Rewire→Rebuild bridge instead: the
+ * story they caught themselves telling. That is context the instrument cannot produce, and it is what Greg means
+ * by acknowledging the shift rather than announcing it.
+ */
+const B1_ENGAGE_FRAME =
+  'Rewire was your head — the lies, the picture, the protocol. Rebuild is your body: how you move, how you eat, ' +
+  'how you sleep.' + BEAT_SEP +
+  'What comes next is a read on where your motivation actually sits today. Answer it the way things are, rather ' +
+  'than the way they ought to be — a starting mark is only worth having if it is honest.';
+const B1_ENGAGE_Q =
+  'First, though: coming out of Rewire, what is the story you catch yourself telling about your body?';
+
+const b1Engage = {
+  id: 'why-open',
+  next: 'why',
+  frame: () => B1_ENGAGE_FRAME,
+  question: () => B1_ENGAGE_Q,
+  handIn: () => whyOpener(),
+};
+
 const whyStage: StageDef = administeredStage({
   id: 'why',
   itemCount: WHY_ITEM_COUNT, // 12
@@ -79,8 +112,8 @@ const whyStage: StageDef = administeredStage({
 
 export const REBUILD_B1_ARC: ArcConfig = {
   id: 'rebuild-b1',
-  stageOrder: ['why'],
-  stages: { why: whyStage },
+  stageOrder: ['why-open', 'why'],
+  stages: { 'why-open': engagementStage(b1Engage), why: whyStage },
   onComplete: () => B1_CLOSE,
 };
 
@@ -90,7 +123,8 @@ export function applyRebuildB1Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function rebuildB1Opening(): Turn {
-  return { reply: whyOpener(), state: { stage: 'why', collected: {} }, complete: false, expects: scaleExpects(REBUILD_B1_ARC, 'why', false) };
+  // Opens on Greg's Stage 1; the 1–7 chips belong to the instrument, one turn later.
+  return { reply: engagementOpening(b1Engage), state: { stage: 'why-open', collected: {} }, complete: false };
 }
 
 export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -176,6 +210,32 @@ function skillsOpener(): string {
   return `${B2_OPEN}${BEAT_SEP}${skillsDeliver(0)}`;
 }
 
+/**
+ * B2's OPENING BEAT — Greg's Stage 1, per B2.md:448: "Stage 1 Engagement: present opening frame, acknowledge that
+ * self-assessment requires honesty, set the stance as development map not verdict."
+ *
+ * Jay walked this one and said it plainly: "This Session can't just start with an assessment." Twenty-four items
+ * of self-rating is the longest grind in Rebuild, and it began with item 1.
+ *
+ * The question asks for a skill they have ALREADY used — which is the same construct the instrument measures,
+ * approached from the side the member can actually see. It also gives the close something true to work with: a
+ * member who has just described making something stick reads "this is a strength of yours" as a description
+ * rather than a compliment.
+ */
+const B2_ENGAGE_FRAME =
+  'These are the practical skills — the ones that decide whether a good intention survives a bad week.' + BEAT_SEP +
+  'Rating yourself on them only works if you are straight about it. What comes out is a map of what to build ' +
+  'next, and a map drawn generously takes you somewhere you are not.';
+const B2_ENGAGE_Q = 'Before that: think of something you made stick once. What did you actually do to hold it?';
+
+const b2Engage = {
+  id: 'skills-open',
+  next: 'skills',
+  frame: () => B2_ENGAGE_FRAME,
+  question: () => B2_ENGAGE_Q,
+  handIn: () => skillsOpener(),
+};
+
 const skillsStage: StageDef = administeredStage({
   id: 'skills',
   itemCount: SKILLS_ITEM_COUNT, // 24
@@ -199,8 +259,8 @@ const skillsStage: StageDef = administeredStage({
 
 export const REBUILD_B2_ARC: ArcConfig = {
   id: 'rebuild-b2',
-  stageOrder: ['skills'],
-  stages: { skills: skillsStage },
+  stageOrder: ['skills-open', 'skills'],
+  stages: { 'skills-open': engagementStage(b2Engage), skills: skillsStage },
   onComplete: () => B2_OPEN,
 };
 
@@ -209,7 +269,8 @@ export function applyRebuildB2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function rebuildB2Opening(): Turn {
-  return { reply: skillsOpener(), state: { stage: 'skills', collected: {} }, complete: false, expects: scaleExpects(REBUILD_B2_ARC, 'skills', false) };
+  // Opens on Greg's Stage 1; the 1–4 chips belong to the instrument, one turn later.
+  return { reply: engagementOpening(b2Engage), state: { stage: 'skills-open', collected: {} }, complete: false };
 }
 
 export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -600,14 +661,16 @@ export function composePilotPlan(activity: string, diet: string): string {
 // ONE DEPARTURE FROM HIS WORDS: he opens "You pedal." Kept as "you move" — Movement here is walking and lifting
 // and the rest, and a member who does not cycle should not read the phase's closing beat as addressed to someone
 // else. The cycling metaphor stays where it is earned, at Clip in.
-const B4_CHECKPOINT_OPEN =
+// THE RECAP (the doorway's frame) — orientation, not part of the ask. Split from the instrument's framing on
+// 2026-08-28 so the member answers CHECKPOINT_ENGAGE_Q between them. See checkpointEngagement().
+const B4_CHECKPOINT_RECAP =
   "Rebuilding is physical. You move, you eat better, you watch the numbers change. It's hard, but it's tangible." +
   BEAT_SEP +
   "Four weeks in, the easiest thing to miss is what changed underneath the numbers — your motivation, your habits, " +
   "the things you've stopped having to decide." + BEAT_SEP +
   "So this checkpoint asks whether Rebuild went past the numbers. The move into Reclaim isn't hitting a target " +
-  "weight or finishing an event; it's the point where you notice your world got bigger because you changed." +
-  BEAT_SEP +
+  "weight or finishing an event; it's the point where you notice your world got bigger because you changed.";
+const B4_CHECKPOINT_OPEN =
   // SIX, NOT "A DOZEN" (Jay, 2026-08-26: "I believe it skipped some dietary questions at the end of the session,
   // there was only one before it closed me out"). He was right to distrust it, and the fault was this sentence.
   // Greg's V5 cut B4 from twelve activity/diet halves to six single items on 2026-08-14 — the items changed, the
@@ -660,10 +723,20 @@ const rebuildCeremonyStage: StageDef = {
   },
 };
 
+const rebuildCheckpointEngage = checkpointEngagement({
+  next: 'checkpoint',
+  recap: B4_CHECKPOINT_RECAP,
+  handIn: () => rebuildCheckpointOpener(),
+});
+
 export const REBUILD_CHECKPOINT_ARC: ArcConfig = {
   id: 'rebuild-checkpoint',
-  stageOrder: ['checkpoint', 'ceremony'],
-  stages: { checkpoint: rebuildCheckpointStage, ceremony: rebuildCeremonyStage },
+  stageOrder: ['checkpoint-open', 'checkpoint', 'ceremony'],
+  stages: {
+    'checkpoint-open': engagementStage(rebuildCheckpointEngage),
+    checkpoint: rebuildCheckpointStage,
+    ceremony: rebuildCeremonyStage,
+  },
   onComplete: () => REBUILD_CEREMONY_LEAD,
 };
 
@@ -672,7 +745,8 @@ export function applyRebuildCheckpointTurn(state: ConvState, history: ConvMessag
 }
 
 export function rebuildCheckpointOpening(): Turn {
-  return { reply: rebuildCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(REBUILD_CHECKPOINT_ARC, 'checkpoint', false) };
+  // Opens on the doorway; the 1–5 chips belong to the instrument, one turn later.
+  return { reply: engagementOpening(rebuildCheckpointEngage), state: { stage: 'checkpoint-open', collected: {} }, complete: false };
 }
 
 // The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.

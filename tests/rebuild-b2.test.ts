@@ -16,8 +16,16 @@ import { practicePrompt } from '../lib/practice/store.ts';
 // B2 · Strengths & Weaknesses — the administered 24-item self-management arc (12 skills × activity/diet, 1–4), the
 // scoring (per-domain %, per-skill, meta-categories), the plain-language close, and the noticing-week nudge.
 
+// PAST THE ENGAGEMENT DOORWAY (2026-08-28). Jay, walking this Session: "This Session can't just start with an
+// assessment." It no longer does — Greg's Stage 1 (B2.md:448) opens it and the 24 items arrive on the next turn.
+// The doorway is covered in tests/no-session-opens-on-an-assessment.test.ts.
+const pastDoorway = () =>
+  applyRebuildB2Turn(rebuildB2Opening().state, [], 'I kept a running streak going for two years once.', { text: '' } as never);
+
 test('B2 arc · warm frame → movement pass → diet transition at 12 → plain-language close (no numbers)', () => {
-  let t = rebuildB2Opening();
+  assert.match(rebuildB2Opening().reply, /made stick once/i, 'the doorway asks for a skill they already have');
+
+  let t = pastDoorway();
   assert.equal(t.state.stage, 'skills');
   // THE FRAME BY ITS JOB, NOT ITS WORDING. This pinned the exact sentence ("take stock of your current state") and
   // so failed the moment the set-up was rewritten from Greg's own member-shown introduction (Donna, 2026-08-23:
@@ -45,7 +53,7 @@ test('B2 arc · warm frame → movement pass → diet transition at 12 → plain
 });
 
 test('B2 arc · out-of-scale (0 or 5) is re-prompted on the 1–4 scale, not recorded', () => {
-  const t = rebuildB2Opening();
+  const t = pastDoorway();
   const five = applyRebuildB2Turn(t.state, [], '5', { text: '' } as never);
   assert.equal((five.state.administeredResponses ?? []).length, 0, '5 is off a 1–4 scale — not recorded');
   assert.match(five.reply, /1 to 4/i, 're-prompts');

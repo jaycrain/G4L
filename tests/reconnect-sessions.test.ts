@@ -26,9 +26,22 @@ const COMMITTED: Collected = { identityNoun: 'Racer', gap: 'The years took it.',
 // ── R1 · THE MIRROR ───────────────────────────────────────────────────────────────────────────────────────────
 test('R1 opens on the mirror — and is the FIRST Session, per Greg', () => {
   const t = reconnectR1Opening(COMMITTED);
-  assert.equal(t.state.stage, 'measurement', 'R1 is the IDQ');
-  assert.match(t.reply, /start with the mirror/i, "Greg's own image, kept");
+  // OPENS ON THE DOORWAY, NOT THE INSTRUMENT. Jay, 2026-08-28: "If the Session is leading with an assessment,
+  // something's missing." Greg's R1 is opening → rating → closure; this used to start at `measurement`, so the
+  // member's first act in the first Session of the program was tapping a number. It is now the engagement beat.
+  assert.equal(t.state.stage, 'mirror-open', 'R1 opens on the doorway in front of the IDQ');
+  assert.equal(RECONNECT_R1_ARC.stageOrder[1], 'measurement', 'and the instrument is what it opens onto');
+  assert.match(t.reply, /mirror/i, "Greg's own image, kept");
   assert.match(t.reply, /uncomfortable/i, 'and his discomfort line, which is the best sentence in his intro');
+
+  // GREG'S TWO LOAD-BEARING CONTRACTS, both required BEFORE any rating is collected.
+  assert.match(t.reply, /measuring stick/i, 'R1-41 — a measuring stick, framed by the revisit');
+  assert.match(t.reply, /where you actually are right now/i, 'R1-05 — current perspective, not what you want true');
+
+  // AND IT ENDS ON A QUESTION THEY ANSWER IN WORDS. The whole point of the beat is that they speak first; an
+  // opening that merely *contains* a frame and then asks for a number is the thing being fixed.
+  assert.match(t.reply, /expect to read hardest\?$/, 'the doorway closes on one open question');
+  assert.equal(t.expects, undefined, 'and no 1–5 chips under it — those belong to the instrument');
 
   // OUR RULE BEATS HIS DRAFT HERE. Greg's V4 intro reads "This is a mirror, not a test. There are no right
   // answers and no scores to worry about." Reassuring a member about an instrument implies they feared being
@@ -43,6 +56,10 @@ test('R1 opens on the mirror — and is the FIRST Session, per Greg', () => {
 
 test('R1 ENDS when the instrument does — it does not run on into the Drift Quiz', () => {
   let s = reconnectR1Opening(COMMITTED).state as ConvState;
+  // Through the doorway first — one answer in prose, which is now how the Session starts.
+  const doorway = applyReconnectTurn(s, [], 'The body, probably.', { text: '' }, RECONNECT_R1_ARC);
+  s = doorway.state as ConvState;
+  assert.equal(s.stage, 'measurement', 'one answer opens the doorway — it is not a beat to be held in');
   let last;
   for (let i = 0; i < TOTAL_ITEMS; i++) {
     last = applyReconnectTurn(s, [], '3', { text: '' }, RECONNECT_R1_ARC);
@@ -146,8 +163,8 @@ test('R3 ENDS after the letter — the Checkpoint is its own Session', () => {
 // ── R4 · THE CHECKPOINT, then the ceremony ────────────────────────────────────────────────────────────────────
 test('the Checkpoint Session carries the ceremony, as every other phase does', () => {
   const t = reconnectCheckpointOpening(COMMITTED);
-  assert.equal(t.state.stage, 'checkpoint');
-  assert.deepEqual(RECONNECT_CHECKPOINT_ARC.stageOrder, ['checkpoint', 'ceremony']);
+  assert.equal(t.state.stage, 'checkpoint-open', 'it opens on the doorway, not the instrument');
+  assert.deepEqual(RECONNECT_CHECKPOINT_ARC.stageOrder, ['checkpoint-open', 'checkpoint', 'ceremony']);
 });
 
 // ── THE SHAPE ─────────────────────────────────────────────────────────────────────────────────────────────────

@@ -22,13 +22,18 @@ import {
 // rather than a literal, so the next change to the instrument does not need a test edit to go with it.
 
 test('B4 checkpoint arc · warm frame → every administered item → hands into the ceremony', () => {
-  let t = rebuildCheckpointOpening();
-  assert.equal(t.state.stage, 'checkpoint');
+  // THE DOORWAY FIRST (2026-08-28) — the recap and "what's different now" are their own beat; the instrument
+  // arrives on the next turn. See tests/no-session-opens-on-an-assessment.test.ts.
+  const doorway = rebuildCheckpointOpening();
+  assert.equal(doorway.state.stage, 'checkpoint-open');
   // Pinned the old sentence verbatim and broke when B4's set-up was restored from Greg's own "Introduction (Shown
   // to Member)". Assert what the frame has to DO: say what this checkpoint asks, and what moving to Reclaim means.
-  assert.match(t.reply, /past the numbers|beyond the numbers/i, 'this is not a weigh-in');
-  assert.match(t.reply, /Reclaim/i, 'and it names what comes next');
-  assert.ok(t.reply.includes(grintaStem(CHECKPOINT_CONTROL_ITEMS[0]!)), 'plus the first item, verbatim');
+  assert.match(doorway.reply, /past the numbers|beyond the numbers/i, 'this is not a weigh-in');
+  assert.match(doorway.reply, /Reclaim/i, 'and it names what comes next');
+
+  let t = applyRebuildCheckpointTurn(doorway.state, [], 'I stopped negotiating with myself at 6am.', { text: '' } as never);
+  assert.equal(t.state.stage, 'checkpoint');
+  assert.ok(t.reply.includes(grintaStem(CHECKPOINT_CONTROL_ITEMS[0]!)), 'then the first item, verbatim');
   for (let i = 0; i < CHECKPOINT_CONTROL_ITEMS.length; i++) {
     assert.equal(t.state.stage, 'checkpoint', 'still administering');
     t = applyRebuildCheckpointTurn(t.state, [], '4', { text: '' } as never);
@@ -43,7 +48,7 @@ test('B4 checkpoint arc · warm frame → every administered item → hands into
 });
 
 test('B4 checkpoint arc · a non-number is re-prompted (instrument fidelity), not advanced', () => {
-  const t = rebuildCheckpointOpening();
+  const t = applyRebuildCheckpointTurn(rebuildCheckpointOpening().state, [], 'A lot, actually.', { text: '' } as never);
   const bad = applyRebuildCheckpointTurn(t.state, [], 'pretty aware', { text: '' } as never);
   assert.equal(bad.state.stage, 'checkpoint', 'a non-Likert answer does not advance');
   assert.match(bad.reply, /1 to 5/i, 're-prompts for a number');

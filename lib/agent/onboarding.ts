@@ -30,6 +30,14 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // v2.2 Reconnect arc (config #2 on the shared kernel): its stage ids. 'entry' = the callback (§2a).
   | 'entry'
   | 'doors'
+  // The OPENING BEAT in front of an instrument (Greg's Stage 1, "Engagement") — one open question the member
+  // answers in prose before any item is delivered. See engagementStage() in onboarding-staged.ts for why every
+  // instrument-led Session has one. 'mirror-open' precedes R1's 'measurement'.
+  | 'mirror-open'
+  | 'checkpoint-open'
+  | 'why-open'
+  | 'skills-open'
+  | 'audit-open'
   | 'measurement'
   // §2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz, RCN-DFT) then 'window' (The Window, RCN-WIN —
   // the two-Tuesdays vision), with the turn-toward-hope BRIDGE at the drift→window seam. (The Legacy Letter is a
@@ -712,6 +720,11 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // engine (lib/agent/reconnect.ts) supplies its own openers. A neutral fallback keeps the safety net honest.
   entry: 'Where would you like to pick things up?',
   doors: 'What feels like it opened the distance — take me into it.',
+  'mirror-open': 'Before we start: which part of this do you expect to read hardest?',
+  'checkpoint-open': "Before the numbers — what's different now that wasn't when you started?",
+  'why-open': 'Coming out of Rewire, what is the story you catch yourself telling about your body?',
+  'skills-open': 'Think of something you made stick once. What did you actually do to hold it?',
+  'audit-open': 'Before the ratings: where has your world actually got bigger since you started?',
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
   drift: 'What did the Fade cost you — and how far are you from that version of you?',

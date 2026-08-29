@@ -1560,6 +1560,106 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
   };
 }
 
+// --- THE OPENING BEAT (Greg's Stage 1, "Engagement") — the doorway every instrument-led Session was missing.
+//
+// Jay, 2026-08-28: "If the Session is leading with an assessment, something's missing."
+//
+// EIGHT of the sixteen Sessions opened cold on an instrument — R1 (the IDQ, the first Session a member ever does),
+// B1, B2, C2, and all four Checkpoints. In every one of them the member's first act was to tap a number.
+//
+// That is not a copy shortfall, it is a missing STAGE, and Greg's own specs say so in his vocabulary. B1 and B2
+// each declare a five-stage sequence whose Stage 1 is "Engagement — present opening frame / acknowledge the shift
+// from [the prior phase] / set the stance: honest self-assessment, not a performance" (B1.md:264). R1 runs
+// opening → rating → closure, with the rating in the MIDDLE (R1.md:341). We shipped the middle one, eight times.
+//
+// WHY A STAGE AND NOT A LONGER OPENER. An `opener` string glues the frame onto item 1, so the frame is something a
+// member scrolls past on the way to the chips — which is exactly how it reads. A stage makes them SPEAK first: one
+// open question, answered in their own words, before the instrument starts. That answer is what the Companion has
+// to reflect back at the close, and it is what R1's checklist means by capturing "values, hopes, fears, and
+// remembered-self language ... as prior_module_context" (R1.md:517, item 5). It is not stored in a new column —
+// it is in the thread, which is the Companion's context; a persisted field is a separate, reconciled change.
+//
+// ONE TURN, NOT A DRAW-OUT. This is a doorway, not a beat with a depth floor — whatever they say advances it. The
+// only reason to hold is a member who answers with a question of their own, and that is bounded, because the last
+// thing an instrument-led Session needs is a second place to be stuck in front of the instrument.
+export type EngagementConfig = {
+  id: StageId;
+  next: StageId; // the instrument stage this doorway opens onto
+  frame: (c: Collected) => string; // what this is, what it is NOT, and the stance to take
+  question: (c: Collected) => string; // the ONE open question, answered in prose
+  handIn: (c: Collected) => string; // the instrument's own opening (frame + item 0) — unchanged, just now second
+};
+
+// A member may ask at most this many questions back before the doorway opens anyway. Two is enough to answer a
+// real "what is this for?" and small enough that it cannot become a gate. Their questions are answered either way.
+const ENGAGE_MAX_HOLDS = 2;
+
+/** Is this message a question put TO us, rather than an answer to ours? */
+function asksBack(message: string): boolean {
+  const t = (message ?? '').trim();
+  return t.endsWith('?') && /^(what|why|how|who|when|where|do|does|did|is|are|can|could|should|will|would)\b/i.test(t);
+}
+
+/** The Session's first turn: the frame, then the one question, as two bubbles. */
+export function engagementOpening(cfg: EngagementConfig, c: Collected = {}): string {
+  return `${cfg.frame(c)}${BEAT_SEP}${cfg.question(c)}`;
+}
+
+export function engagementStage(cfg: EngagementConfig): StageDef {
+  const open: StageHandler = (b) => {
+    const sc = b.scratch as { holds?: number };
+    if (asksBack(b.memberMessage) && (sc.holds ?? 0) < ENGAGE_MAX_HOLDS) {
+      sc.holds = (sc.holds ?? 0) + 1;
+      // The model answers what they asked; the doorway's question goes back on the end, once.
+      b.reply = withQuestion(b.modelText, cfg.question(b.collected));
+      return;
+    }
+    b.stage = cfg.next;
+    b.reply = receiveThen(b.modelText, cfg.handIn(b.collected));
+  };
+  return {
+    id: cfg.id,
+    mode: 'drawout',
+    opener: (c) => engagementOpening(cfg, c),
+    offersSubstance: () => true,
+    gather: open,
+    // A doorway has no reflect-confirm loop. If something upstream leaves awaitingConfirm set, the honest
+    // behaviour is still to open — never to strand the member in a confirm this stage cannot resolve.
+    confirm: open,
+    forceProgress: (b) => {
+      b.stage = cfg.next;
+      b.reply = cfg.handIn(b.collected);
+    },
+  };
+}
+
+/**
+ * THE CHECKPOINT DOORWAY — the same beat for all four, because it is the same moment four times.
+ *
+ * Jay walked the Rewire Checkpoint on 2026-08-28: "This is underdeveloped for a Checkpoint." All four opened by
+ * recapping the phase in OUR words and then asking for six numbers — so the one place in the program that exists
+ * to ask "what did this phase do to you" never actually asked. The member's own account of the phase is also the
+ * only thing the ceremony can reflect back that the instrument cannot supply.
+ *
+ * The recap moves up into the frame (it is orientation, not part of the ask), the instrument's own framing stays
+ * with the instrument, and one question sits between them.
+ */
+export const CHECKPOINT_ENGAGE_Q = "Before the numbers — what's different now that wasn't when you started?";
+
+export function checkpointEngagement(cfg: {
+  next: StageId;
+  recap: string; // what they did in this phase, in the phase's own authored words
+  handIn: (c: Collected) => string; // the instrument's framing + item 0
+}): EngagementConfig {
+  return {
+    id: 'checkpoint-open',
+    next: cfg.next,
+    frame: () => cfg.recap,
+    question: () => CHECKPOINT_ENGAGE_Q,
+    handIn: cfg.handIn,
+  };
+}
+
 // After this many consecutive unreadable answers, stop repeating the item alone and name the way out. (CAT-31)
 const ADMINISTERED_HELP_AFTER = 3;
 function administeredStuckHelp(max: number): string {
