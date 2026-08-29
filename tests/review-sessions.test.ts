@@ -38,7 +38,10 @@ test('only DONE sessions are reviewable; Reconnect contributes its own; checkpoi
   assert.deepEqual(keys, ['r2', 'r3', 'w1', 'w2'],
     "Reconnect's done Sessions each review separately; w3 not done; no measurement/checkpoint");
   // The label is the SESSION's now, not the phase's — 'Reconnect' was the label when the phase was one session.
-  assert.equal(rev[0]!.label, 'The Doors', 'label from the redesign session-registry');
+  // 'Excavation' since 2026-08-29 (Jay: "I love the word Excavation relative to what we're doing"). R2 carries
+  // Identity Excavation AND The Doors; it was titled after the second, so a member doing the excavation had
+  // no way to know that is what it was. The Doors are untouched as a term — this is the Session's name.
+  assert.equal(rev[0]!.label, 'Excavation', 'label from the redesign session-registry');
 });
 
 test('nothing done → empty (a fresh member has nothing to revisit)', () => {

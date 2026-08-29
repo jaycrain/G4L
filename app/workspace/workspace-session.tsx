@@ -31,6 +31,7 @@ export interface Wayfinding {
   phaseLabel: string;
   phaseOrdinal: number;
   positionLabel: string; // "The Visualization Workshop · Session 2 of 3"
+  detail?: string | null; // the assets inside, where a Session holds more than one ("Identity Excavation + Doors")
   progressPct: number; // 0..100 within the phase
   rings: RingPhaseState[];
   ringCenter: string; // phase label for the ring center
@@ -172,6 +173,9 @@ export default function WorkspaceSession({
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel} · Completed</div>
                   <div className="ws-way-ss">{wayfinding.positionLabel}</div>
+                  {/* WHAT IS INSIDE, when the Session holds more than one of Greg's assets. Jay asked "is this
+                      the excavation?" in R2, which is called Excavation and is also the Doors. */}
+                  {wayfinding.detail && <div className="ws-way-detail">{wayfinding.detail}</div>}
                 </div>
               </div>
             </>

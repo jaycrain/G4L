@@ -1556,6 +1556,12 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    modifier class: alone it pushes itself right (the old look, unchanged for B3/B2/W3); with a link beside it, the
    link sits left and the count still lands right. */
 .wk-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+/* The grid's own name, in the header cell that used to be empty. Navy and sentence case against the
+   uppercase muted day counter, so the pair reads as title + status rather than two labels. */
+.wk-title { font-size: 0.9rem; font-weight: 600; color: var(--navy); }
+/* What a Session contains, under its name — quieter than the title, because it is orientation and not the
+   thing the member came to do. Only set where one Session holds more than one of Greg's assets. */
+.ws-way-detail { font-size: 0.78rem; color: var(--muted-grey); margin-top: 2px; }
 
 /* THE FINISHED FIRST DAYS, above the current week. Deliberately quieter than the live grid — smaller cells, muted
    label, no hover — because it is a record, not somewhere to act. It exists so a member whose Session closed

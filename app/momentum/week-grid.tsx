@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WeekGrid as Grid } from '../../lib/practice/grid.ts';
 import Link from 'next/link';
+import { PRACTICE_WEEK_TITLE } from '../../lib/practice/store.ts';
 import { isTappable, logSurfaceFor, dateForDay, canLogOn } from '../../lib/practice/mark.ts';
 import { toggleMarkAction } from './actions.ts';
 
@@ -167,6 +168,11 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
         </div>
       )}
       <div className="wk-head">
+        {/* THE GRID NAMES ITSELF (Jay, 2026-08-29: "No title"). This cell was empty and the name lived on a
+            heading outside, which only rendered when a member had more than one week open — so a single grid was
+            anonymous. A panel that carries a member's own commitments should say what it is without depending on
+            whichever surface happens to be drawing it. */}
+        <span className="wk-title">{PRACTICE_WEEK_TITLE[grid.kind]}</span>
         <span className="wk-day">Day {grid.day} of {grid.window.days}</span>
         {/* The named action MOVED to the foot (Jay, 2026-08-14) — see the note down there. */}
       </div>

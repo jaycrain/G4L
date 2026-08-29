@@ -24,6 +24,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { showComposer } from '../lib/chat/composer.ts';
+import { PRACTICE_WEEK_TITLE } from '../lib/practice/store.ts';
 
 const ROOT = new URL('../', import.meta.url).pathname;
 const AGENT = join(ROOT, 'lib/agent');
@@ -116,5 +117,34 @@ test('every arc chat passes the expectation, not a bare boolean', () => {
     const src = readFileSync(new URL(`../app/${f}.tsx`, import.meta.url), 'utf8');
     assert.doesNotMatch(src, /showComposer\(!!/, `${f}: coerces the expectation to a boolean`);
     assert.match(src, /showComposer\(expects \?\? null/, `${f}: must hand over the kind`);
+  }
+});
+
+// EVERY PRACTICE GRID NAMES ITSELF — the standard, so a new one cannot ship anonymous.
+//
+// Jay, 2026-08-29, pointing at a grid's top-left: "No title." The name lived in a map inside the Playbook view,
+// on a heading that rendered only when a member had MORE THAN ONE week open — so a member with one grid saw no
+// name at all, and `reclaim_item` had never had one even with the heading, because the map didn't cover it.
+//
+// "Make it so for other grids as they get added as the standard." Record<PracticeKind, string> is the standard:
+// a new kind without a title does not compile. This asserts the part the type cannot — that none is blank, and
+// that no surface has quietly reintroduced its own copy of the names.
+test('every practice-week kind has a non-empty title', () => {
+  const kinds: string[] = ['w2_image', 'w3_logging', 'b2_noticing', 'b3_pilot', 'c3_quality', 'reclaim_item'];
+  for (const k of kinds) {
+    const title = (PRACTICE_WEEK_TITLE as Record<string, string>)[k];
+    assert.ok(title && title.trim().length > 2, `${k}: no title — it would render an empty header cell`);
+  }
+  assert.equal(Object.keys(PRACTICE_WEEK_TITLE).length, kinds.length, 'a kind was added without a title');
+});
+
+test('the grid draws the title, and no surface keeps a second copy of the names', () => {
+  const grid = readFileSync(new URL('../app/momentum/week-grid.tsx', import.meta.url), 'utf8');
+  assert.match(grid, /PRACTICE_WEEK_TITLE\[grid\.kind\]/, 'the grid must name itself, not rely on its caller');
+  // The Playbook's own WEEK_LABEL map is what let the name and the grid disagree; a second copy anywhere is the
+  // same bug waiting. [[one-fact-many-sites]]
+  for (const f of ['playbook/[memberId]/redesign-playbook-view', 'playbook/[memberId]/playbook-view']) {
+    const src = readFileSync(new URL(`../app/${f}.tsx`, import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /WEEK_LABEL\s*:/, `${f}: keeps its own copy of the grid names`);
   }
 });

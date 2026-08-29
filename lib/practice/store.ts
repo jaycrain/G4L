@@ -16,6 +16,28 @@ import { localDate, trackerRun, currentWindow, priorWindow, runIsOver, columnFor
 // when an item is a CADENCE ("3 times per week"). Everything else about it is the same mechanic, which is the
 // point: the week, the grid, the marks, the close and the keeper all already work per-kind.
 export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot' | 'c3_quality' | 'reclaim_item';
+
+/**
+ * WHAT EACH PRACTICE WEEK IS CALLED — the standard, not a per-surface decision.
+ *
+ * Jay, 2026-08-29, pointing at the top-left of a grid: "No title." Two things made that possible. The name lived
+ * in a map inside the Playbook view, so the grid itself did not know what it was called; and the heading carrying
+ * it rendered only when a member had MORE THAN ONE week open, so a member with a single grid saw no name at all.
+ * The grid's own header row had an empty cell where the name belongs.
+ *
+ * `Record<PracticeKind, string>` is doing real work here: it is exhaustive, so adding a sixth kind without a
+ * title FAILS TO COMPILE rather than falling through to a generic "This week". That fallback is how `reclaim_item`
+ * — which already existed — had no name of its own. ("Make it so for other grids as they get added as the
+ * standard.") [[one-fact-many-sites]]
+ */
+export const PRACTICE_WEEK_TITLE: Record<PracticeKind, string> = {
+  w2_image: 'Your picture',
+  w3_logging: 'Your triggers this week',
+  b2_noticing: 'The skills you’re building',
+  b3_pilot: 'Your Lifestyle Pilot',
+  c3_quality: 'Your Quality Days',
+  reclaim_item: 'Your Reclaim item',
+};
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = {

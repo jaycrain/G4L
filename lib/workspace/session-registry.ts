@@ -42,6 +42,16 @@ export interface SessionDef {
   kind: SessionKind;
   segments: SessionType[]; // ORDERED — the canvas swaps per segment as the session runs
   note?: string;
+  /**
+   * WHAT THIS SESSION CONTAINS, for a member — distinct from `note`, which is an internal build comment nobody
+   * renders ("draw-out then w2_image practice week"). Set it only where a Session bundles more than one of Greg's
+   * assets and the title therefore covers half the work.
+   *
+   * Jay asked "is this the excavation?" mid-walk in R2, which is exactly what a member asks when the Session is
+   * called The Doors and is also the Identity Excavation. The Sessions are what a member sits down to do; the
+   * assets are Greg's units. Where one Session holds two, say so.
+   */
+  detail?: string;
 }
 
 // Every session + checkpoint, in phase order. Grounded in the real arc stageOrders (verified 7/13).
@@ -51,7 +61,12 @@ export const SESSION_REGISTRY: SessionDef[] = [
   // line that made Reconnect the only phase without Session boundaries. The ring now fills per Session, and the
   // member returns to the dashboard between them. R1 is the mirror and comes FIRST, per Greg's spec.
   { id: 'r1', phase: 'reconnect', label: 'The Mirror', kind: 'session', segments: ['B'] },
-  { id: 'r2', phase: 'reconnect', label: 'The Doors', kind: 'session', segments: ['D'] },
+  // EXCAVATION (Jay, 2026-08-29: "I love the word Excavation relative to what we're doing"). R2 carries TWO of
+  // Greg's assets — Identity Excavation (RCN-EXC) and The Doors (RCN-FDR) — under one Session, and it was
+  // titled after the second of them. Jay asked mid-walk "is this the excavation?", which is what a member
+  // asks when the name covers half the work. The Doors are untouched as a term: they are still the eleven
+  // doors, the board and the Playbook chapter. This is the name of the SESSION that opens them.
+  { id: 'r2', phase: 'reconnect', label: 'Excavation', detail: 'Identity Excavation + Doors', kind: 'session', segments: ['D'] },
   { id: 'r3', phase: 'reconnect', label: 'The Drift Quiz', kind: 'session', segments: ['A'] },
   { id: 'r4', phase: 'reconnect', label: 'Reconnect Checkpoint', kind: 'checkpoint', segments: ['B', 'E'] },
 

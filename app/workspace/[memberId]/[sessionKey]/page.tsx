@@ -107,6 +107,10 @@ export default async function WorkspacePage({
       : sessions.length > 1 && idx >= 0
         ? `${def.label} · Session ${idx + 1} of ${sessions.length}`
         : def.label;
+  // The assets inside this Session, where it holds more than one. Rendered rather than stored-and-forgotten —
+  // `note` on the same type is an internal build comment and nothing draws it, which is how a member-facing
+  // detail could have been written and never seen. [[no-unreachable-rules]]
+  const sessionDetail = def.detail ?? null;
   const activeRing = rings.find((r) => r.phase === def.phase);
   const progressPct = Math.round((activeRing?.fill ?? 0) * 100);
   const ringSub = def.kind === 'checkpoint' ? 'checkpoint' : sessions.length > 1 && idx >= 0 ? `${idx + 1} of ${sessions.length}` : null;
@@ -122,7 +126,7 @@ export default async function WorkspacePage({
       memberId={memberId}
       sessionKey={sessionKey}
       artifact={artifact}
-      wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
+      wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, detail: sessionDetail, progressPct, rings, ringCenter: phaseLabel, ringSub }}
       review={review}
       nudge={nudge}
       // The SHARED app topbar (brand · Program · Field Guide · Playbook · account). RedesignTopbar is an async server

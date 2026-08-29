@@ -20,13 +20,6 @@ import RichText from '../../rich-text.tsx';
 // from, and Greg will read these against his own assets, where each week has a specific job. W3 tracks the
 // triggers the member NAMED and whether they caught the day; B2 tracks the skills their own appraisal marked as
 // growing edges. The names now say so.
-const WEEK_LABEL: Record<string, string> = {
-  w2_image: 'Your picture',
-  w3_logging: 'Your triggers this week',
-  b2_noticing: 'The skills you’re building',
-  b3_pilot: 'Your Lifestyle Pilot',
-  c3_quality: 'Your Quality Days',
-};
 import OutcomeCards from './outcome-cards.tsx';
 import { PANEL_MESSAGING } from '../../../lib/content/panel-messaging.ts';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
@@ -652,11 +645,10 @@ export default function RedesignPlaybookView({
                 <div key={g.kind} className="pb-week">
                   {/* Name the week when there is more than one, so a member knows which Session each came from and
                       which row they are ticking. With one, the heading above already said it. */}
-                  {grids.length > 1 && (
-                    <div className="pb-week-h">
-                      {WEEK_LABEL[g.kind] ?? 'This week'} <span className="pb-week-day">Day {g.day} of {g.window.days}</span>
-                    </div>
-                  )}
+                  {/* THE HEADING IS GONE, not moved (Jay, 2026-08-29: "say it ONCE"). It duplicated both halves
+                      of the grid's own header — the name and the day counter — and it rendered only when a member
+                      had more than one week open, which is precisely how a single grid ended up with no title
+                      anywhere. WeekGridPanel names itself now, on every surface that draws it. */}
                   <WeekGridPanel memberId={memberId} grid={g} />
                 </div>
               ))}
