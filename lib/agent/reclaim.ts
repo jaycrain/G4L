@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -1112,8 +1112,7 @@ function reclaimCheckpointOpener(): string {
 const reclaimCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_CHALLENGE_ITEMS.length, // 6 (scaleMax defaults to 5)
-  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
-  maxLabel: 'completely',
+  ...AGREEMENT_1_5, // Greg's verbatim 1–5 anchors, one definition (onboarding-staged.ts)
   opener: () => reclaimCheckpointOpener(),
   deliverItem: (n) => reclaimCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${reclaimCheckpointDeliver(n)}`,

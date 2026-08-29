@@ -1582,6 +1582,32 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
 // ONE TURN, NOT A DRAW-OUT. This is a doorway, not a beat with a depth floor — whatever they say advances it. The
 // only reason to hold is a member who answers with a question of their own, and that is bounded, because the last
 // thing an instrument-led Session needs is a second place to be stuck in front of the instrument.
+/**
+ * THE 1–5 AGREEMENT SCALE — Greg's anchors, in one place, for every instrument that uses it.
+ *
+ * Jay, 2026-08-28: "It's not branding, it's more likely psychometrically sound from the professor... use Greg's
+ * terms throughout."
+ *
+ * We shipped "not at all" → "completely" on six 1–5 instruments (the IDQ, the Grinta baseline, and all four
+ * Checkpoint reads). Greg's specs state the anchors verbatim and identically in all of them — R1.md:33 for the
+ * IDQ, GATED-RECONNECT.md:112/482 and GATED-REWIRE.md:1062 for the Grinta family: `Rate each statement from 1
+ * (strongly disagree) to 5 (strongly agree).` These are agreement scales over STATEMENTS, and the anchors are
+ * part of the instrument, not copy we get to warm up.
+ *
+ * THIS IS NOT A UNIVERSAL LABEL, and it must not become one. Anchors belong to their instrument: B1 is SDT on
+ * 1–7 ("not at all true" → "very true"), B2 is 1–4 agreement, C2 rates magnitude on 1–10 ("low" → "high") where
+ * agreement anchors would be meaningless. Only the 1–5 agreement family reads from here.
+ *
+ * ONE DEFINITION BECAUSE IT WAS TWELVE. The anchors were written out at twelve sites — six chip pairs, four prose
+ * statements of the scale, two re-prompts — so the chips and the sentence beside them could disagree, and a
+ * seventh instrument would have been a thirteenth copy. [[one-fact-many-sites]]
+ */
+export const AGREEMENT_1_5 = { minLabel: 'strongly disagree', maxLabel: 'strongly agree' } as const;
+/** The scale said out loud, Greg's phrasing — for prose that states it before the items. */
+export const AGREEMENT_1_5_HINT = '1 (strongly disagree) to 5 (strongly agree)';
+/** The same scale for a RE-ASK, where the range wants to lead and the parentheses read as clutter. */
+export const AGREEMENT_1_5_REPROMPT = '1 to 5 — 1 is strongly disagree, 5 is strongly agree';
+
 export type EngagementConfig = {
   id: StageId;
   next: StageId; // the instrument stage this doorway opens onto
@@ -2524,8 +2550,8 @@ const GRINTA_OPEN =
 // The honesty line lives on the RAMP now (the last screen before the conversation starts), so repeating it here
 // would be the third time a member has been told to be honest before answering anything.
 const GRINTA_SCALE =
-  'Answer as you actually are right now, not who you’re aiming to be. For each, how true does it feel — 1 (not at ' +
-  'all) to 5 (completely)?\n\nToday:';
+  'Answer as you actually are right now, not who you’re aiming to be. Rate each statement from ' +
+  `${AGREEMENT_1_5_HINT}.\n\nToday:`;
 // The full survey opener as TWO beats (two bubbles): the Phases intro (orientation), then the pre-survey framing +
 // the first item (the survey instruction). Two jobs — let each breathe (same reason as the drift-beat split).
 function grintaSurveyOpener(): string {
@@ -2534,7 +2560,7 @@ function grintaSurveyOpener(): string {
 
 // A member answered with something that isn't a 1–5 → re-ask the CURRENT item, gently.
 function grintaReprompt(index: number): string {
-  return `A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”\n\n${grintaDeliver(index)}`;
+  return `A number from ${AGREEMENT_1_5_REPROMPT}.\n\n${grintaDeliver(index)}`;
 }
 
 // Deliver the item at 0-based `index`. W-48: the "n of 12" progress cue moved to the chip surface (universal across
@@ -2561,8 +2587,7 @@ function grintaClose(composite: number): string {
 const grintaStage: StageDef = administeredStage({
   id: 'grinta',
   itemCount: ONBOARDING_BASELINE_ITEMS.length, // 12
-  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
-  maxLabel: 'completely',
+  ...AGREEMENT_1_5, // Greg's verbatim 1–5 anchors, one definition (onboarding-staged.ts)
   opener: () => grintaSurveyOpener(), // the 4Rs intro + scale + item 0, delivered when Reclaim hands in
   deliverItem: (n) => grintaDeliver(n),
   reprompt: (n) => grintaReprompt(n),

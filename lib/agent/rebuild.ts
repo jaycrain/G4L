@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -692,8 +692,7 @@ function rebuildCheckpointOpener(): string {
 const rebuildCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_CONTROL_ITEMS.length, // 6 since Greg's V5 (was 12 activity/diet pairs); scaleMax defaults to 5
-  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
-  maxLabel: 'completely',
+  ...AGREEMENT_1_5, // Greg's verbatim 1–5 anchors, one definition (onboarding-staged.ts)
   opener: () => rebuildCheckpointOpener(),
   deliverItem: (n) => rebuildCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rebuildCheckpointDeliver(n)}`,

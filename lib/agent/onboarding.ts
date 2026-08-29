@@ -713,7 +713,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   legacy: 'What does a Tuesday look like for you one year from now — the ordinary day, not the highlight reel?',
   // Administered (staged only) — off the depth kernel, so this fallback prompt is never actually used; present
   // for type completeness. A number-based re-ask, matching the survey's own reprompt.
-  grinta: 'On a scale of 1 (not at all) to 5 (completely), how true does that feel today?',
+  grinta: 'Rate that statement from 1 (strongly disagree) to 5 (strongly agree).',
   complete: "That's everything we need. Let's look at where you're starting from next.",
   declined: 'This may not be your season for it — and the door stays open whenever that changes.', // terminal; never appended
   // v2.2 Reconnect stages are present only for type completeness — v1 never routes here, and the Reconnect

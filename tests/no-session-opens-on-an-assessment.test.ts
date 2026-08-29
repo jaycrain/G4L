@@ -124,3 +124,39 @@ test('a Checkpoint names what the phase did before it measures it', () => {
   assert.match(rebuildCheckpointOpening().reply, /underneath the numbers/, 'Rebuild recaps the phase');
   assert.match(reclaimCheckpointOpening().reply, /clearer eyes/, 'Reclaim recaps the phase');
 });
+
+// ── THE ANCHORS ARE THE INSTRUMENT'S, NOT OURS ────────────────────────────────────────────────────────────────
+//
+// Jay, 2026-08-28: "It's not branding, it's more likely psychometrically sound from the professor. So, if it's an
+// easy swap out, use Greg's terms throughout."
+//
+// We had shipped "not at all" → "completely" on six 1–5 instruments. Greg states the anchors verbatim and
+// identically in every one of his specs — R1.md:33 for the IDQ, GATED-RECONNECT.md:112/482 and
+// GATED-REWIRE.md:1062 for the Grinta family: "Rate each statement from 1 (strongly disagree) to 5 (strongly
+// agree)." An agreement scale over statements has agreement anchors; ours were a warmer paraphrase of somebody
+// else's instrument.
+//
+// NOT A UNIVERSAL LABEL, which is the thing this test protects in BOTH directions. B1 is SDT on 1–7, B2 is 1–4,
+// C2 rates magnitude on 1–10 where "strongly agree" would be meaningless. The rule is that anchors follow the
+// instrument — so this asserts Greg's anchors on the 1–5 family and asserts the others are LEFT ALONE.
+test('every 1-5 agreement instrument carries Greg’s anchors, from one definition', () => {
+  const onFive = ARCS.flatMap(([name, arc]) =>
+    arc.stageOrder.map((s) => [name, arc.stages[s]] as const)
+      .filter(([, st]) => st?.mode === 'administered' && st.scale?.max === 5));
+  assert.ok(onFive.length >= 5, 'expected the IDQ + the four Checkpoint reads');
+  for (const [name, st] of onFive) {
+    assert.equal(st!.scale!.minLabel, 'strongly disagree', `${name}: 1–5 low anchor is not Greg's`);
+    assert.equal(st!.scale!.maxLabel, 'strongly agree', `${name}: 1–5 high anchor is not Greg's`);
+  }
+});
+
+test('and the instruments on other scales keep their own anchors', () => {
+  const anchorsOf = (arc: ArcConfig, id: string) => arc.stages[id]!.scale!;
+  assert.deepEqual(
+    { ...anchorsOf(REBUILD_B1_ARC, 'why') },
+    { max: 7, minLabel: 'not at all true', maxLabel: 'very true', itemCount: 12 },
+    'B1 is SDT on 1–7 — agreement anchors would be the wrong instrument',
+  );
+  assert.equal(anchorsOf(REBUILD_B2_ARC, 'skills').max, 4, 'B2 is 1–4');
+  assert.equal(anchorsOf(RECLAIM_C2_ARC, 'audit-physical').minLabel, 'low', 'C2 rates magnitude, not agreement');
+});

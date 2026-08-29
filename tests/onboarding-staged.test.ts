@@ -28,7 +28,10 @@ function replayStaged(steps: Step[], from: ConvState = { stage: 'identity', coll
 function assertHandsToGrinta(turn: Turn) {
   assert.equal(turn.complete ?? false, false, 'Reclaim hands into the Grinta survey, not straight to the card');
   assert.equal(turn.state.stage, 'grinta');
-  assert.match(turn.reply, /1 \(not at all\) to 5/i, 'the survey opener + first item are delivered');
+  // GREG'S ANCHORS, not our warmer paraphrase (2026-08-28). Asserted on the ANCHOR WORDS rather than the range
+  // string: the anchors are the part of the instrument that must not drift, and "1 to 5" would still pass if
+  // someone relabelled the poles again. R1.md:33 / GATED-RECONNECT.md:112.
+  assert.match(turn.reply, /strongly disagree.*strongly agree/i, 'the survey opener + first item are delivered');
   // W-48: the "n of 12" cue moved from the bubble to the chip signal — the opener is the first item (Question 1 of 12).
   assert.equal(turn.expects?.index, 1, 'chip signal: first item');
   assert.equal(turn.expects?.total, 12, 'chip signal: 12-item length');
@@ -45,7 +48,7 @@ function assertHandsToGrinta(turn: Turn) {
   // Anchored on "twelve questions" rather than a stylistic phrase: it identifies the baseline intro AND guards
   // the count the member is promised, which must match ONBOARDING_BASELINE_ITEMS.length.
   assert.match(bubbles[1]!, /twelve questions/i, 'bubble 2 = the Grinta baseline intro');
-  assert.match(bubbles[2]!, /1 \(not at all\) to 5/i, 'bubble 3 = the pre-survey framing + the first item');
+  assert.match(bubbles[2]!, /strongly disagree.*strongly agree/i, 'bubble 3 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.
 function walkSurvey(state: ConvState, history: ConvMessage[] = [], val = 3): Turn {

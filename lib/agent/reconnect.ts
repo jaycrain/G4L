@@ -25,7 +25,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } 
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -1067,7 +1067,7 @@ const windowStage: StageDef = {
 // threaded from the Doors excavation so it reads as "a check-in with someone who knows me", not a survey. Deterministic
 // (no model call per item). Scoring + the baseline write (submitIdq) happen in the ACTION when the 24 land. The score
 // is a mirror — movement, never a bare number/verdict (governance).
-const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
+const IDQ_SCALE_HINT = `a number from ${AGREEMENT_1_5_HINT}`;
 /**
  * R1 IS THE FIRST SESSION IN THE PROGRAM NOW, so this is the first thing a member ever does here — and it opens
  * the phase, not just the instrument.
@@ -1086,7 +1086,7 @@ const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
  */
 function idqOpen(): string {
   return (
-    'Here we go. Tell me how true each one feels — 1 for not at all, 5 for completely.\n\n' +
+    `Here we go. Rate each statement from ${AGREEMENT_1_5_HINT}.\n\n` +
     `First a few about your body.\n\n${itemStem(0)}`
   );
 }
@@ -1417,8 +1417,7 @@ const legacyStage: StageDef = {
 const measurementStage: StageDef = administeredStage({
   id: 'measurement',
   itemCount: TOTAL_ITEMS,
-  minLabel: 'not at all', // W-24: chip anchors — the frozen IDQ 1–5 poles (IDQ_SCALE_HINT)
-  maxLabel: 'completely',
+  ...AGREEMENT_1_5, // Greg's verbatim 1–5 anchors, one definition (onboarding-staged.ts)
   opener: () => idqOpen(), // the warm open + item 0, delivered when Doors hands in
   deliverItem: (n) => deliverIdqItem(n),
   reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
@@ -1470,7 +1469,7 @@ const CHECKPOINT_RECAP =
 const CHECKPOINT_OPEN =
   'A quick check-in before we close. Six short statements about what this work is making you think about. ' +
   "You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment. " +
-  'Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.';
+  `Same as before: rate each statement from ${AGREEMENT_1_5_HINT}.`;
 function checkpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_GRIT_ITEMS[index]!);
 }
@@ -1490,8 +1489,7 @@ const checkpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   resetOnEntry: true,
   itemCount: CHECKPOINT_GRIT_ITEMS.length, // 6
-  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
-  maxLabel: 'completely',
+  ...AGREEMENT_1_5, // Greg's verbatim 1–5 anchors, one definition (onboarding-staged.ts)
   opener: () => checkpointOpener(),
   deliverItem: (n) => checkpointDeliver(n),
   reprompt: (n) => checkpointReprompt(n),
