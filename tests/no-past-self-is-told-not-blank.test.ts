@@ -48,3 +48,32 @@ test('a member who DID describe their past still gets their own words, unchanged
   // The fix must not cost the ordinary case. The verbatim capture is the whole point of the field.
   assert.match(PROVIDER, /Past self: \$\{i\.athleticPast\}/, 'their words go through verbatim when present');
 });
+
+test('skipping the identity beat skips BOTH its outputs, not just one', async () => {
+  // Jay, 2026-08-30, on a member finishing with neither a past self nor a handle: "gives a prospect some
+  // flexibility and room to get comfortable, not turning them away. We should expect cases like that."
+  //
+  // `identitySkipped` already satisfied the identity slot. It did not satisfy athleticPast — the OTHER output of
+  // the same beat — so a member deliberately let past that question was recorded as permanently incomplete on
+  // it. Expecting a case means representing it as a supported state, not a gap in the record.
+  const { contractGaps, contractMet } = await import('../lib/agent/onboarding-contract.ts');
+  const skipped = {
+    identitySkipped: true,
+    gap: 'My dad got sick in 2019 and everything I did for myself just stopped for three years.',
+    reclaimList: ['ride my bike again', 'sleep properly', 'see friends monthly'],
+  } as never;
+  assert.deepEqual(contractGaps(skipped), [], 'a skipped member is complete, not perpetually missing a slot');
+  assert.equal(contractMet(skipped), true);
+});
+
+test('but a member who did NOT skip still owes a past self', async () => {
+  const { contractGaps } = await import('../lib/agent/onboarding-contract.ts');
+  // The ruling is scoped to the member who was let past the beat. Someone still IN it has not been excused
+  // anything — dropping the requirement for everyone would be relaxing the bar, which is not what was asked.
+  const stillGoing = {
+    identityNoun: 'Racer',
+    gap: 'My dad got sick in 2019 and everything I did for myself just stopped for three years.',
+    reclaimList: ['ride my bike again', 'sleep properly', 'see friends monthly'],
+  } as never;
+  assert.deepEqual(contractGaps(stillGoing), ['athleticPast'], 'named an identity but described no past self');
+});

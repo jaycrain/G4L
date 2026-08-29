@@ -49,7 +49,22 @@ export function hasIdentity(c: Collected): boolean {
 // Which required slots are still unmet. Empty array = the contract is satisfied.
 export function contractGaps(c: Collected): ContractGap[] {
   const missing: ContractGap[] = [];
-  if (!c.athleticPast) missing.push('athleticPast');
+  // SKIPPING THE IDENTITY BEAT SKIPS BOTH ITS OUTPUTS (Jay, 2026-08-30).
+  //
+  // `identitySkipped` means the member chose to name who they are reclaiming later, at Excavation. It already
+  // satisfies the identity slot below (see hasIdentity) — but athleticPast, the OTHER output of that same beat,
+  // was still demanded. So a member who skipped it was recorded as incomplete forever, on a slot they had been
+  // deliberately let past.
+  //
+  // Jay's ruling, on being shown that a member can finish with neither: "gives a prospect some flexibility and
+  // room to get comfortable, not turning them away. We should expect cases like that." Expecting a case means
+  // representing it as a supported state, not as a permanent gap in the record — the card is logged to telemetry
+  // and read on /admin/member, where "missing: athleticPast" reads as something having gone wrong.
+  //
+  // NOT a relaxation of the bar: the gap narrative and the Reclaim List are still required, and those are what
+  // the program actually routes on. What is dropped is a description of the past self from someone who told us,
+  // twice, that they were not ready to give one.
+  if (!c.athleticPast && !c.identitySkipped) missing.push('athleticPast');
   if (!hasIdentity(c)) missing.push('identity');
   if ((c.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) missing.push('reclaimList');
   if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) missing.push('gap');
