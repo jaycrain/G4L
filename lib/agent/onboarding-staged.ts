@@ -192,6 +192,26 @@ export function identityIsGrounded(noun: string, memberCorpus: string): boolean 
   return words.some((w) => w.startsWith(key) || n.startsWith(w.slice(0, 3)));
 }
 
+/**
+ * NEVER SAY THE SAME THING TWICE — usable from every exit, not just the bottom of runArcTurn.
+ *
+ * The guard existed and was unreachable from nine of the ten places a turn can leave the engine. Handlers that
+ * build their own Turn — the reclaim commit, the gap dispute, the administered stages — returned straight past
+ * it, and those are exactly the paths that re-emit a canned line.
+ *
+ * The live persona eval (2026-08-30) caught it in FOUR of six runs, every one on the reclaim beat: "I've got
+ * those 5 written down…" and "Put them down here in your own words…" shipped twice in a row, word for word. A
+ * member reads that as the product not having heard them.
+ *
+ * The guard's own comment already argued this: "A guard whose job is 'never say the same thing twice' cannot
+ * have an exemption for the case that says it twice." It had one — nine of them. [[one-fact-many-sites]]
+ */
+function noRepeat(b: Beat, text: string): string {
+  if (b.complete || text !== lastAgentReply(b.history)) return text;
+  const leads = ['Take whatever time you need.', 'No rush at all.', "Whenever you're ready.", "There's no wrong way in."];
+  return `${leads[b.history.length % leads.length]} ${text}`;
+}
+
 export function isThirdPersonGap(gap: string): boolean {
   const g = (gap ?? '').trim();
   if (!g) return false;
@@ -2340,7 +2360,7 @@ const gapStage: StageDef = {
         b.stage = 'reclaim';
         b.awaitingConfirm = false;
         b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
-        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm)! } : {}) };
+        return { reply: noRepeat(b, b.reply), state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm)! } : {}) };
       }
       b.awaitingConfirm = false;
       b.reply = REOPEN_GAP;
@@ -2499,7 +2519,7 @@ function commitStructuredReclaim(b: Beat): Turn {
   setStructuredReclaim(b.collected, parseReclaimListSubmission(b.memberMessage));
   if ((b.collected.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) {
     return {
-      reply: RECLAIM_NUDGE,
+      reply: noRepeat(b, RECLAIM_NUDGE),
       state: beatState(b),
       complete: false,
       expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (b.collected.reclaimList ?? []).filter(Boolean) },
@@ -2688,7 +2708,7 @@ const reclaimStage: StageDef = {
     // a stale client, a resumed session, a replay — the right answer is to put the form back in front of her, NOT
     // to capture it conversationally. Capturing it is precisely the bug this redesign removes.
     b.reply = reclaimBuilderHandoff(b.collected);
-    return { reply: b.reply, state: beatState(b), complete: false,
+    return { reply: noRepeat(b, b.reply), state: beatState(b), complete: false,
       expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: reclaimSeedList(b.collected) } };
   },
   confirm(b) {
@@ -2715,7 +2735,7 @@ function answerPendingShape(b: Beat): Turn {
   const ack = resolvePendingShape(b, b.pendingReclaimShape!);
   const turn = enterGrintaSurvey(b, false);
   b.reply = `${ack}${BEAT_SEP}${turn.reply}`;
-  return { ...turn, reply: b.reply, state: beatState(b) };
+  return { ...turn, reply: noRepeat(b, b.reply), state: beatState(b) };
 }
 
 // --- The Grinta baseline — "Introduction to Grinta." An administered 12-item survey that runs AFTER the member
@@ -2834,14 +2854,14 @@ function enterGrintaSurvey(b: Beat, gateShapes = true, engineSpoke = false): Tur
     b.awaitingConfirm = false;
     b.reply = receiveThen(engineSpoke ? '' : (b.modelText || reclaimReceipt(b.collected)), grintaSurveyOpener());
     const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
-    return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
+    return { reply: noRepeat(b, b.reply), state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
   const proposal = gateNextShape(b);
   if (proposal) {
     b.stage = 'reclaim';
     b.awaitingConfirm = true;
     b.reply = proposal;
-    return { reply: b.reply, state: beatState(b), complete: false };
+    return { reply: noRepeat(b, b.reply), state: beatState(b), complete: false };
   }
   b.stage = 'grinta';
   b.awaitingConfirm = false;
@@ -2849,7 +2869,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true, engineSpoke = false): Tur
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
   const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
-  return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
+  return { reply: noRepeat(b, b.reply), state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
 const ONBOARDING_ARC: ArcConfig = {
@@ -3008,7 +3028,7 @@ export function runArcTurn(
     const early = stageDef.administer(b);
     if (early) return early;
     const expects = nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected); // W-24/W-48: next item → chips (+ "n of y"); completed → prose close
-    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }), ...(b.visual && { visual: b.visual }) };
+    return { reply: noRepeat(b, b.reply), state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }), ...(b.visual && { visual: b.visual }) };
   }
 
   // COACH stages (§B3, Decision PP) also run OFF the depth kernel: the model owns the coaching conversation and the
@@ -3031,11 +3051,11 @@ export function runArcTurn(
       if (forced) return forced;
       // forceProgress may mutate-and-fall-through (the usual shape) — if it ended the stage, emit that, don't
       // hand the turn back to the coach and overwrite its exit line.
-      if (b.complete) return { reply: b.reply, state: beatState(b), complete: true, ...(b.visual && { visual: b.visual }) };
+      if (b.complete) return { reply: noRepeat(b, b.reply), state: beatState(b), complete: true, ...(b.visual && { visual: b.visual }) };
     }
     const early = stageDef.coach(b);
     if (early) return early;
-    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(b.visual && { visual: b.visual }) };
+    return { reply: noRepeat(b, b.reply), state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(b.visual && { visual: b.visual }) };
   }
 
   // PROGRESS vs STALL: the member CONTRIBUTED this turn if a captured field grew, OR they offered usable
@@ -3096,15 +3116,14 @@ export function runArcTurn(
   // This used to skip while awaitingConfirm — which is precisely the state where repeats happen, because a confirm
   // that isn't resolved re-emits the same reflection fallback. Jennifer's walk shipped one line three times running.
   // A guard whose job is "never say the same thing twice" cannot have an exemption for the case that says it twice.
-  if (!b.complete && b.reply === lastAgentReply(history)) {
-    const leads = ['Take whatever time you need.', 'No rush at all.', "Whenever you're ready.", "There's no wrong way in."];
-    b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
-  }
+  // ONE DEFINITION — see noRepeat. This was the only place the rule lived, which is why nine early exits sailed
+  // past it; keeping a second copy here would have been the same mistake with better intentions.
+  b.reply = noRepeat(b, b.reply);
 
   // A handler may have emitted a structured turn directly (identity tap-to-pick chips); that wins. Otherwise derive
   // the expectation from the resulting stage (W-24/W-48: a draw-out handing INTO an administered stage delivers item 0).
   const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm);
-  return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
+  return { reply: noRepeat(b, b.reply), state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
 // The onboarding turn — config #1 on the generic kernel. The public signature is unchanged (callers/fixtures
