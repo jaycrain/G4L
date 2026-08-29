@@ -46,8 +46,19 @@ test('B2 arc · warm frame → movement pass → diet transition at 12 → plain
     if (i === SKILLS_DOMAIN_SPLIT) assert.match(t.reply, /Same skills now, for eating/i, 'diet transition at 12');
     t = applyRebuildB2Turn(t.state, [], '3', { text: '' } as never);
   }
-  assert.equal(t.complete, true, 'after the 24th, B2 completes');
+  // THE INSTRUMENT NO LONGER ENDS THE SESSION. Greg's stages 3–5 follow it — evocation, then the teaching beat,
+  // then consolidation — so the 24th answer hands on. The profile reflection moved WITH the close, because
+  // reading a member their strengths before asking what they noticed answers the question evocation exists to
+  // ask. (tests/b2-five-stages.test.ts owns the stage walk.)
+  assert.equal(t.complete, false, 'the items are in, but the Session is not over');
   assert.equal((t.state.administeredResponses ?? []).length, 24, 'all 24 captured');
+  t = applyRebuildB2Turn(t.state, [], 'The planning ones felt true.', { text: 'Planning.' });
+  t = applyRebuildB2Turn(t.state, [], 'I wanted to rate the slip one higher.', { text: 'That one.' });
+  t = applyRebuildB2Turn(t.state, [], 'Maybe more learnable, yes.', { text: 'Mm.' });
+  t = applyRebuildB2Turn(t.state, [], 'Getting back on after a slip.', { text: 'That one.' });
+  t = applyRebuildB2Turn(t.state, [], 'Planning ahead.', { text: 'Planning ahead.' });
+  t = applyRebuildB2Turn(t.state, [], 'Getting back on after a slip.', { text: 'Right.' });
+  assert.equal(t.complete, true, 'after consolidation, B2 completes');
   assert.match(t.reply, /strongest looks like|room to grow/i, 'reflects strongest + growth edge');
   assert.doesNotMatch(t.reply, /\d+\s*%|\/\s*48|\bscore\b/i, 'no numbers at the close (plain language)');
 });

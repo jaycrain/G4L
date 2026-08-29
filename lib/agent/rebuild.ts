@@ -487,26 +487,110 @@ const skillsStage: StageDef = administeredStage({
   deliverItem: (n) => skillsDeliver(n),
   reprompt: (n) => `A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.\n\n${skillsDeliver(n)}`,
   onComplete: (b) => {
-    // All 24 responses are in b.administeredResponses (activity 0–11, diet 12–23). Score + reflect the strongest /
-    // growth-edge skill in-engine (pure fns, no DB) so the close names skills, not numbers. The ACTION stores the
-    // full profile + opens the noticing week.
+    // All 24 responses are in b.administeredResponses (activity 0–11, diet 12–23). The SCORING now happens at
+    // consolidation, not here: Greg's evocation stage comes between, and reading a member their profile before
+    // asking what they noticed would answer the question the evocation exists to ask. The ACTION still stores the
+    // full profile + opens the noticing week off the completing turn.
+    b.stage = 'skills-evoke';
+    b.reply = B2_EVOKE_PROBES[0]!;
+  },
+});
+
+// ── GREG'S FIVE STAGES FOR B2 (B2.md:441) ─────────────────────────────────────────────────────────────────────
+//
+//   engagement → assessment support → evocation → didactic informing → consolidation
+//
+// DIFFERENT SHAPE FROM B1'S, on purpose. B1 elicits BEFORE each half of its instrument, because the thing being
+// measured (why you move) is something a member can say in their own words cold. B2 measures twelve skills a
+// member has no vocabulary for until they have been walked through them — so Greg puts the whole assessment
+// second ("assessment support") and the drawing-out AFTER it ("evocation"), where the member now has language.
+// Reading a member's skills back to them before they had rated anything would be us supplying the answer.
+//
+// GREG GRANTS B2 ITS OWN DIDACTIC LATITUDE (B2.md:294, "didactic_latitude = true (B2-specific)"). Worth recording
+// because B1.md:85 says latitude is "true for B1 and W1 only among the gated assets specified so far" — that was
+// written before B2 was specified, and the per-asset doc governs its own asset. [[greg-doc-precedence-and-levels]]
+const B2_EVOKE_PROBES = [
+  'Looking at how you answered — which of those felt truest about you?',
+  'And was there one you wanted to rate higher than you honestly could?',
+];
+
+// Greg's four permitted points (B2.md:371), in his approved phrasing (B2-56, B2-57, B2-58, B2-60). Two are
+// delivered; the ledger and maxShared keep it from becoming a lecture, exactly as in B1.
+const B2_TEACH_OPEN =
+  "That's the twenty-four. One or two things worth knowing about what you just rated, if you want them.";
+const B2_POINTS = [
+  {
+    id: 'skills-not-traits',
+    // B2-56, verbatim.
+    text: "One thing that's useful to know: these aren't personality traits. They're skills. And skills can be developed.",
+    then: 'Does any of them feel more learnable than it did ten minutes ago?',
+  },
+  {
+    id: 'weakness-is-information',
+    // B2-58, verbatim. Paired deliberately with the point above — a member who has just rated themselves low on
+    // six things needs this one, and it is the half of the pair that does the protective work.
+    text: "A weakness here isn't a flaw. It's just information about where you might want to focus your effort.",
+    then: 'Which one would you actually want to put effort into first?',
+  },
+];
+
+// B2-57's three-factor framework, at consolidation — it explains the MAP she is about to be shown, so it belongs
+// beside the map rather than in the middle of the teaching beat.
+const B2_THREE_FACTOR =
+  'In this framework we group the skills into three categories — Predisposing, Enabling and Reinforcing — ' +
+  'because different skills tend to matter at different points in the change process.';
+const B2_CONSOLIDATE_ASK = 'Before we close: which skill would you want to be better at by the end of Rebuild?';
+
+// B2-60 — the CFW bridge, delivered at the close where it hands into B3 (Greg's fourth permitted point is "the
+// connection to B3", and this is that connection stated as the principle rather than as a signpost).
+const B2_BRIDGE =
+  'Self-management is the bridge between wanting something and doing it — which is exactly what the pilot in ' +
+  'your next Session is for.';
+
+const b2ConsolidateStage: StageDef = {
+  id: 'skills-close',
+  mode: 'drawout',
+  opener: () => B2_CONSOLIDATE_ASK,
+  offersSubstance: () => true,
+  gather: (b) => {
+    // One turn: receive their answer, then the authored close — the profile reflection, the framework that names
+    // its three groups, and the bridge into B3.
     const responses = b.administeredResponses.slice(0, SKILLS_ITEM_COUNT);
     const { strongest, growthEdge } = skillHighlights(scoreSkills(responses));
     b.stage = 'complete';
     b.complete = true;
-    b.reply = b2Close(strongest, growthEdge);
+    b.reply = receiveThen(b.modelText, `${B2_THREE_FACTOR}${BEAT_SEP}${b2Close(strongest, growthEdge)}${BEAT_SEP}${B2_BRIDGE}`);
   },
-});
+  confirm: (b) => b2ConsolidateStage.gather(b),
+};
 
 export const REBUILD_B2_ARC: ArcConfig = {
   id: 'rebuild-b2',
-  stageOrder: ['skills-open', 'skills'],
-  stages: { 'skills-open': engagementStage(b2Engage), skills: skillsStage },
+  stageOrder: ['skills-open', 'skills', 'skills-evoke', 'skills-teach', 'skills-close'],
+  stages: {
+    'skills-open': engagementStage(b2Engage),
+    skills: skillsStage,
+    'skills-evoke': elicitationStage({
+      id: 'skills-evoke',
+      next: 'skills-teach',
+      probes: B2_EVOKE_PROBES,
+      floor: 2,
+      handIn: () => B2_TEACH_OPEN,
+    }),
+    'skills-teach': didacticStage({
+      id: 'skills-teach',
+      next: 'skills-close',
+      points: B2_POINTS,
+      maxShared: 2,
+      handOff: () => B2_CONSOLIDATE_ASK,
+    }),
+    'skills-close': b2ConsolidateStage,
+  },
   onComplete: () => B2_OPEN,
 };
 
-export function applyRebuildB2Turn(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  return runArcTurn(REBUILD_B2_ARC, state, history, memberMessage, { text: '' });
+export function applyRebuildB2Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(REBUILD_B2_ARC, state, history, memberMessage, model);
 }
 
 export function rebuildB2Opening(): Turn {
@@ -514,8 +598,93 @@ export function rebuildB2Opening(): Turn {
   return { reply: engagementOpening(b2Engage), state: { stage: 'skills-open', collected: {} }, complete: false };
 }
 
-export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  return applyRebuildB2Turn(state, history, memberMessage);
+// ── B2'S LIVE PROMPT ──────────────────────────────────────────────────────────────────────────────────────────
+//
+// THE FORBIDDEN FORMULATIONS ARE GREG'S, VERBATIM (B2-59). All three are the same move — turning a self-rating
+// into a verdict about the person — which is the exact failure this Session is most exposed to, because a member
+// has just rated themselves low on several things and is waiting to be told what it means about them.
+const B2_SYSTEM = `${MEMBER_AGENT_GOVERNED_CORE}
+
+YOU ARE RUNNING B2 — "Appreciating Your Strengths and Weaknesses", the second Session of Rebuild.
+
+WHAT JUST HAPPENED. The member rated themselves on twelve self-management skills, twice over — once for movement,
+once for eating. Twenty-four judgments about themselves, in a row. Some of them will have been uncomfortable.
+
+YOUR JOB IS TO DRAW OUT WHAT THEY NOTICED, not to interpret their answers. They have the language for these
+skills now, which they did not have twenty minutes ago; that is what makes this the moment to ask.
+
+NEVER SAY, OR SAY ANYTHING SHAPED LIKE:
+  · "You need to improve your Reinforcing skills."
+  · "Your Predisposing scores are low, so you're not ready to change."
+  · "Self-management is what separates people who succeed from those who don't."
+The first prescribes, the second diagnoses readiness, the third makes a skill rating into a claim about their
+character. A weakness here is information about where to put effort. Nothing more.
+
+DO NOT NAME A SCORE, A PERCENTAGE, OR A CATEGORY TOTAL. The engine reflects the profile in plain language at the
+close. If they ask how they did, tell them what they said, not what it computed.
+
+DO NOT TEACH. The teaching points are written and delivered by the engine at the right moment.
+
+ONE QUESTION PER TURN. Two or three sentences.`;
+
+function b2StageNote(state: ConvState): string {
+  switch (String(state.stage ?? '')) {
+    case 'skills-open':
+      return '\n\nWHERE YOU ARE: the opening. They have just described something they once made stick. Receive ' +
+        'it — that is a skill they already own, and naming it as one is enough.';
+    case 'skills-evoke':
+      return '\n\nWHERE YOU ARE: drawing out what they noticed while rating themselves. Ask about their ' +
+        'EXPERIENCE of answering, not about what the answers mean. Do not interpret, rank, or total anything.';
+    case 'skills-teach':
+      return '\n\nWHERE YOU ARE: the engine has just delivered a short teaching point and asked them something. ' +
+        'Respond to their answer only. Do NOT add to the teaching or restate it.';
+    case 'skills-close':
+      return '\n\nWHERE YOU ARE: the close. They have named the skill they want to be better at. Reflect it ' +
+        'back in their words, briefly. The engine says what the profile shows and what comes next — you do not.';
+    default:
+      return '';
+  }
+}
+
+/** Which stages of B2 need a live model — the conversational ones. The 24 items stay deterministic. */
+const B2_TALKING_STAGES = new Set(['skills-open', 'skills-evoke', 'skills-teach', 'skills-close']);
+
+export async function liveTurnRebuildB2(
+  state: ConvState,
+  history: ConvMessage[],
+  memberMessage: string,
+  carryForward?: string | null,
+): Promise<Turn> {
+  // Same wall as B1: the instrument never calls the model.
+  if (!B2_TALKING_STAGES.has(String(state.stage ?? ''))) {
+    return applyRebuildB2Turn(state, history, memberMessage);
+  }
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 1,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 300,
+    system: [
+      { type: 'text' as const, text: B2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: b1Context(state.collected) + b2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
+    messages,
+  });
+  const text = (res.content as Array<{ type: string; text?: string }>)
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('')
+    .trim();
+  return applyRebuildB2Turn(state, history, memberMessage, { text });
 }
 
 // ══ B3 · The Lifestyle Pilot (the marquee — COACH mode, Decision PP) ═══════════════════════════════════════════

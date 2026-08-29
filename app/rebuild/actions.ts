@@ -319,10 +319,12 @@ export async function rebuildTurnAction(
     // block to enter, and tests/retention.test.ts recorded that as a deliberate gap. Greg's five stages gave it
     // three conversational beats (2026-08-28), so the declaration is now honoured instead of decorative.
     // Guarded — losing the carry-forward costs the connective tissue, never the Session.
-    const b1Carry = session === 'b1' ? await carryForward(db, memberId, 'b1').catch(() => []) : [];
+    // Both now have a model turn (Greg's five stages, 2026-08-28), so both can finally receive the carry-forward
+    // their UPSTREAM entries have declared all along. Guarded — losing it costs connective tissue, not the Session.
+    const carried = await carryForward(db, memberId, session).catch(() => []);
     const turn = session === 'b2'
-      ? liveTurnRebuildB2(state, history, message)
-      : await liveTurnRebuildB1(state, history, message, describeCarryForward(b1Carry));
+      ? await liveTurnRebuildB2(state, history, message, describeCarryForward(carried))
+      : await liveTurnRebuildB1(state, history, message, describeCarryForward(carried));
     let earnedBadge: { id: string; name: string } | null = null;
     if (turn.complete) {
       const responses = turn.state.administeredResponses ?? [];
