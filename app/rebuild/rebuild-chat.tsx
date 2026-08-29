@@ -168,7 +168,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
         <>
           {/* The text box is hidden on an administered turn (the chips render inline in the thread above); it returns
               on conversational turns. */}
-          {showComposer(!!expects, awaitingContinue) && (
+          {showComposer(expects ?? null, awaitingContinue) && (
             <form className="chat-input" onSubmit={send}>
               <textarea
                 value={input}

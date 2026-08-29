@@ -346,7 +346,7 @@ export default function ReconnectChat({
           turn to join. He was stuck with no way out but the browser.
           Every other arc already hides its input at `done`; Reconnect never had to, because it was one arc that
           ran into the ceremony. Three Sessions that each END is a different thing. */}
-      {!done && showComposer(!!expects, awaitingContinue) && (
+      {!done && showComposer(expects ?? null, awaitingContinue) && (
         <form className="chat-input" onSubmit={send}>
           <textarea
             value={input}

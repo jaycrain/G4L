@@ -15,11 +15,35 @@
 // dead end that looks like one. Deriving both from this function is what stops them disagreeing again.
 
 /**
- * Should the free-text composer be shown?
+ * NOT EVERY EXPECTATION IS THE INPUT. Some are a SHORTCUT to it, and those must keep the text box.
  *
- * @param hasExpectation the engine handed back a structured surface (chips, a board, a builder) — that IS the input
- * @param awaitingContinue the beat is over and a continue control is on screen, waiting for a tap
+ * Jay, R3, 2026-08-28: "Didn't give the composer on the first try."
+ *
+ * `beat_confirm` is the Companion asking the member to rule on something it just reflected — the drift, the
+ * window, the Legacy Letter. The chips are two fast answers; they are not the only two answers, and the code that
+ * renders them says so eight lines above the composer: "The composer stays: typed replies fall through to the
+ * classifier as before." It did not stay. This helper landed afterwards, for Donna's Rebuild finding, and
+ * overrode a rule written down beside it — so a member holding a draft of their own Legacy Letter, wanting to
+ * change one line, had two buttons and nowhere to type.
+ *
+ * THE DISTINCTION IS WHETHER THE STRUCTURE CAN CARRY THE WHOLE ANSWER:
+ *  · a 1–5 scale, the Doors board, the Reclaim builder — the answer IS the structure. No composer; a text box
+ *    beside it is the dead end Donna reported.
+ *  · a confirm — the structure carries the two COMMON answers. Anything else the member wants to say has to go
+ *    somewhere, and the engine already accepts it (the confirm handlers classify free text).
+ *
+ * The failure modes are not symmetric, which is what settles it: a needless text box is a moment's confusion,
+ * and a missing one is a member who cannot say the thing they came to say. [[no-unreachable-rules]]
  */
-export function showComposer(hasExpectation: boolean, awaitingContinue: boolean): boolean {
-  return !hasExpectation && !awaitingContinue;
+const SHORTCUT_KINDS = new Set(['beat_confirm']);
+
+export function showComposer(
+  expectation: boolean | { kind?: string } | null | undefined,
+  awaitingContinue: boolean,
+): boolean {
+  if (awaitingContinue) return false;
+  // Back-compat: callers that pass a bare boolean get the old all-or-nothing rule.
+  if (typeof expectation === 'boolean') return !expectation;
+  if (!expectation) return true;
+  return SHORTCUT_KINDS.has(expectation.kind ?? '');
 }

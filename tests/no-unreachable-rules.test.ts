@@ -23,6 +23,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { showComposer } from '../lib/chat/composer.ts';
 
 const ROOT = new URL('../', import.meta.url).pathname;
 const AGENT = join(ROOT, 'lib/agent');
@@ -88,4 +89,32 @@ test('the W3 protocol announces itself before the first move', () => {
   const src = readFileSync(join(AGENT, 'rewire.ts'), 'utf8');
   assert.match(strip(src), /W3_PROTOCOL_INTRO\}\$\{BEAT_SEP\}/,
     'the frame leads the protocol step, as its own beat before the model poses the first move');
+});
+
+// A CONFIRM'S CHIPS ARE A SHORTCUT, NOT THE ONLY ANSWER.
+//
+// Jay, R3, 2026-08-28: "Didn't give the composer on the first try." He was holding a draft of his own Legacy
+// Letter, wanted to change a line, and had two buttons and nowhere to type.
+//
+// The rule was already written down — in reconnect-chat.tsx, eight lines above the composer: "The composer stays:
+// typed replies fall through to the classifier as before." Then showComposer() arrived for Donna's Rebuild
+// finding, hid the box for ANY expectation, and overrode a rule sitting beside it. Same class as everything else
+// that day: a rule that exists and does not run.
+test('a confirm keeps the text box; an input-shaped expectation does not', () => {
+  assert.equal(showComposer({ kind: 'beat_confirm' }, false), true, 'a ruling can always be typed instead');
+  for (const kind of ['scale', 'doors_board', 'reclaim_builder', 'domain_pick']) {
+    assert.equal(showComposer({ kind }, false), false, `${kind}: the structure IS the answer`);
+  }
+  assert.equal(showComposer(null, false), true, 'an open question always gets a box');
+  assert.equal(showComposer({ kind: 'beat_confirm' }, true), false, 'except when a continue is waiting');
+});
+
+test('every arc chat passes the expectation, not a bare boolean', () => {
+  // `!!expects` throws away the kind, which is the only thing that distinguishes the two cases — so a caller
+  // still coercing to boolean silently gets the old behaviour back on that surface alone. Four surfaces, one rule.
+  for (const f of ['reconnect/reconnect-chat', 'rewire/rewire-chat', 'rebuild/rebuild-chat', 'reclaim/reclaim-chat']) {
+    const src = readFileSync(new URL(`../app/${f}.tsx`, import.meta.url), 'utf8');
+    assert.doesNotMatch(src, /showComposer\(!!/, `${f}: coerces the expectation to a boolean`);
+    assert.match(src, /showComposer\(expects \?\? null/, `${f}: must hand over the kind`);
+  }
 });
