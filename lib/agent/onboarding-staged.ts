@@ -162,6 +162,36 @@ const ONBOARDING_HARD_CEILING = 30; // absolute backstop against a true runaway/
  * positive here silently discards a real capture, which is the failure we are trying to prevent, so the guard
  * refuses only what cannot be the member's own account. [[member-words-outrank-model-guess]]
  */
+/**
+ * Is this identity word the MEMBER'S, or the model's invention?
+ *
+ * The identity is tap-to-pick by design (2026-07-29): chips plus coin-your-own, never extraction. But
+ * `name_identity` — permitted "ONLY when the member flatly names it themselves" — was prompt-only, and the engine
+ * stored whatever it recorded. Walked 2026-08-30: a member who said only that she "used to run marathons and was
+ * the one everyone leaned on" was recorded as **the Sovereign**, a word she never used, and the Companion then
+ * addressed her by it in the same turn.
+ *
+ * That crosses two hard rules from the AI Governance Framework, not a style preference: never name an identity
+ * label without member confirmation, and address the member as "you" — never by their Identity.
+ *
+ * DELIBERATELY LOOSE (Jay's call). The failure modes are not symmetric. A false NEGATIVE recreates CAT-54, where
+ * rejecting the model's identity record produced fifteen consecutive re-prompts for a question she had already
+ * answered — a member trapped being asked the same thing. A false POSITIVE stores a word close to her own. So
+ * this matches on a three-character prefix in either direction: "Runner" is grounded by "I used to run", "Racer"
+ * by "I raced", "Maker" by "I made things". Only a genuinely invented word fails.
+ *
+ * When it fails, nothing is stored and the chips flow proceeds normally — which is the designed capture path, so
+ * the member is offered the word rather than assigned it. [[their-own-words-back]] [[identity-tap-to-pick]]
+ */
+export function identityIsGrounded(noun: string, memberCorpus: string): boolean {
+  const n = (noun ?? '').trim().toLowerCase().replace(/^(the|a|an)\s+/, '');
+  if (!n) return false;
+  const words: string[] = (memberCorpus ?? '').toLowerCase().match(/[a-z']+/g) ?? [];
+  const key = n.slice(0, 3);
+  if (key.length < 3) return words.includes(n); // a very short handle must appear outright
+  return words.some((w) => w.startsWith(key) || n.startsWith(w.slice(0, 3)));
+}
+
 export function isThirdPersonGap(gap: string): boolean {
   const g = (gap ?? '').trim();
   if (!g) return false;
@@ -1246,7 +1276,11 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
   const next: Collected = {
     ...prev,
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
-    ...(rec.identityNoun !== undefined && rec.identityNoun !== '' && { identityNoun: displayIdentityNoun(rec.identityNoun) }),
+    // GROUNDED IN HER OWN WORDS, or not stored at all — see identityIsGrounded. Her self-description and her gap
+    // are the evidence, the same material the Door filter above uses; the model's own reflections never count.
+    ...(rec.identityNoun !== undefined && rec.identityNoun !== ''
+      && identityIsGrounded(rec.identityNoun, [prev.athleticPast ?? '', prev.gap ?? '', memberMaterial].filter(Boolean).join('\n'))
+      && { identityNoun: displayIdentityNoun(rec.identityNoun) }),
     ...(rec.identitySkipped === true && { identitySkipped: true }),
     // THE GAP IS THE MEMBER'S OWN FIRST-PERSON ACCOUNT — enforced here, not only asked for.
     //
