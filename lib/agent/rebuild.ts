@@ -1038,7 +1038,7 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
     // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own text is byte-identical every
     // turn and carries the breakpoint; context, stage note and carry-forward move AFTER it, because a single
     // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
-    // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 2048-token cache minimum, so it could
+    // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 1024-token cache minimum, so it could
     // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
     system: [
       { type: 'text' as const, text: B3_SYSTEM, cache_control: { type: 'ephemeral' as const } },

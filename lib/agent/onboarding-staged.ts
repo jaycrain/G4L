@@ -3552,7 +3552,18 @@ export async function liveTurnStaged(
   const res = await captureCreate((model) => client.messages.create({
     model,
     max_tokens: 600,
-    system: STAGED_SYSTEM + stageInstruction(state.stage, { gapHeld: state.stageScratch?.gap?.gapHeld === true }),
+    // CACHED PREFIX / VOLATILE SUFFIX (2026-08-30). This was ONE concatenated string, so nothing cached — and
+    // onboarding is the most expensive path in the product: ~4,500 tokens of governed system prompt re-sent on
+    // every turn, ~30 turns per member, on OPUS. Anthropic's billing flagged the org's cache hit rate; this is
+    // where most of it was going.
+    //
+    // The split is the same contract Rewire, Rebuild and Reclaim already use: STAGED_SYSTEM is byte-identical
+    // every turn and carries the breakpoint; the stage instruction varies per turn and must come AFTER it, since
+    // caching is a prefix match and a single varying byte inside the cached block invalidates the whole thing.
+    system: [
+      { type: 'text' as const, text: STAGED_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: stageInstruction(state.stage, { gapHeld: state.stageScratch?.gap?.gapHeld === true }) },
+    ],
     tools: STAGED_TOOLS,
     messages,
   }));

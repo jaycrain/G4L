@@ -2018,7 +2018,16 @@ export async function liveTurnReconnect(
   const res = await captureCreate((model) => client.messages.create({
     model,
     max_tokens: writingLetter ? 1800 : 600,
-    system: RECONNECT_SYSTEM + reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage, state),
+    // CACHED PREFIX / VOLATILE SUFFIX (2026-08-30). This was one concatenated string, so Reconnect — the longest
+    // phase in the program — re-sent its whole system prompt uncached on every turn.
+    //
+    // The breakpoint sits on the LAST STATIC block. Caching is hierarchical (tools → system → messages), so this
+    // one breakpoint covers the tools as well; the member's context and the stage note vary per turn and must
+    // come after it, because a single changed byte inside a cached block invalidates the whole prefix.
+    system: [
+      { type: 'text' as const, text: RECONNECT_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage, state) },
+    ],
     tools: RECONNECT_TOOLS,
     messages,
   }));

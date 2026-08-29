@@ -371,7 +371,7 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
     // the 1.25x write premium for nothing.
     //
     // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
-    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
     system: [
@@ -688,7 +688,7 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
     // the 1.25x write premium for nothing.
     //
     // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
-    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
     system: [
@@ -1228,7 +1228,7 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
     // the 1.25x write premium for nothing.
     //
     // THE BLOCK IS WHAT MAKES CACHING POSSIBLE, WHICH IS THE INVERSION WORTH KNOWING. Sonnet 4.6 will not cache a
-    // prefix under 2048 tokens; these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
+    // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
     system: [
