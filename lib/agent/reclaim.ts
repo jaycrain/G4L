@@ -838,7 +838,10 @@ const C2_EXPANSION_PROBES = [
 ];
 const C2_CONTRACTION_PROBES = [
   'And the other direction: where does your life still feel narrower than you would want it?',
-  'What would a slightly bigger day look like there? Not a transformed one — slightly bigger.',
+  // WAS "Not a transformed one — slightly bigger." Two faults in one clause: it negates instead of declaring
+  // (our voice rule), and "transformed" is on Greg's own avoid-list, which the extended causality filter
+  // caught the moment it was widened. My copy, tripping my rule, on the turn I added it.
+  'What would a slightly bigger day look like there — one with a bit more room in it?',
 ];
 const C2_APPROACH_PROBES = [
   'One more angle. Some of this is moving away from things. What are you moving toward?',

@@ -97,6 +97,7 @@ const RULES: Rule[] = [
  * measurement. If the rate does not fall, we will know, which is more than was true before.
  */
 const CAUSALITY_DENY: { re: RegExp; why: string }[] = [
+  // ── C2-81's list, which is where this started ──────────────────────────────────────────────────────────────
   { re: /\b(proves|proving|proved)\b/i, why: 'causality:proves' },
   { re: /\b(reveals|revealing|revealed)\b/i, why: 'causality:reveals' },
   { re: /\b(guarantees|guaranteed|guarantee)\b/i, why: 'causality:guarantees' },
@@ -105,6 +106,43 @@ const CAUSALITY_DENY: { re: RegExp; why: string }[] = [
   { re: /\b(this is )?evidence (of|that)\b/i, why: 'causality:evidence' },
   { re: /\bovercome the Fade\b/i, why: 'causality:overcome-the-fade' },
   { re: /\bpsychological flexibility\b/i, why: 'causality:psych-flexibility' },
+
+  // ── THE REST OF GREG'S LIST, from the document C2-81 was a fragment of ─────────────────────────────────────
+  //
+  // "AI Companion Guidance for [Reclaim] Science-Check Language and Goal-Reflection Dialogue" (13 July) — 2,416
+  // words that had never reached the library, found 2026-08-29 while auditing his corpus at Jay's direction.
+  // C2-81 gave six terms inside one asset's spec; this document is the rule itself, across the whole program:
+  // "The Companion should not present psychological change as simple, automatic, or fully caused by a single
+  // exercise… Behavior-change research often supports probabilistic claims, not absolute ones."
+  //
+  // Built one day after the C2-81 half, which is the point worth recording: a rule extracted from one asset
+  // looked complete and was a subset. The fuller source existed the whole time.
+  { re: /\btransform(s|ed|ing|ation)?\b/i, why: 'causality:transform' },
+  { re: /\bcures?\b|\bcured\b/i, why: 'causality:cure' },
+  { re: /\bunlocks?\b|\bunlocked\b|\bunlocking\b/i, why: 'causality:unlock' },
+  { re: /\beliminates?\b|\beliminated\b/i, why: 'causality:eliminate' },
+  { re: /\bpermanently\b/i, why: 'causality:permanently' },
+  { re: /\bonce and for all\b/i, why: 'causality:once-and-for-all' },
+  // "fix" and "resolve" are NARROWED to the overclaiming sense on purpose. Bare /fix/ would fire on "a fixed
+  // trait", which is copy we NEED, and "conflict resolution" is one of Greg's own twelve skill names. A guard
+  // that eats the product's own vocabulary is worse than the tell it removes — the same lesson the "quiet"
+  // exemption taught this file.
+  { re: /\b(will|can|would|to) fix\b|\bfixes (your|the|this)\b/i, why: 'causality:fix' },
+  { re: /\b(will|can|would) resolve\b|\bresolves (your|the|this)\b/i, why: 'causality:resolve' },
+
+  // ── HIS TEN FORBIDDEN PHRASES, each with a better version he supplies ──────────────────────────────────────
+  //
+  // Generalised a little from his literal strings — "this reveals your true self" is caught by the verb above,
+  // but "that exercise revealed the real you" is the same claim and would not be. What each one shares is a
+  // system telling a member what is TRUE ABOUT THEM, which is the move the whole program forbids.
+  { re: /\b(change|changed|changes) your life\b/i, why: 'causality:change-your-life' },
+  { re: /\b(true|real) self\b|\bthe real you\b/i, why: 'causality:true-self' },
+  { re: /\b(the|this is the) reason you (struggle|struggled)\b/i, why: 'causality:the-reason-you-struggle' },
+  { re: /\b(real|true) (priorities|purpose)\b/i, why: 'causality:real-priorities' },
+  { re: /\bnow you know (exactly )?(what|who)\b/i, why: 'causality:now-you-know' },
+  { re: /\bshows exactly who you are\b/i, why: 'causality:shows-who-you-are' },
+  { re: /\byou'?ve outgrown\b/i, why: 'causality:outgrown' },
+  { re: /\bwhat really matters\b/i, why: 'causality:what-really-matters' },
 ];
 
 /** Phrases the gate can SEE but must not rewrite — they need a new sentence, which only the model can write. */

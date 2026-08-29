@@ -268,3 +268,42 @@ test('the evocation never claims cause, and never supplies the growth narrative'
   assert.deepEqual(detectVoiceTells(all).filter((x) => x.startsWith('causality:')), [], 'the evocation overclaims');
   assert.doesNotMatch(all, /you'?re clearly doing more|real progress|you'?ve grown/i, 'the narrative was supplied');
 });
+
+test('Greg’s FULL science-check deny-list is enforced, not the C2-81 fragment', () => {
+  // C2-81 gave six terms inside one asset's spec and looked complete. The rule itself lives in "AI Companion
+  // Guidance for [Reclaim] Science-Check Language and Goal-Reflection Dialogue" (13 July, 2,416 words) — which had
+  // never reached the library and was found on 2026-08-29 auditing his corpus at Jay's direction. One day after
+  // building the fragment. A rule extracted from a single asset is a subset until you check.
+  const OVERCLAIMS = [
+    'This will transform how you see yourself.',
+    'That unlocks your real purpose.',
+    'This will fix your motivation.',
+    'It eliminates the pattern for good.',
+    'This permanently rewires your goals.',
+    'Now you know exactly what matters.',
+    'That exercise revealed the real you.',
+    'This is the reason you struggle.',
+    "You've outgrown those goals.",
+    'It shows exactly who you are.',
+    'This will change your life.',
+    'Now you know what really matters.',
+  ];
+  for (const line of OVERCLAIMS) {
+    assert.ok(detectVoiceTells(line).some((t) => t.startsWith('causality:')), `not caught: "${line}"`);
+  }
+});
+
+test('and the narrowed rules do not eat the product’s own vocabulary', () => {
+  // "fix" and "resolve" are scoped to the overclaiming sense deliberately. A bare match would fire on "a fixed
+  // trait" — copy B1 and B2 NEED, because the whole teaching point is that skills are not fixed — and on
+  // "conflict resolution", one of Greg's twelve skill names. A guard that eats our own words is worse than the
+  // tell it removes; that is what the "quiet"/"Quiet Day" exemption taught this file.
+  for (const ok of [
+    'These are skills, not fixed traits.',
+    'Conflict resolution is one of the twelve.',
+    'Your motivation is not a fixed quantity.',
+    'It can help you notice where the room is.',
+  ]) {
+    assert.deepEqual(detectVoiceTells(ok).filter((t) => t.startsWith('causality:')), [], `false positive: "${ok}"`);
+  }
+});
