@@ -40,105 +40,107 @@ exists.
 
 ---
 
+## ⚠ RE-DERIVED 2026-08-30 — this doc described the RETIRED engine
+
+Everything below was re-read out of the code on 2026-08-30 and rewritten. **It previously described
+`lib/agent/onboarding.ts` — the v1 engine — which prod has not run since the `ONBOARDING_ENGINE=staged`
+flip.** Its map pointed at `liveTurn`/`applyModelTurn`, and every guard in its failure-shape table
+(`uncapturedDoorSignals`, `augmentDoors`, `doorAsked`, `resolveIdentityGate`, `confirmsWhole`) lives in that
+file and is unreachable in production.
+
+CLAUDE.md names this doc as the starting point for every onboarding decision, so a stale map here is not a
+documentation problem — it is a wrong mental model handed to whoever reads it next, and it survived because a
+doc cannot fail a test. **The code was largely fine; the description was not.** Do not restore the old version
+from git without re-checking it against the staged engine.
+
+*What the WHY and the BAR above say is unchanged and still governs.*
+
+---
+
 ## The one principle: the model proposes, the engine disposes
 
-The live model runs the *conversation* (warm, reflective, one question at a time). It does **not** get the
-final say on what was captured or whether we're done. Every capture bug we have ever shipped was a case of
-**trusting the model's record**; every fix was **moving that decision into the engine**, where it's
-deterministic and replay-tested. The model is a fuzzy narrator; the engine is the source of truth.
+The live model runs the *conversation* — warm, reflective, one question at a time. It never decides what is
+true about the member and never decides when onboarding is finished. Every capture it proposes is grounded,
+gated or overridden by the engine before it becomes a fact.
 
-Concretely, the engine is split so the risk lives in one thin place:
-- **`liveTurn`** (`lib/agent/onboarding.ts`) — the only non-deterministic part: build the request, call the
-  model, hand the model's turn to the pure engine. Untestable by nature; keep it thin.
-- **`applyModelTurn`** (`lib/agent/onboarding.ts`) — **pure and replayable.** Every decision (gating,
-  capture, completion, the forced-forward branches, reconciliation) lives here. No API, no DB — so it
-  unit-tests and replays offline against recorded transcripts.
-- **`onboarding-contract.ts`** — the deterministic completion gate (`contractMet` / `contractGaps`) and the
-  summary-card builder. "Done" is the contract's call, never the model's.
-- **The confirmation card** — the member sees exactly what was captured and confirms (or "keep talking")
-  before a single thing commits. This is the seatbelt that makes imperfect capture survivable.
+**Where that principle actually lives now:** `applyStagedTurn` (pure) and `liveTurnStaged` (the API wrapper),
+both in `lib/agent/onboarding-staged.ts`, running on the shared arc kernel `runArcTurn`.
 
 ---
 
-## The beats (what gets captured, in order)
+## The architecture, as shipped
 
-1. **Identity** — who they were at their best, in their words (`athleticPast`), then a reclaimed-identity
-   noun *or* an explicit "find it later" skip (`identityNoun` | `identitySkipped`). Never named without
-   the member's confirmation.
-2. **Reclaim List** — concrete, observable things they want back (`reclaimList`, ≥ `RECLAIM_LIST_MIN`). No
-   maximum; the *member* signals it's complete, not a count.
-3. **The Door(s)** — how the gap opened, in their words (`gap`, a real narrative), mapped to one or more of
-   the Doors (`doors`; routing may be null — recognition is required, a Door tag is not).
-4. **Handoff** — summary card → member confirms → IDQ.
+Onboarding is **config #1 on the arc kernel** — the same machine Reconnect, Rewire, Rebuild and Reclaim run
+on. That is why fixing a beat here often fixes one in a phase: they share the kernel.
+
+`STAGED_ARC.stageOrder = ['identity', 'gap', 'reclaim', 'grinta']`
+
+| Stage | Mode | What the member does |
+|---|---|---|
+| `identity` | draw-out | Says who they were; picks a handle from **chips** or coins their own (never extracted) |
+| `gap` | draw-out | Tells how the distance opened. The **Doors board** is shown — they mark their own |
+| `reclaim` | structured | Builds the Reclaim List in a **builder UI** — the builder IS the input and the confirmation |
+| `grinta` | administered | The 12-item Grinta baseline, 1–5, off the model entirely |
+| *(terminal)* | card | The summary card — **confirm-only** |
+
+**Three of the four beats are no longer conversational extraction, and that is the single biggest difference
+from what this doc used to describe.** Identity is chips, the Doors are a board, the Reclaim List is a
+builder. Conversational extraction lost ~30% of what members said; a widget cannot mishear.
 
 ---
 
-## The invariants the engine guarantees (mapped to the bar)
+## What the kernel guarantees, before any stage runs
+
+Every turn, in order, in `runArcTurn`:
+
+1. **Crisis routing** — `detectCrisis` → 988, before anything else. Non-negotiable, and inherited by every arc.
+2. **The voice gate** — the model's prose only, at the one seam where it enters a beat. Deletes what it can
+   delete safely, reports what it cannot (including Greg's causality deny-list).
+3. **Stall and runaway backstops** — `ONBOARDING_IDLE_LIMIT = 3` consecutive no-progress turns, or
+   `ONBOARDING_HARD_CEILING = 30` turns absolute. Fires the current stage's `forceProgress`, so no member can
+   be trapped in a beat.
+4. **A stage transition clears the confirm gate** — a handler that advances has emitted the new stage's
+   opener, so the next message must reach `gather()`, never `confirm()`. Left to each handler this was one
+   fact restated at every transition and wrong at six of Reconnect's seven sites.
+5. **No verbatim repeat** — never emit the exact line just said.
+
+---
+
+## The invariants, mapped to the bar
 
 **Never drop what they gave you**
-- **Doors accumulate, never replace.** Each turn's recorded Doors are *unioned* with what's already there;
-  a later (fumbled) record can add but can never silently drop a recognized Door. Removal happens only on
-  an explicit member dispute/decline. *(Part B slice — the rita run.)*
-- **A Door the member raised but the model dropped is caught.** Before handoff, the engine scans the
-  member's own Door-beat words (`uncapturedDoorSignals`) and, if one isn't recorded, asks one confirm
-  reflecting their words back. *(Part C reconciliation — the ree/aging-parents run.)*
-- **The gap backstop** captures the member's own message as the gap when the model converses without
-  recording it.
+- **The builder is the only writer of the Reclaim List**, stored verbatim (`setStructuredReclaim`). No model
+  paraphrase reaches it.
+- **The `RECLAIM_LIST_MIN` floor is enforced at the reclaim→grinta chokepoint.** Below it the engine HOLDS and
+  re-shows the builder seeded with what they have. *(This floor once lived ONLY in the dead v1 `contractGaps`,
+  so the staged path advanced on a short list — the exact hazard this doc's staleness creates.)*
+- **The Doors board is the member's own marking**, so "the model dropped a Door they raised" is structurally
+  impossible rather than guarded against. v1 needed `uncapturedDoorSignals` for this; the board replaced it.
 
 **Never assume past what they said**
-- **No gap is captured and the intake cannot complete before the Door beat is actually entered** (the
-  "how did the gap open?" question posed). "Reclaim List hit the minimum count" is *not* "we're in the
-  Door beat" — the list has no max. *(Part A — `doorAsked`; the Donna premature-completion runs.)*
-- **A model-recorded gap/doors is trusted only once we're in the Door beat.** On entry the gap can come
-  only from the member's *own words*, never a model paraphrase — so a reclaim item can never be promoted
-  to the fade story.
-- **Door inference reads only the gap narrative** (never the reclaim answers), and the reconciliation
-  **asks, never auto-adds** — a false match is a question the member declines, not a wrong Door.
+- **Identity is chosen, never extracted** — chips plus coin-your-own.
+- **`gapIsNarrative`** rejects a gap that is a list goal or a short forward ambition, so a want can never be
+  promoted to the fade story. Shared with the contract module, not duplicated.
+- **The shape gate (Decision II)** runs at the reclaim→survey chokepoint: overlap, vision and multi-want
+  proposals are put to the member, never applied.
 
 **Always be correctable**
-- **Completion is gated by the deterministic contract**, never the model's say-so: `athleticPast` +
-  (`identityNoun` | `identitySkipped`) + `reclaimList ≥ min` + a real `gap` narrative.
-- **The member confirms the summary card before anything commits**, and can "keep talking" to fix it.
-
-**Replay invariants (asserted on every fixture):** the engine never repeats its own last message verbatim,
-never strands a non-final turn without a next step, and never completes on an unmet contract.
+- **The card is CONFIRM-ONLY** (Jay's call). The Reclaim List is FROZEN across it — a post-card add attempt is
+  detected engine-side and answered with `CARD_LIST_SET`, so the reply can never falsely claim something landed.
+- **Correction after the card routes downstream** — Reconnect's callback (identity / door / gap) and the
+  companion rail (Decision L CRUD), not a card-return.
 
 ---
 
-## Known failure shapes → which guard owns each
+## Where the completion decision actually is
 
-| Failure shape (a real run) | What went wrong | The guard |
-|---|---|---|
-| Speeds through; a reclaim item shows up as the "gap"; completes before the Door is asked | "list ≥ min" treated as "in the Door beat" | **Part A** — `doorAsked` entry gate |
-| The model converses but never records the gap → loops the same question | model under-records | **gap backstop** (capture the member's words) |
-| A Door the member *raised* is missing from the card (aging parents) | model's summary dropped it | **Part C** — reconciliation confirm in their words |
-| The agent *said* three Doors, the card shows two different ones | a later record replaced the recognized set | **Part B slice** — Doors accumulate (union) |
-| `gap` saved as "I'd like to lose 30 lbs" (a goal, not a story) | gap-is-a-goal | **contract** — `gapIsNarrative` |
-| Identity never captured → un-completable (71 turns) | model drifts past the beat | **identity gate** — `resolveIdentityGate` |
-| `capturedSoFar` "do-not-re-ask" injection raced the model into skipping beats | a guard that promoted guesses | **removed** (revert, don't patch) |
+There is **no `contractMet()` call in the staged engine.** Completion is a property of the stage machine: the
+Grinta survey's `onComplete` is the only path that sets `b.complete = true` on the terminal crossing, and it is
+reachable only by walking identity → gap → reclaim (floor enforced) → 12 administered items.
 
-The discipline: **the second occurrence of a shape is the signal to fix the abstraction, not patch.** Most
-of these were recurring shapes of one root — *the model proposes, but we let it dispose.*
-
----
-
-## How to change this code without breaking it (the runbook)
-
-1. **State which clause of the bar your change serves.** If none, stop.
-2. **Default to not touching the live capture loop.** It's load-bearing and took a long road. Prefer copy
-   or config changes elsewhere when they suffice.
-3. **Reproduce first, as a replay fixture.** Add the run to `tests/onboarding-replay.test.ts` (red), then
-   fix until green. Real runs become permanent regression fixtures — that is how a bug stops recurring.
-4. **Prefer a clean revert of a regression over another guard.** Before any fix, `git diff` the live path
-   against the last-known-good commit to isolate exactly what changed. Adding another regex/branch is a
-   smell; the loop is already dense (the structured-capture refactor is the path to *fewer* guards, not
-   more).
-5. **Never weaken the contract or the card.** They are the seatbelt; "always correctable" depends on them.
-6. **Keep decision logic pure** (`applyModelTurn` and the helpers it calls) so it stays replayable. The
-   live wrapper (`liveTurn`) stays thin.
-7. **Run the gates:** `tsc`, the replay suite, and — once a key exists — the persona eval (below).
-8. **Verify live after deploy.** The replay suite proves the *engine*; only a live run (or the eval) tests
-   the real *model*.
+`lib/agent/onboarding-contract.ts` still holds `contractMet`/`contractGaps` and **both engines import
+`gapIsNarrative` and `hasIdentity` from it.** The rest of that module serves v1 and the card. If you change the
+contract, check which functions the staged path actually calls — three of them it does not.
 
 ---
 
@@ -146,30 +148,43 @@ of these were recurring shapes of one root — *the model proposes, but we let i
 
 | Concern | File |
 |---|---|
-| Live wrapper + pure engine | `lib/agent/onboarding.ts` (`liveTurn`, `applyModelTurn`) |
-| Completion contract + summary card | `lib/agent/onboarding-contract.ts` |
-| Door taxonomy + matcher | `lib/doors.ts` (`matchDoors`, `correctDoors`) |
-| Identity helpers | `lib/member/identity.ts` |
-| Save/resume (transient) | `lib/agent/onboarding-session.ts` (deleted on completion) |
+| **Live wrapper + pure engine (PROD)** | `lib/agent/onboarding-staged.ts` (`liveTurnStaged`, `applyStagedTurn`) |
+| The arc kernel every phase shares | `lib/agent/onboarding-staged.ts` (`runArcTurn`) |
+| Engine selection (`ONBOARDING_ENGINE`) | `lib/agent/onboarding.ts` (`onboardingNextTurn` dispatches) |
+| **v1 engine — RETIRED, not reachable in prod** | `lib/agent/onboarding.ts` (`liveTurn`, `applyModelTurn`) |
+| Shared contract helpers | `lib/agent/onboarding-contract.ts` (`gapIsNarrative`, `hasIdentity`) |
+| Reclaim-shape gate (Decision II) | `lib/agent/reclaim-shape.ts` |
+| Door taxonomy + matcher | `lib/doors.ts` |
+| Voice gate | `lib/agent/voice-gate.ts` |
 | Replay fixtures + invariants | `tests/onboarding-replay.test.ts` |
 | Live-model persona eval | `scripts/onboarding-eval.ts` |
-| Build log / the three legs | `docs/onboarding-hardening-plan.md` |
 
 ---
 
-## The eval — the live-model safety net (and the gap to close)
+## How to change this code without breaking it
 
-The replay suite is a great net for *known* shapes, but new shapes only surface when the **real model**
-misbehaves on a real person — which is why bugs have been found reactively, one live run at a time.
-
-`scripts/onboarding-eval.ts` closes that gap: it plays a scripted "member" (a second model in persona)
-through the *real* onboarding model + engine and reports what got captured — no human needed. The harness
-exists; the blocker is that `ANTHROPIC_API_KEY` is a **Sensitive** Vercel var (write-only, unpullable), so
-there is no local key. **The fix is a separate low-budget eval key** so this can run before any human does.
-Grow it into a small persona suite (multi-Door, no-Fade, terse, front-loader, a say/do "Clair" case) and
-it becomes the net that catches the next shape early. This is the highest-leverage thing left to do here.
+1. **Reproduce it as a replay fixture first** (`tests/onboarding-replay.test.ts`) — a sequence of turns, each
+   with the member's message and the model's turn, replayed through `applyStagedTurn` offline with no API.
+   Prefer this to chasing a live run.
+2. **Fix the pattern, not the symptom.** The second occurrence of a shape is the signal to fix the
+   abstraction. Never let a shape reach its fourth patch.
+3. **When the live loop regresses, REVERT** — `git diff` the live path against the last-known-good and prefer
+   a clean revert to another guard. *(The `capturedSoFar` injection was removed, not softened.)*
+4. **Check which ENGINE you are changing.** Half the functions in `onboarding.ts` are dead. A fix there
+   protects nobody.
 
 ---
 
-*Anchored to the Companion Behavior Spec's "Why this is load-bearing" preamble (v0.3). Keep them in sync:
-if the bar changes, it changes in both.*
+## The eval — the live-model net
+
+`scripts/onboarding-eval.ts` plays six scripted personas (rita, donna, no-fade, terse, front-loader,
+follow-on) through the real model and engine.
+
+**It is no longer blocked.** This doc previously said the blocker was that `ANTHROPIC_API_KEY` is a Sensitive
+Vercel var with no local key. There is a local key in `.env.local`; the eval runs. It costs roughly
+$0.50–1.00 per persona (two model calls per turn), so ~$3–6 for the suite.
+
+---
+
+*Anchored to the Companion Behavior Spec's "Why this is load-bearing" preamble. Keep them in sync: if the bar
+changes, it changes in both.*
