@@ -74,7 +74,7 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
         body: 'Identity loss is rarely felt as one undifferentiated thing; it erodes in specific places. Knowing which ones gives you a different and more usable starting point than knowing only that something went.' },
       { head: 'Finding it is a shared pattern takes the weight out of it',
         body: 'When people learn others walked through the same doors, they tend to stop reading their own pattern as a personal defect. That does not remove responsibility for what comes next, but it lowers the shame that usually stops people engaging at all.' },
-      { head: 'Sitting with why is different from noticing that',
+      { head: 'Working out why is different from noticing that',
         body: 'Knowing a problem exists is not the same as having worked out where it came from. The slower version tends to stay available to you later, as something to steer by, in a way that a passing realisation does not.' },
     ],
   },
@@ -241,7 +241,7 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
         head: 'Sorting the list is what makes it usable',
         body:
           'Clear, ranked goals tend to work better than a long flat list of good intentions. Most lists start out ' +
-          'diffuse and a little competing. Sitting with one deliberately is how it becomes something you can act on.',
+          'diffuse and a little competing. Choosing one deliberately is how it becomes something you can act on.',
       },
       {
         head: 'Changing a goal is a skill, not a retreat',

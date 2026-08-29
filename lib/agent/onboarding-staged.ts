@@ -327,7 +327,9 @@ const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of d
 // question and the buttons are two separate asks — the exact shape that made a member say "didn't we just do that"
 // on the Doors board. "Does that land" is answered by "not quite right"; "is there more" by "there's more"; both
 // by "that's the whole of it". It stays a question in the Companion's voice, not a prompt to operate a control.
-const GAP_FORECAST_CONFIRM = 'Does that land the way it happened — or is there more?';
+// "does that land" is banned by our own voice rules — "Not 'does that land' either — ask 'is that right'".
+// It shipped in the one line that asks a member to rule on their own fade story. (Voice sweep, 2026-08-28.)
+const GAP_FORECAST_CONFIRM = 'Have I got that right the way it happened — or is there more?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -337,7 +339,8 @@ const REOPEN_GAP = "I want to get this right — tell me how it really went, in 
 // we reflect and move on (the reflect-confirm is still correctable — she can add more there).
 const GAP_MORE_VARIANTS = [
   'Thank you for that. Was there more around that same stretch — other things that landed at the same time — or is that the heart of how it opened?',
-  'I hear you. Was anything else tangled up in that same period, or does that capture the shape of how the distance opened?',
+  // "I hear you" is named in the voice rules as filler, and "the shape of" as saying nothing. Both were in one line.
+  'Was anything else tangled up in that same period, or does that cover how the distance opened?',
   'That helps me understand. Did anything else pile on around then — or do we have the heart of it now?',
 ];
 // THE CAP WAS A COMMENT, NOT CODE. GAP_MORE_MAX was declared here and never referenced — the chooser indexed
@@ -384,7 +387,9 @@ function gapToReclaimBridge(c: Collected): string {
   // the member the OBJECT of a sentence about their own experience. The Identity may still be named as the thing
   // they are reclaiming (the product's actual promise); it may not stand in for them as the one who lived it.
   return (
-    `That's a lot to have been carrying${identity ? ` — no wonder that part of you went silent under all of it` : ''}. ` +
+    // "what you've been carrying" is banned by our own rules — it is a paraphrase of their life in OUR words.
+    // Say what happened instead. (Voice sweep, 2026-08-28.)
+    `That's two years of real life at once${identity ? ` — no wonder that part of you went silent under all of it` : ''}. ` +
     `Here's the turn, though: none of it is gone. It's been waiting for you.`
   );
 }
@@ -3035,7 +3040,7 @@ unrecorded, and never store it raw.
 DO NOT BUILD THEIR RECLAIM LIST HERE. This stage is HOW IT OPENED — nothing else. People naturally name things
 they miss while telling you how they lost them; note each one with add_reclaim_item as it lands, silently, and
 keep going with the story. But NEVER compose those wants into a list, never read a list back to them, and never
-ask them to confirm one ("here's the whole of it… does that land?"). The next stage hands them a form they fill
+ask them to confirm one ("here's the whole of it… have I got that right?"). The next stage hands them a form they fill
 in THEMSELVES, so a list you assemble here just makes them say it all over again a moment later — which reads as
 if you weren't listening the first time. Warmth about what they miss is right and welcome; ASSEMBLING it is what
 the next stage is for. If you find yourself summarising what they want, stop: stay with the story.
@@ -3136,7 +3141,7 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'door or clearly told you that is the whole of it — and reflect their whole story back in their words on that turn. ' +
       'ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more ' +
       'around then — other things that landed at the same time?"), or your correctable check on the reflect turn ' +
-      '("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no ' +
+      '("have I got that right, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no ' +
       'question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.\n' +
       // THE ONE EXEMPTION, and it is why the heaviest transition in onboarding was inconsistent (2026-08-19).
       //

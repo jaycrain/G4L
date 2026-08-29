@@ -514,7 +514,9 @@ test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone fr
   ).last.reply;
 
   for (const [label, reply] of [['blank', blank], ['parked', parked]] as const) {
-    assert.match(reply, /that's a lot to have been carrying/i, `${label} opener lost the bridge`);
+    // "what you've been carrying" is banned — it paraphrases their life as a burden in OUR words. The bridge
+    // says what happened instead. Same beat, same position, different sentence.
+    assert.match(reply, /that's two years of real life at once/i, `${label} opener lost the bridge`);
     assert.match(reply, /none of it is gone/i, `${label} opener lost the turn toward hope`);
     assert.doesNotMatch(reply, /now, the good part/i, `${label} opener cold-pivots`);
   }
@@ -613,7 +615,7 @@ test('gap→reclaim receives her Doors by name even when the model says NOTHING'
 
   assert.match(turn.reply, /Two things, close together\./, 'the engine supplies the receipt the model did not — as SHAPE, never as our labels');
   assert.ok(
-    turn.reply.indexOf('Two things') < turn.reply.search(/that's a lot to have been carrying/i),
+    turn.reply.indexOf('Two things') < turn.reply.search(/that's two years of real life at once/i),
     'and it comes FIRST — receiving after inviting is not receiving',
   );
   assert.match(turn.reply, /what would start bringing that person back|Your Reclaim List/i, 'the list still opens; no beat is added');

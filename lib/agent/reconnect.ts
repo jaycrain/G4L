@@ -329,7 +329,8 @@ function doorMore(history: ConvMessage[]): string | null {
 // The INSIGHT reflect: trust the model's synthesis (the prompt makes it offer a connection, in their words, as a
 // check). If it left only a question, use it whole. GRACEFUL DEGRADATION (hard rule): if it returned nothing, a
 // smaller honest reflection — NEVER a manufactured pattern.
-const DOOR_INSIGHT_CONFIRM = 'Does that land the way it happened — or is it not quite right?';
+// Same ban, same shape as the gap confirm — ask "is that right", never "does that land".
+const DOOR_INSIGHT_CONFIRM = 'Have I got that right — or is it not quite?';
 function reflectDoor(modelText: string): string {
   const t = (modelText ?? '').trim();
   if (t && /\?\s*$/.test(t)) return t;
@@ -1750,7 +1751,7 @@ now — let's go there." (This is different from a re-seeing below: they're not 
 telling you which door to work.)
 
 ACCEPT THE LANDING (hard rule): the insight reflect is a CHECK, not a new door. Reflect it and end on something they
-can simply affirm or wave off ("does that land — or is it not quite it?") — never a second open question ("…and how
+can simply affirm or wave off ("have I got that right — or not quite?") — never a second open question ("…and how
 long has it been running?") tacked onto it. The MOMENT they confirm it ("yeah, that's exactly the shape of it"), you
 are DONE with this beat: call member_reply(intent='done') and let it move on — do NOT reflect it back to them again,
 and do NOT ask another question. Once they've landed it, drawing MORE is over-circling: it makes them re-do work they

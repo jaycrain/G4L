@@ -748,7 +748,9 @@ function scriptedOpening(c: CheckinContext): string {
   const hi = `Good to see you${firstName(c.displayName) ? `, ${firstName(c.displayName)}` : ''}.`;
   const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you’re reclaiming';
   const item = c.reclaimList?.[0];
-  let knew = `${hi} I’ve been sitting with what you told me — you’re reclaiming ${noun}`;
+  // "sitting with" is banned, and so is announcing that you remember — you just remember. Both were in this one
+  // greeting, which is the first thing a returning member reads.
+  let knew = `${hi} you’re reclaiming ${noun}`;
   if (item) knew += `, and part of what you want back is ${item.charAt(0).toLowerCase() + item.slice(1)}`;
   knew += '.';
   if (c.doorDisplayNames.length) knew += ` ${c.doorDisplayNames[0]} is a real one to come through.`;

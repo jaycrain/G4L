@@ -158,7 +158,9 @@ test('SEAM · the invitation is ONE question, and the chips are its answers', ()
   // the one on screen, which is two asks around one decision.
   assert.ok(!/what was that like/i.test(reply), "the model's competing question must not survive");
   assert.equal((reply.match(/\?/g) ?? []).length, 1, 'exactly one question mark on the turn');
-  assert.match(reply, /does that land the way it happened — or is there more\?$/i);
+  // "does that land" is banned by our own voice rules — the confirm asks "have I got that right" now. Pinned as
+  // COPY on purpose: this is the line that asks a member to rule on their own fade story.
+  assert.match(reply, /have I got that right the way it happened — or is there more\?$/i);
 
   // ...and every choice must actually answer it.
   assert.ok(state.awaitingConfirm && (expects as { kind: string }).kind === 'gap_confirm');
