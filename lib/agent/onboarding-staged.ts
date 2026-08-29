@@ -1408,6 +1408,7 @@ interface Beat {
   reseeingTells: ReseeingTell[];
   administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
   pendingHarvest: HarvestSignal[]; // §2d: keeper/share candidates queued for the action to emit
+  pendingListChange?: ConvState['pendingListChange']; // C1: a confirmed revision pass, for the action to commit
   driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
   // R3 Legacy Letter — threaded across the draft→revise→confirm turns, exactly like driftPayload. All three MUST
   // appear in the write-back below or the draft vanishes between turns and the member is asked to revise a letter
@@ -1905,6 +1906,7 @@ function beatState(b: Beat): ConvState {
     ...(b.reseeingTells.length > 0 && { reseeingTells: b.reseeingTells }),
     ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
     ...(b.pendingHarvest.length > 0 && { pendingHarvest: b.pendingHarvest }),
+    ...(b.pendingListChange ? { pendingListChange: b.pendingListChange } : {}),
     ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
     ...(b.legacyDraft !== undefined && { legacyDraft: b.legacyDraft }),
     ...(b.legacyRevisions !== undefined && { legacyRevisions: b.legacyRevisions }),
@@ -2920,6 +2922,7 @@ export function runArcTurn(
     reseeingTells: [...(state.reseeingTells ?? [])],
     administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
     pendingHarvest: [...(state.pendingHarvest ?? [])], // §2d harvest queue, drained by the action
+    pendingListChange: state.pendingListChange, // C1's confirmed pass, drained by the action
     driftPayload: state.driftPayload,
     legacyDraft: state.legacyDraft,
     legacyRevisions: state.legacyRevisions,

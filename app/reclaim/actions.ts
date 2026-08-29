@@ -35,7 +35,7 @@ import { expectsForState, type ArcConfig } from '../../lib/agent/onboarding-stag
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { getLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
-import { commitRefinement, resolveRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
+import { commitListChange, commitRefinement, resolveRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading, type AuditReflections } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { persistQualityDayProfile } from '../../lib/reclaim/quality-day-store.ts';
@@ -271,9 +271,22 @@ export async function reclaimTurnAction(
     // point of C1: the member re-reads a list they wrote as a different person, and the refinement is only honest
     // if the Companion holds what changed them in between.
     const carriedC1 = describeCarryForward(await carryForward(db, memberId, 'c1').catch(() => []));
-    const turn = state.stage === 'refine'
-      ? await liveTurnReclaimRefine(state, history, message, carriedC1)
-      : applyReclaimC1Turn(state, history, message);
+    const turn = await liveTurnReclaimRefine(state, history, message, carriedC1);
+
+    // DRAIN THE CONFIRMED PASS. C1 commits as it goes (Jay, 2026-08-29), so each member-confirmed change lands
+    // here on the turn they confirm it — not in a batch at the close, which is what loses everything when
+    // someone leaves a twenty-minute Session two thirds through.
+    //
+    // NOT best-effort, and this is the one place that distinction matters. The member has ALREADY been told the
+    // change was made; swallowing a failure here would make the product lie about their own list, which is the
+    // exact fault CAT-36 was raised for one layer up. A failure is logged loudly and the change is left on the
+    // state so the next turn retries rather than dropping it silently. [[swallowed-read-renders-as-truth]]
+    const change = turn.state.pendingListChange;
+    if (change) {
+      const res = await commitListChange(db, memberId, change as Parameters<typeof commitListChange>[2]);
+      if (res.ok) delete turn.state.pendingListChange;
+      else console.error(`C1: confirmed ${change.op} did NOT reach the Reclaim List (${res.reason}) member=${memberId}`);
+    }
 
     // CAT-36 (option b, Jay 2026-08-01) — VALIDATE BEFORE THE MEMBER IS ASKED TO CONFIRM.
     //

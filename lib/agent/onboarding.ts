@@ -243,6 +243,10 @@ export type ConvState = {
   // drains NEW ones via emitHarvestMoment (same seam + default-emit discipline as the §2b re-seeing tell). Drift → a
   // keeper; Legacy line → a share candidate (slice 2). driftPayload carries the member's drift declaration (their own
   // words — the "preserve declarations" wall) from the reflect turn to the confirm turn, where the keeper is queued.
+  // C1's confirmed revision pass, set by the engine and DRAINED BY THE ACTION on the same turn — the same shape
+  // as pendingHarvest. Transient by construction: the action commits it to the Reclaim List and clears it before
+  // the state goes back to the client, so it can never be applied twice.
+  pendingListChange?: { op: string; target?: string; text?: string; order?: string[] };
   pendingHarvest?: HarvestSignal[];
   driftPayload?: string;
   // R3 · THE LEGACY LETTER (Greg relocated it from Reclaim into Reconnect so a member leaves the first R holding a

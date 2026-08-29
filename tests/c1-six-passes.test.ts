@@ -26,7 +26,7 @@ const listOf = (t: Turn) => (t.state as ConvState).collected.reclaimList ?? [];
 test('C1 opens on Greg’s stage 1 — the frame and the stance, not the first question', () => {
   const t = open();
   assert.equal((t.state as ConvState).stage, 'c1-open');
-  assert.match(t.reply, /list you made in Reconnect/i, 'it names what they are looking at');
+  assert.match(t.reply, /Your Reclaim List, from Reconnect/i, 'it names what they are looking at');
   // THE STANCE IS THE LOAD-BEARING LINE (C1.md:495 — "refinement not correction"). Without it a member reads six
   // passes over their own list as a test they are failing.
   assert.match(t.reply, /not to check whether you stuck to it/i, 'refinement, not correction');

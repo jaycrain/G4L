@@ -9,6 +9,8 @@ import type { Db } from '../db/schema.ts';
 import { addReclaimItemForMember } from '../member/refine.ts';
 import { readJson, payloadKind } from '../db/jsonb.ts';
 import { getReclaimItems } from '../beats/store.ts';
+import { addReclaimItems, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../beats/store.ts';
+import { categorizeReclaimItems } from '../beats/categorize.ts';
 
 export type Tier = 'top' | 'important' | 'emerging' | 'no_longer_central';
 export const REFINE_TIERS: readonly Tier[] = ['top', 'important', 'emerging', 'no_longer_central'];
@@ -217,4 +219,47 @@ export async function latestRefinement(db: Db, memberId: string): Promise<Refine
     console.error(`latestRefinement read failed for member=${memberId}:`, (e as Error).message);
     return null;
   }
+}
+
+/**
+ * COMMIT ONE CONFIRMED REVISION PASS to the member's live Reclaim List.
+ *
+ * C1 runs Greg's six passes (C1.md:495) and commits AS IT GOES — a member who stops after pass three keeps those
+ * three (Jay, 2026-08-29). That is the difference this function exists for: `commitRefinement` above takes a
+ * whole settled list at the end, which is the contract the six passes replace.
+ *
+ * IT IS THE SEAM THE PASSES WERE PARKED FOR. The engine applies each confirmed change to the CONVERSATION's copy
+ * of the list; without this, a member could walk all six passes, confirm every change, be told their list was
+ * refined, and have nothing reach the table. That failure does not error — it lies, about the one artifact whose
+ * loss leaves no evidence — which is why the arc shipped built-and-not-switched-on until this landed.
+ *
+ * EVERY OP IS ALREADY AUDITED AND REVERSIBLE, which is why this dispatches rather than writing SQL: `drop` is a
+ * SOFT remove (stamps removed_at, the row and its history survive), `reword` keeps the item's id and its whole
+ * trail, `reorder` only moves sort_order and never deletes. Nothing here can destroy a member's item.
+ *
+ * Returns what actually happened, never a bare boolean: the caller has already TOLD the member the change was
+ * made, so a silent failure here would be the same lie one layer down. [[swallowed-read-renders-as-truth]]
+ */
+export async function commitListChange(
+  db: Db,
+  memberId: string,
+  change: { op: 'drop'; target: string } | { op: 'reword'; target: string; text: string } | { op: 'add'; text: string } | { op: 'reorder'; order: string[] },
+): Promise<{ ok: boolean; reason?: string }> {
+  if (change.op === 'drop') {
+    const r = await removeReclaimItemByText(db, memberId, change.target);
+    return r.ok ? { ok: true } : { ok: false, reason: r.reason ?? 'nomatch' };
+  }
+  if (change.op === 'reword') {
+    const r = await refineReclaimItemByText(db, memberId, change.target, change.text);
+    return r.ok ? { ok: true } : { ok: false, reason: r.reason ?? 'nomatch' };
+  }
+  if (change.op === 'add') {
+    // The category is the agent's usual call; 'physical' is not assumed. categorizeReclaimItems is the one
+    // classifier, so the item arrives on the list the same way one added from the rail does.
+    const [category] = await categorizeReclaimItems([change.text]);
+    await addReclaimItems(db, memberId, [{ text: change.text, category: category ?? 'self' }]);
+    return { ok: true };
+  }
+  await reorderReclaimList(db, memberId, change.order);
+  return { ok: true };
 }

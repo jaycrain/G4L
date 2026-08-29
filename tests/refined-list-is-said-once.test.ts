@@ -34,7 +34,7 @@ function proposalFor(items: string[], tiers: string[], top3: string[]): string {
   return t.reply;
 }
 
-test('a three-item list is not handed back its own three as "the three you\'d move on next"', () => {
+test.skip('RETIRED 2026-08-30 (top-3 went with the whole-list contract) — a three-item list is not handed back its own three as "the three you\'d move on next"', () => {
   const card = proposalFor(HERS, ['top', 'important', 'emerging'], HERS);
   assert.ok(card.includes("Here's your list, refined:"), 'the card still shows the list');
   assert.ok(!card.includes("The three you'd move on next"), 'a top-3 that IS the list narrows nothing — omit it');
@@ -43,7 +43,7 @@ test('a three-item list is not handed back its own three as "the three you\'d mo
   }
 });
 
-test('a top-3 that genuinely narrows a longer list is still shown — and ends in one period', () => {
+test.skip('RETIRED 2026-08-30 (top-3 went with the whole-list contract) — a top-3 that genuinely narrows a longer list is still shown — and ends in one period', () => {
   const seven = [...HERS, 'Read again.', 'Call my brother.', 'Sleep seven hours.', 'Cook on Sundays.'];
   const card = proposalFor(seven, ['top', 'top', 'important', 'important', 'emerging', 'emerging', 'emerging'], HERS);
   assert.ok(card.includes("The three you'd move on next"), 'three out of seven is a real selection');
@@ -51,7 +51,7 @@ test('a top-3 that genuinely narrows a longer list is still shown — and ends i
   assert.doesNotMatch(card, /\.\./, 'no doubled full stop');
 });
 
-test('the model is told not to print the list or run its own save gate', () => {
+test.skip('RETIRED 2026-08-30 (top-3 went with the whole-list contract) — the model is told not to print the list or run its own save gate', () => {
   assert.match(REFINE_SYSTEM, /NEVER PRINT THE LIST/);
   assert.match(REFINE_SYSTEM, /never\s+ask them to confirm saving it/);
   assert.match(REFINE_SYSTEM, /THREE OR FEWER ITEMS/);

@@ -1,3 +1,15 @@
+// ═══ THIS FILE DESCRIBES THE RETIRED C1 ═══════════════════════════════════════════════════════════════════════
+//
+// C1 was ONE coach stage: the model settled a whole refinement in conversation, handed back a rewritten list, and
+// the member confirmed it once at the end. On 2026-08-30 it became Greg's seven stages — an engagement beat and
+// six revision passes, each recording ONE change and committing on its own confirm.
+//
+// The tests below are SKIPPED, not deleted, and the distinction is deliberate: they are the written record of a
+// contract we replaced, and several of them encode faults that cost real time (CAT-36's "your list now reflects
+// where you are" over zero changed rows; the top-3 that handed a three-item list back its own three). A future
+// contract could reintroduce any of them. tests/c1-six-passes.test.ts is what guards C1 now.
+//
+// Delete this file only when the refineStage machinery it exercises is deleted with it.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { reclaimC1Opening, applyReclaimC1Turn, RECLAIM_C1_ARC, sanitizeRefinement } from '../lib/agent/reclaim.ts';
@@ -14,7 +26,7 @@ const m = (text: string, refinement?: ModelTurn['refinement']): ModelTurn => ({ 
 
 const opened = (list: string[] = []): ConvState => reclaimC1Opening(list).state;
 
-test('C1 opens straight into the refinement — no assessment in front of it', () => {
+test.skip('RETIRED 2026-08-30 — C1 opens straight into the refinement — no assessment in front of it', () => {
   const t = reclaimC1Opening(['be healthier', 'see friends more']);
   assert.equal(t.state.stage, 'refine', 'the first turn IS the coaching stage');
   assert.equal(t.complete, false);
@@ -27,18 +39,18 @@ test('C1 opens straight into the refinement — no assessment in front of it', (
   assert.doesNotMatch(t.reply, /\bscore\b/i);
 });
 
-test('the arc has exactly one stage (a re-added assessment must be a deliberate act)', () => {
+test.skip('RETIRED 2026-08-30 — the arc has exactly one stage', () => {
   assert.deepEqual(RECLAIM_C1_ARC.stageOrder, ['refine']);
   assert.equal(RECLAIM_C1_ARC.stages.evidence, undefined, 'the evidence stage is unwired, not merely skipped');
 });
 
-test('an empty list is still workable — the coach offers to build it', () => {
+test.skip('RETIRED 2026-08-30 — an empty list is still workable — the coach offers to build it', () => {
   const t = reclaimC1Opening([]);
   assert.match(t.reply, /list is empty/i, 'says so rather than showing an empty bullet');
   assert.equal(t.complete, false);
 });
 
-test('coach → propose → confirm; the confirmed refinement lands in the snapshot for commit', () => {
+test.skip('RETIRED 2026-08-30 — coach → propose → confirm; the confirmed refinement lands in the snapshot for commit', () => {
   const state = opened(['be healthier', 'get my life together']);
 
   // Turn 1: the member reflects; the model coaches (no record yet) → still coaching, not proposed.
@@ -105,7 +117,7 @@ test('MID-FLIGHT SESSION: someone persisted at the retired stage is carried acro
   assert.doesNotMatch(t.reply, /^\s*$/, 'never an empty reply');
 });
 
-test('MID-FLIGHT SESSION: the very next turn coaches normally (the migration is one-shot)', () => {
+test.skip('RETIRED 2026-08-30 — MID-FLIGHT SESSION: the very next turn coaches normally (the migration is one-shot)', () => {
   const stranded = { stage: 'evidence', collected: { reclaimList: ['ride my bike again'] } } as unknown as ConvState;
   const first = applyReclaimC1Turn(stranded, [], '4', m(''));
   const second = applyReclaimC1Turn(first.state, [], 'the bike one still matters most', m('What would riding again look like this month?'));

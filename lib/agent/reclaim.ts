@@ -225,7 +225,11 @@ export function describeListChange(c: ListChange): string {
 // and possibly more honest version of themselves." Without it a member reads six passes over their own list as
 // a test they are failing.
 const C1_OPEN_FRAME =
-  'This is the list you made in Reconnect — the things you wanted back.' + BEAT_SEP +
+  // NOT "This is the list…" — claimsGateOutcome reads that as the model ANNOUNCING a list into existence,
+  // which is the exact fault it was built for (Donna, 2026-08-20: a Reclaim List declared that did not
+  // exist). Here the list is real and on screen, but the guard cannot know that, and weakening a guard to
+  // fit new copy is how the next real claim gets through. Reworded instead. The walk harness caught it.
+  'Your Reclaim List, from Reconnect — the things you said you wanted back.' + BEAT_SEP +
   'You have been through three phases since you wrote it. The point now is not to check whether you stuck to ' +
   'it. It is to read it again as the person you are now, and let it change where it should.' + BEAT_SEP +
   'Some items will still be exactly right. Some will have quietly stopped mattering. Some were never really ' +
@@ -357,6 +361,9 @@ function revisionPassStage(cfg: RevisionPass): StageDef {
       // COMMITTED. A NEW array — mutating in place does not survive the wire, which cost a whole beat once.
       // [[mutating-state-vanishes-over-the-wire]]
       b.collected.reclaimList = applyListChange(b.collected.reclaimList ?? [], pending);
+      // AND HAND IT TO THE ACTION TO PERSIST. Updating `collected` alone changes the conversation's copy of the
+      // list and nothing else — which is precisely why this arc was built and left switched off overnight.
+      b.pendingListChange = pending;
       sc.pending = undefined;
       return handOn(b);
     }
@@ -462,26 +469,13 @@ const c1EngageConfig = {
 // GREG'S SEVEN STAGES, plus the close (C1.md:495). The old single 'refine' coach turn is RETIRED — it asked the
 // model to settle the whole refinement in conversation and hand back a rewritten list, which is the contract Jay
 // replaced on 2026-08-29 ("one change at a time"). Nothing is lost: every job it did is now a named pass.
-// ═══ BUILT, NOT SWITCHED ON (2026-08-29) ══════════════════════════════════════════════════════════════════════
-//
-// The engine below is complete and tested. It is NOT the live C1 arc, and must not become one until the
-// persistence seam is wired — see the block above RECLAIM_C1_ARC.
-//
-// THE GAP, precisely: a confirmed pass updates `collected.reclaimList`, which is the CONVERSATION's copy of the
-// list. The member's actual Reclaim List lives in a table with item ids, and C1's action commits to it through
-// resolveRefinement/commitRefinement — built for the whole-list contract this replaces. So a member could walk
-// all six passes, confirm every change, be told their list was refined, and have nothing reach it.
-//
-// That is the defect class we spent the week clearing — a rule that exists and does not run — except dressed as
-// a working Session, which is worse: it does not fail, it lies. Switching this on before the wiring would be the
-// single most damaging thing we could ship, because the evidence of the loss is the thing that went missing.
-//
-// TO FINISH: route each confirmed ListChange through lib/reclaim/refinement-store.ts. drop/reword/reorder map
-// onto item ids that resolveRefinement already resolves; add goes through the normal add path. Then point
-// RECLAIM_C1_ARC and reclaimC1Opening at this arc and delete refineStage + RECORD_REFINEMENT_TOOL +
-// sanitizeRefinement, which become dead the moment it flips.
-export const RECLAIM_C1_PASSES_ARC: ArcConfig = {
-  id: 'reclaim-c1-passes',
+// C1 · GREG'S SEVEN STAGES — LIVE (2026-08-30). Built 8/29 and deliberately held one night: a confirmed pass
+// updated `collected.reclaimList` and nothing reached the member's actual list, which would not have errored —
+// it would have told a member their list was refined while losing the change. commitListChange() in
+// lib/reclaim/refinement-store.ts is the seam that was missing; the engine now emits each confirmed pass as
+// `pendingListChange` and the action drains it on the same turn.
+export const RECLAIM_C1_ARC: ArcConfig = {
+  id: 'reclaim-c1',
   stageOrder: ['c1-open', ...C1_PASSES.map((p) => p.id), 'c1-close'],
   stages: {
     'c1-open': engagementStage(c1EngageConfig),
@@ -497,19 +491,14 @@ export function reclaimC1PassesOpening(listTexts: string[] = []): Turn {
   return { reply: engagementOpening(c1EngageConfig, collected), state: { stage: 'c1-open', collected }, complete: false };
 }
 
-/** Drive the six-pass arc. Test/wiring surface only until it becomes the live C1. */
+/** @deprecated alias kept for the tests written before the flip — same arc. */
+export const RECLAIM_C1_PASSES_ARC = RECLAIM_C1_ARC;
+
 export function applyReclaimC1PassesTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
   return runArcTurn(RECLAIM_C1_PASSES_ARC, state, history, memberMessage, model);
 }
 
-// THE LIVE C1, unchanged, until the per-pass commit reaches the store. Retiring refineStage before then would
-// leave the Session with no working path at all.
-export const RECLAIM_C1_ARC: ArcConfig = {
-  id: 'reclaim-c1',
-  stageOrder: ['refine'],
-  stages: { refine: refineStage },
-  onComplete: () => REFINE_COMMITTED_1,
-};
+
 
 // A session persisted mid-'evidence' when Step 1 was removed. `arc.stages['evidence']` is now undefined, so the kernel
 // would run the turn with no stage definition — a stranded member on a page that answers nothing. Anyone part-way
@@ -527,59 +516,54 @@ export function applyReclaimC1Turn(state: ConvState, history: ConvMessage[], mem
 
 // The opening seeds the member's CURRENT Reclaim List into collected (loaded by the action) so the coach can present it.
 export function reclaimC1Opening(listTexts: string[] = []): Turn {
-  const collected: Collected = { reclaimList: listTexts.filter(Boolean) };
-  return { reply: refineOpener(collected), state: { stage: 'refine', collected }, complete: false };
+  return reclaimC1PassesOpening(listTexts);
 }
 
 // ── The live surface — the model COACHES the refinement and records the result via record_refinement ──
 export const REFINE_SYSTEM =
-  // GOVERNED (2026-08-27). This prompt was a standalone string, so the Companion ran this Session with none of the
-  // shared rules — privacy, never-name-a-real-person, never-infer-gender, the AI-tell word list, the locked
-  // vocabulary, identity-is-not-an-address, what-you-are, reflect-and-route, never-narrate-the-machinery. Each was
-  // written because it had already reached a real member once, and the costliest is privacy: the block's own
-  // header records a member being assured "this is between us" by something with no knowledge of how her data is
-  // held. Rewire was governed on 8/26 and verified live — asked the privacy question, it refused the between-us
-  // promise, named the Founders and offered to escalate.
-  //
-  // The AI-disclosure trailer is excluded by MEMBER_AGENT_GOVERNED_CORE, deliberately: it reads "first line of a
-  // member's first conversation, verbatim", and dropped here it would re-disclose forty minutes into a Session.
-  MEMBER_AGENT_GOVERNED_CORE + '\n\n' +
-  "You are the G4L Companion running C1 Step 2 — revisiting the member's Reclaim List in Reclaim (Phase 4). The list " +
-  "was built at the very start; now, after Reconnect/Rewire/Rebuild, you help them re-read it THROUGH A CHANGED SELF " +
-  "and refine it. This is coaching, warm and member-owned — not a survey, not therapy. Walk them, one question at a " +
-  "time, through: (1) re-read the list and notice it; (2) reflect on what still feels true, what feels different, " +
-  "what's newly important; (3) refine the wording — help vague items ('be healthier') become specific and personal " +
-  "('feel physically capable and steady again'), and merge items that belong together; (4) re-prioritize into four " +
-  "tiers — Top Priorities Now, Important but Not First, Emerging Priorities, No Longer Central — then name the three " +
-  "they'd move on next. Play their own words back; never impose. Do NOT rewrite their list yourself — you propose, " +
-  "they decide.\n\n" +
-  // ENGINE OWNS THE LIST, MODEL OWNS THE CONVERSATION (Donna's walk, 2026-08-27: "crazy repetition on priorities").
-  // She read her own three items FOUR times in a row — the model printed them grouped by tier, then printed them
-  // again as a numbered order, then the app's card printed them a third time by tier and a fourth as the top three.
-  // And she was asked to confirm twice: the model's "does that feel right before I save it?", answered, then the
-  // card's "want me to save this?". The card is the propose→confirm gate and cannot move; the model's copy of it
-  // is what has to go.
-  "NEVER PRINT THE LIST. Do not write out their items, the tiers, or a numbered ordering in your reply, and never " +
-  "ask them to confirm saving it — the app shows the finished list back in a card and asks that question itself. " +
-  "Talk about the list in conversation ('the leadership role first, then the physical work') and let the card do " +
-  "the showing. If you print it too, they read the same list twice and answer the same question twice.\n\n" +
-  "IF THEIR LIST HAS THREE OR FEWER ITEMS, do not ask which three they'd move on next — that is the entire list, " +
-  "and the question reads as busywork. Ask what ORDER they'd take them in instead, or just record it.\n\n" +
-  "RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE " +
-  "refined list — every item as {original (their current wording, to match), text (the refined wording, or the same " +
-  "if unchanged), tier} — plus top3 (the three refined texts they'd move on next). " +
-  // ADDED 2026-08-17. `added` existed in the tool schema and nothing here mentioned it, so the model never used
-  // it — a live walk named a new goal and it vanished. Same failure as B3's eating day-target on 8/7: an
-  // instruction that lives only in a tool description is one the model skips at the moment it matters.
-  "IF THEY NAMED SOMETHING THAT IS NOT ALREADY ON THE LIST — a goal that has newly emerged, which is step (2) — pass " +
-  "it in `added` as {text (their own words), tier, emergedFrom (what brought it into view, if they said)}. Do NOT put " +
-  "a new goal in `items`: `original` there must match a line already on their list, so a new one silently matches " +
-  "nothing and is lost. Only what they actually said they want; never invent one, and omit `added` entirely when " +
-  "nothing new came up, which is the common case. " +
-  "Only call it when the refinement is " +
-  "settled; the app then shows them the result to confirm before anything is saved. 'No Longer Central' just means " +
-  "lowest priority for this season — it does NOT delete the item. If a distress or crisis signal appears, drop the " +
-  "exercise and route to support (988 US / local) and a human — always on." + SESSION_LIMITS;
+  `${MEMBER_AGENT_GOVERNED_CORE}\n\n` +
+  "YOU ARE RUNNING C1 — \"Looking Forward\", the first Session of Reclaim.\n\n" +
+  "WHAT THIS IS. The member wrote a Reclaim List in Reconnect — the things they wanted back. They have since " +
+  "come through three phases. They are re-reading that list as the person they are now.\n\n" +
+  "GREG'S FRAME, AND IT IS THE WHOLE POSTURE: this is REFINEMENT, NOT CORRECTION. The earlier list was not " +
+  "wrong; it reflected a different stage of understanding. Never imply they failed to stick to it, never praise " +
+  "them for consistency, and never treat a dropped goal as a loss. Some items get stronger, some fade, some turn " +
+  "out to have belonged to pressure or an earlier self. All of that is ordinary and useful.\n\n" +
+  "THE ENGINE OWNS THE STRUCTURE. It walks six passes — what still matters, what has faded, what was borrowed or " +
+  "vague, what has become concrete, what is newly important, and what belongs at the top. You do not announce " +
+  "them, count them, or move between them. Answer what is in front of you and draw them out.\n\n" +
+  "ONE CHANGE AT A TIME. When the member clearly asks for a change to their list, call record_list_change ONCE " +
+  "with that single change. Never a rewritten list. `target` must be an item's exact current wording — if you " +
+  "cannot quote it exactly, do not call the tool. The app shows them the change and applies it only if they " +
+  "confirm; you are not the one saving it, so do not say it is saved.\n\n" +
+  "DO NOT PROPOSE CHANGES THEY HAVE NOT ASKED FOR. A pass where nothing changes is a complete pass. \"They all " +
+  "still matter\" is an answer, and treating it as a failure to answer teaches them to invent edits to their own " +
+  "list.\n\n" +
+  "NEVER LEAD THEM TO A PREFERRED ANSWER. Not \"so clearly health should be at the top now?\" — ask what feels " +
+  "most central and let them say it. Do not overinterpret: a goal that faded does not mean it was never authentic.\n\n" +
+  "SPEAK PROBABILISTICALLY. This exercise CAN help clarify what feels meaningful; it does not reveal their true " +
+  "self, prove what really matters, or show who they are. Use: can help · may be showing you · often supports · " +
+  "it would make sense if.\n\n" +
+  "ONE QUESTION PER TURN. Reflect what they actually said before you ask." + SESSION_LIMITS;
+
+const RECORD_LIST_CHANGE_TOOL = {
+  name: 'record_list_change',
+  description:
+    "Record ONE change the member has clearly asked for to their Reclaim List. One call per change, never a " +
+    "rewritten list. Only call when they have actually asked for it in their own words — not when you think an " +
+    "item could be better. `target` MUST be an item's exact current wording from the list you were given; if you " +
+    "cannot quote it exactly, do not call this. The app shows them the change and only applies it if they confirm.",
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      op: { type: 'string', enum: ['drop', 'reword', 'add', 'reorder'], description: 'what kind of change' },
+      target: { type: 'string', description: "for drop/reword: the item's EXACT current wording" },
+      text: { type: 'string', description: 'for reword: the new wording. for add: the new item, in their words' },
+      order: { type: 'array', items: { type: 'string' }, description: 'for reorder: EVERY item, in the new order' },
+    },
+    required: ['op'],
+  },
+};
 
 const RECORD_REFINEMENT_TOOL = {
   name: 'record_refinement',
@@ -633,9 +617,19 @@ function refineStageNote(state: ConvState): string {
 function parseRefineModel(content: readonly unknown[]): ModelTurn {
   let text = '';
   let refinement: ModelTurn['refinement'];
+  let listChange: ModelTurn['listChange'];
   for (const raw of content) {
     const bl = raw as { type: string; text?: string; name?: string; input?: { items?: unknown; top3?: unknown } };
     if (bl.type === 'text') text += bl.text ?? '';
+    if (bl.type === 'tool_use' && bl.name === 'record_list_change') {
+      const i = (bl as { input?: Record<string, unknown> }).input ?? {};
+      listChange = {
+        op: typeof i.op === 'string' ? i.op : undefined,
+        ...(typeof i.target === 'string' ? { target: i.target } : {}),
+        ...(typeof i.text === 'string' ? { text: i.text } : {}),
+        ...(Array.isArray(i.order) ? { order: (i.order as unknown[]).map((x) => String(x ?? '')) } : {}),
+      };
+    }
     if (bl.type === 'tool_use' && bl.name === 'record_refinement') {
       const items = Array.isArray(bl.input?.items)
         ? (bl.input!.items as unknown[]).map((it) => {
@@ -647,7 +641,7 @@ function parseRefineModel(content: readonly unknown[]): ModelTurn {
       refinement = { items, top3 };
     }
   }
-  return { text: text.trim(), ...(refinement ? { refinement } : {}) };
+  return { text: text.trim(), ...(refinement ? { refinement } : {}), ...(listChange ? { listChange } : {}) };
 }
 
 /** @param carryForward What upstream assets retained (lib/curriculum/retention.ts), rendered, or null. Passed in
@@ -677,7 +671,7 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
       { type: 'text' as const, text: REFINE_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: refineStageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
     ],
-    tools: [RECORD_REFINEMENT_TOOL],
+    tools: [RECORD_LIST_CHANGE_TOOL],
     messages,
   });
   return applyReclaimC1Turn(state, history, memberMessage, parseRefineModel(res.content));
