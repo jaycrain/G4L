@@ -154,6 +154,22 @@ const ONBOARDING_HARD_CEILING = 30; // absolute backstop against a true runaway/
 
 // Personalize with the member's identity handle ("the Cheerleader") in NATURAL CASE (brand: never all-caps,
 // lowercase "the" mid-sentence), with a graceful fallback when they chose to name it later (skipped).
+/**
+ * Is this "gap" written ABOUT the member rather than BY them?
+ *
+ * The one shape the set_gap contract forbids by name, and the only one safe to reject mechanically: no
+ * first-person voice anywhere, plus a pronoun referring to a person. Keeping the bar this low matters — a false
+ * positive here silently discards a real capture, which is the failure we are trying to prevent, so the guard
+ * refuses only what cannot be the member's own account. [[member-words-outrank-model-guess]]
+ */
+export function isThirdPersonGap(gap: string): boolean {
+  const g = (gap ?? '').trim();
+  if (!g) return false;
+  const firstPerson = /\b(i|i'?m|i'?ve|i'?d|i'?ll|my|me|mine|we|our|us)\b/i.test(g);
+  const thirdPerson = /\b(he|she|they|him|her|them|his|hers|their|theirs)\b/i.test(g);
+  return !firstPerson && thirdPerson;
+}
+
 function identityRef(c: Collected): string {
   return identityLabel(c.identityNoun) || 'who you used to be';
 }
@@ -1232,7 +1248,22 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
     ...(rec.identityNoun !== undefined && rec.identityNoun !== '' && { identityNoun: displayIdentityNoun(rec.identityNoun) }),
     ...(rec.identitySkipped === true && { identitySkipped: true }),
-    ...(rec.gap !== undefined && rec.gap !== '' && { gap: rec.gap }),
+    // THE GAP IS THE MEMBER'S OWN FIRST-PERSON ACCOUNT — enforced here, not only asked for.
+    //
+    // set_gap's description is emphatic: "in the member's OWN FIRST-PERSON voice… NEVER rewrite it into the THIRD
+    // person… Never paraphrase, reorder, smooth, or add." It was PROMPT-ONLY, and this file's own doctrine is
+    // that a prompt makes good output likely while only the engine makes bad output impossible.
+    //
+    // Walked on 2026-08-30: a member's 204-character account — "My dad got sick in 2019 and I became his carer
+    // for three years…" — was replaced by the model's 52-character "Became a carer for her father and lost her
+    // routines." A quarter of the length, third person, and it is what her summary card, her dashboard ("in your
+    // own words") and every later surface would have shown her.
+    //
+    // THE TEST IS NARROW ON PURPOSE. Third-person pronouns are NOT disqualifying on their own — the tool's own
+    // good example is "my wife got laid off, which hit her hard", which is hers and mentions someone else. What
+    // marks a paraphrase is talking about the member with no first-person voice at all. So: reject only when
+    // there is no "I/my/me/we" anywhere AND a third-person pronoun is present. Anything else is kept.
+    ...(rec.gap !== undefined && rec.gap !== '' && !isThirdPersonGap(rec.gap) && { gap: rec.gap }),
     // Doors accumulate — one note_door call per Door; union with what we already have (never drop one).
     ...(tagged !== undefined && { [bucket]: tagged }),
   };
