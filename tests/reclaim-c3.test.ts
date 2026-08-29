@@ -1,3 +1,7 @@
+// NOTE (2026-08-30): C3 now runs Greg's SETUP STAGES around this coach turn — stage 1 sets the stance
+// ("tracking over time, not reflecting once"), stage 3 sets the expectations before monitoring starts, stage 4
+// does the light planning. So these walks step through the doorway first, and a settled definition hands ON to
+// stage 3 rather than completing the Session. The coach contract they test is unchanged; only its neighbours are.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
@@ -14,6 +18,9 @@ const m = (text: string, qualityDay?: ModelTurn['qualityDay']): ModelTurn => ({ 
 
 test('C3 Step 1 · coach → propose → confirm; the profile lands in the snapshot for the action to store', () => {
   let t = reclaimC3Opening();
+  assert.equal(t.state.stage, 'c3-open', "Greg's stage 1 — the stance, before any defining");
+  assert.match(t.reply, /tracking over time rather than reflecting once/i, 'the stance (C3-79)');
+  t = applyReclaimC3Turn(t.state, [], 'Movement, and not feeling behind.', m('Mm.'));
   assert.equal(t.state.stage, 'quality');
   assert.match(t.reply, /quality days lead to a quality life/i, 'the frame');
 
@@ -36,24 +43,30 @@ test('C3 Step 1 · coach → propose → confirm; the profile lands in the snaps
 
   // Turn 3: confirm → complete; the profile is in the snapshot for the action to store.
   t = applyReclaimC3Turn(t.state, [], "yes, let's go", m(''));
-  assert.equal(t.complete, true);
+  assert.equal(t.state.stage, 'c3-commit');
   assert.equal(t.state.collected?.pendingQualityDay?.nonNegotiables.length, 3);
   assert.match(t.reply, /what makes up your Quality Day/i, 'the committed close');
 });
 
 test('C3 Step 1 · "Please do" confirms the profile — not treated as an adjustment', () => {
   let t = reclaimC3Opening();
+  t = applyReclaimC3Turn(t.state, [], 'Movement, mostly.', m('Mm.')); // through the stance beat
   t = applyReclaimC3Turn(t.state, [], 'a good day has movement and connection', m('Which feel non-negotiable?'));
   t = applyReclaimC3Turn(t.state, [], 'those', m('', { nonNegotiables: ['moved my body', 'some calm'], contributors: ['real connection'], disruptors: ['poor sleep'] })); // → proposal
   assert.equal(t.complete, false);
   // The natural reply to "Want me to save this…?" — must complete, not re-open coaching.
   t = applyReclaimC3Turn(t.state, [], 'Please do', m(''));
-  assert.equal(t.complete, true, '"Please do" is a confirm');
+  // A CONFIRM ENDS STAGE 2, NOT THE SESSION (2026-08-30). The settled definition is what stages 3 and 4 build the
+  // week on — the expectations and the plan sit between it and the first check-in.
+  assert.equal(t.state.stage, 'c3-commit', '"Please do" is a confirm');
+  assert.equal(t.complete, false, 'and C3 is not over — the week still has to be set up');
   assert.match(t.reply, /what makes up your Quality Day/i);
+  assert.match(t.reply, /Consistency matters more than completeness/i, 'stage 3 (C3-81), before monitoring starts');
 });
 
 test('C3 Step 1 · a profile with no non-negotiables never proposes (they are the floor)', () => {
-  const t = reclaimC3Opening();
+  const open = reclaimC3Opening();
+  const t = applyReclaimC3Turn(open.state, [], 'Movement.', m('Mm.'));
   const t2 = applyReclaimC3Turn(t.state, [], 'not sure', m('', { nonNegotiables: [], contributors: ['x'], disruptors: [] }));
   assert.equal(t2.state.collected?.pendingQualityDay, undefined, 'no non-negotiables → nothing captured');
 });

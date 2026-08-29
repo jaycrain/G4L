@@ -1436,9 +1436,10 @@ const qualityStage: StageDef = {
     // confirmOutranksRerecord; found in B3's live walk, fixed across all three coach stages at once).
     const sig = proposalSignature(qd);
     if (confirmOutranksRerecord(sc, c3Confirms(b.memberMessage), sig)) {
-      b.stage = 'complete';
-      b.complete = true;
-      b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMITTED_2}`;
+      // HANDS ON to Greg's stage 3 rather than completing (2026-08-30). The definition being settled is the end
+      // of stage 2, not the end of C3 — the expectations and the plan come between it and the week.
+      b.stage = 'c3-commit';
+      b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMIT_ASK}`;
       return;
     }
 
@@ -1452,9 +1453,8 @@ const qualityStage: StageDef = {
 
     if (sc.proposed) {
       if (c3Confirms(b.memberMessage)) {
-        b.stage = 'complete';
-        b.complete = true;
-        b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMITTED_2}`;
+        b.stage = 'c3-commit';
+        b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMIT_ASK}`;
         return;
       }
       // Not a confirm — a tweak not yet recorded, or a question. Carry the turn, KEEP THE GATE OPEN.
@@ -1467,10 +1467,90 @@ const qualityStage: StageDef = {
   },
 };
 
+// ══ C3 · GREG'S SETUP STAGES ══════════════════════════════════════════════════════════════════════════════════
+//
+// C3 is specified in THREE PHASES (C3.md:573, 584, 586): setup (stages 1–4), the tracked week (5), then a review
+// (6–8). We shipped stage 2 — one coach turn that elicits the definition — and the week. Stages 1, 3 and 4 were
+// never built, and they are the ones that decide whether the week actually happens.
+//
+// STAGE 1's STANCE IS THE LOAD-BEARING ONE (C3-79): "this is a different kind of activity — tracking over time,
+// not reflecting once." Every other Session in the program is a conversation that ends. This one ends and then
+// asks for seven days. A member who does not know that at the start reads the week as the app nagging them.
+//
+// STAGE 3 SETS THE EXPECTATIONS BEFORE MONITORING STARTS (C3-81): consistency over completeness, and forgetting
+// is normal. Said afterwards it is consolation; said first it is permission, and it is the difference between a
+// missed day ending the week and a missed day being part of it. Greg is explicit elsewhere: never penalise a
+// missed day.
+//
+// STAGE 4 IS LIGHT PLANNING (C3-82): the tracking cue anchored to an existing routine, a backup for missed days,
+// and a readiness confirm. HIS DOCS NEVER DEFINE "backup for missed days" — flagged for him — so the member
+// defines it, which is the right answer anyway: a backup they chose is one they might use.
+const C3_STANCE_FRAME =
+  'Quality Days is a different shape from everything you have done so far.' + BEAT_SEP +
+  'The other Sessions were a conversation that ended. This one ends and then asks you for about a week — a ' +
+  'short check-in a day, tracking over time rather than reflecting once.' + BEAT_SEP +
+  'That is the point of it. What a good day is made of is not something you can work out in one sitting; it ' +
+  'shows up across days, in the ones that went well and the ones that did not.';
+const C3_STANCE_ASK = 'Before we define anything: what does a good day look like for you right now?';
+
+// Stage 3 — the expectations, before monitoring starts. His words, ours.
+const C3_COMMIT_ASK =
+  'Two things about the week, and then we set it up.' + BEAT_SEP +
+  'Consistency matters more than completeness — four honest days beat seven tidy ones. And you will forget a ' +
+  'day. That is normal, it is not a failure, and a missed day never counts against you.' + BEAT_SEP +
+  // THE CUE IS FOLDED INTO THE WHEN. Greg lists "establish when the Member will check in" (stage 3) and
+  // "identify the tracking cue — existing routine anchor" (stage 4) as separate items, and asked back to back
+  // they are the same question twice: "when would you do this?" then "what would it hang off?". His two items,
+  // one ask, with the anchor as the guidance it always was.
+  'When in the day would you do it? Hang it off something you already do, so it has somewhere to live.';
+
+// Stage 4 — light planning. Cue, backup, readiness.
+const C3_BACKUP_ASK =
+  'And on a day you forget until it is too late — what do you want to do then? Skip it, or catch it up the next morning?';
+const C3_PLAN_READY = 'That is the setup. Ready to start tomorrow?';
+
+// Stage 3 — one turn: they say when they will check in, and the week's expectations have been set.
+const c3CommitStage: StageDef = {
+  id: 'c3-commit',
+  mode: 'drawout',
+  opener: () => C3_COMMIT_ASK,
+  offersSubstance: () => true,
+  gather: (b) => { b.stage = 'c3-backup'; b.reply = receiveThen(b.modelText, C3_BACKUP_ASK); },
+  confirm: (b) => { b.stage = 'c3-backup'; b.reply = receiveThen(b.modelText, C3_BACKUP_ASK); },
+};
+
+// Stage 4 — the backup for a missed day. ONE turn, then the week opens.
+//
+// GREG NEVER DEFINES "backup for missed days" — flagged for him. So the member defines it, which is the better
+// answer regardless: a backup they chose is one they might actually use. It also does the work of his "never
+// penalise a missed day" rule at the moment it matters, by planning for the miss before it happens.
+const c3BackupStage: StageDef = {
+  id: 'c3-backup',
+  mode: 'drawout',
+  opener: () => C3_BACKUP_ASK,
+  offersSubstance: () => true,
+  // The ACTION opens the c3_quality week off this completing turn, as it always has.
+  gather: (b) => { b.stage = 'complete'; b.complete = true; b.reply = receiveThen(b.modelText, `${C3_PLAN_READY}${BEAT_SEP}${C3_COMMITTED_2}`); },
+  confirm: (b) => { b.stage = 'complete'; b.complete = true; b.reply = receiveThen(b.modelText, `${C3_PLAN_READY}${BEAT_SEP}${C3_COMMITTED_2}`); },
+};
+
+const c3EngageConfig = {
+  id: 'c3-open',
+  next: 'quality',
+  frame: () => C3_STANCE_FRAME,
+  question: () => C3_STANCE_ASK,
+  handIn: () => c3Opening(),
+};
+
 export const RECLAIM_C3_ARC: ArcConfig = {
   id: 'reclaim-c3',
-  stageOrder: ['quality'],
-  stages: { quality: qualityStage },
+  stageOrder: ['c3-open', 'quality', 'c3-commit', 'c3-backup'],
+  stages: {
+    'c3-open': engagementStage(c3EngageConfig),
+    quality: qualityStage,
+    'c3-commit': c3CommitStage,
+    'c3-backup': c3BackupStage,
+  },
   onComplete: () => C3_COMMITTED_1,
 };
 
@@ -1524,7 +1604,8 @@ export function composeRefinedList(top3: readonly string[]): string | null {
 }
 
 export function reclaimC3Opening(): Turn {
-  return { reply: c3Opening(), state: { stage: 'quality', collected: {} }, complete: false };
+  // OPENS ON GREG'S STAGE 1 — the stance (tracking over time, not reflecting once) before the definition work.
+  return { reply: engagementOpening(c3EngageConfig), state: { stage: 'c3-open', collected: {} }, complete: false };
 }
 
 export const C3_SYSTEM =

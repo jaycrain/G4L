@@ -52,6 +52,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'c1-emergent'
   | 'c1-reorder'
   | 'c1-close'
+  // C3's setup stages (Greg C3.md:573) — the stance, then commit, then light planning, around the definition.
+  | 'c3-open'
+  | 'c3-commit'
+  | 'c3-plan'
+  | 'c3-backup'
   | 'why-activity-talk'
   | 'why-activity'
   | 'why-eating-talk'
@@ -769,6 +774,10 @@ const STAGE_PROMPT: Record<Stage, string> = {
   'c1-emergent': 'Has anything become important that was not visible at the beginning?',
   'c1-reorder': 'If you had to reorder the list now, what belongs near the top?',
   'c1-close': 'Which one would you want to still be true a year from now?',
+  'c3-open': 'What does a good day look like for you right now?',
+  'c3-commit': 'When in the day would you actually do this?',
+  'c3-plan': 'What would it hang off — something you already do every day?',
+  'c3-backup': 'On a day you forget — skip it, or catch it up next morning?',
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
   drift: 'What did the Fade cost you — and how far are you from that version of you?',

@@ -67,7 +67,10 @@ test('NO MEASURED SESSION IS STUCK AT A CONSTANT', () => {
   // stage index measured nothing and turns were the honest unit. It now runs Greg's seven stages and is measured
   // in STAGES — strictly better: a member who stops at the de-prioritise pass is distinguishable from one who
   // stopped at the first question, which is exactly the drop-off this file exists to record.
-  assert.deepEqual(open.sort(), ['RBLD-B3', 'RCL-C3'], 'the coaching arcs that are still one open conversation');
+  // C3 LEFT TOO (2026-08-30), when Greg's setup stages landed around its coach turn — the stance, the
+  // expectations, and the light planning. B3 is the last single-stage coaching arc, and it is the only one where
+  // turns are still the honest unit.
+  assert.deepEqual(open.sort(), ['RBLD-B3'], 'the one coaching arc that is still a single open conversation');
 });
 
 test('a COACHING Session counts turns, and says it has no fixed end', () => {
