@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, withQuestion, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -20,7 +20,7 @@ import {
 import { scoreAudit, priorityBarsVisual } from '../reclaim/bigger-world-scoring.ts';
 import type { SessionVisual } from './session-visual.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
-import { confirmsProposal } from './onboarding-intent.ts';
+import { memberDeflecting, confirmsProposal } from './onboarding-intent.ts';
 import { groundToMemberWords } from './member-words.ts';
 import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
 import { SESSION_LIMITS } from './session-limits.ts';
@@ -139,6 +139,237 @@ export function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendi
   return added.length ? { items, top3, added } : { items, top3 };
 }
 
+// ══ C1 · GREG'S SIX REVISION PASSES ═══════════════════════════════════════════════════════════════════════════
+//
+// C1.md:495 and the AI Companion Guidance for [Reclaim] Science-Check Language document (13 July, found
+// 2026-08-29) between them specify SEVEN stages: engagement, then six passes over the Reclaim List — enduring ·
+// de-prioritised · borrowed-or-vague · concretised · emergent · reorder. We shipped ONE open coaching turn.
+//
+// ONE CHANGE AT A TIME (Jay, 2026-08-29). The old contract had the model hand back a WHOLE rewritten list which
+// the engine then diffed. Across six passes that is six chances to silently drop an item the member never
+// mentioned — and a lost Reclaim List is the one failure we cannot detect after the fact, because the evidence
+// is the thing that went missing. So a pass records exactly one operation, and the operation names the item it
+// touches in the member's CURRENT wording, which the engine then has to find. [[their-own-words-back]]
+//
+// COMMIT AS YOU GO (Jay). Each pass proposes → the member confirms → it is applied, then the next pass opens. A
+// member who stops after pass three keeps those three. The alternative — one confirmation at the end — is fewer
+// decisions and loses everything if they leave mid-Session, which is the likelier event in a 20-minute Session.
+export type ListChange =
+  | { op: 'drop'; target: string }
+  | { op: 'reword'; target: string; text: string }
+  | { op: 'add'; text: string }
+  | { op: 'reorder'; order: string[] };
+
+/**
+ * A model-proposed change, GROUNDED against the live list — or nothing.
+ *
+ * The grounding is the whole safety property. `target` must match an item that is actually on the list right now,
+ * so the model cannot drop or reword something it invented, half-remembered, or paraphrased into a different
+ * goal. Matching is exact-then-trimmed-case-insensitive and nothing looser: a fuzzy match here would silently
+ * retarget a deletion onto the wrong item, which is worse than refusing the change.
+ */
+export function groundListChange(raw: unknown, list: readonly string[]): ListChange | null {
+  const c = raw as { op?: unknown; target?: unknown; text?: unknown; order?: unknown } | null;
+  if (!c || typeof c.op !== 'string') return null;
+  const find = (t: unknown): string | null => {
+    if (typeof t !== 'string' || !t.trim()) return null;
+    const needle = t.trim().toLowerCase();
+    return list.find((i) => i.trim().toLowerCase() === needle) ?? null;
+  };
+  if (c.op === 'drop') {
+    const target = find(c.target);
+    return target ? { op: 'drop', target } : null;
+  }
+  if (c.op === 'reword') {
+    const target = find(c.target);
+    const text = typeof c.text === 'string' ? c.text.trim() : '';
+    // A reword to the same words is not a change; proposing it would ask a member to confirm a no-op.
+    return target && text && text.toLowerCase() !== target.toLowerCase() ? { op: 'reword', target, text } : null;
+  }
+  if (c.op === 'add') {
+    const text = typeof c.text === 'string' ? c.text.trim() : '';
+    if (!text) return null;
+    // An "addition" already on the list is a duplicate, and duplicates are how a list quietly doubles.
+    return list.some((i) => i.trim().toLowerCase() === text.toLowerCase()) ? null : { op: 'add', text };
+  }
+  if (c.op === 'reorder') {
+    const order = Array.isArray(c.order) ? c.order.map((x) => find(x)).filter((x): x is string => !!x) : [];
+    // A reorder must account for EVERY item. A partial one is indistinguishable from a reorder that drops the
+    // items it forgot to mention — the exact silent loss this contract exists to make impossible.
+    return order.length === list.length && new Set(order).size === list.length ? { op: 'reorder', order } : null;
+  }
+  return null;
+}
+
+/** Apply a grounded change. PURE, and returns a NEW array — an in-place mutation would not survive the wire. */
+export function applyListChange(list: readonly string[], c: ListChange): string[] {
+  if (c.op === 'drop') return list.filter((i) => i !== c.target);
+  if (c.op === 'reword') return list.map((i) => (i === c.target ? c.text : i));
+  if (c.op === 'add') return [...list, c.text];
+  return [...c.order];
+}
+
+/** What the member is being asked to confirm, in their own words and ours. */
+export function describeListChange(c: ListChange): string {
+  if (c.op === 'drop') return `Take “${c.target}” off the list?`;
+  if (c.op === 'reword') return `Change “${c.target}” to “${c.text}”?`;
+  if (c.op === 'add') return `Add “${c.text}” to your list?`;
+  return `Put them in this order?\n\n${c.order.map((t, i) => `${i + 1}. ${t}`).join('\n')}`;
+}
+
+// C1's ENGAGEMENT BEAT — Greg's stage 1 (C1.md:495): "present opening frame, acknowledge prior module work,
+// display the original [Reclaim] List, set the stance of refinement not correction." (His camel case normalised.)
+//
+// The stance line is the load-bearing one, and it is his: "The Companion should treat this as a process of
+// refinement, not correction… The Member is revisiting their goals through a more informed, more experienced,
+// and possibly more honest version of themselves." Without it a member reads six passes over their own list as
+// a test they are failing.
+const C1_OPEN_FRAME =
+  'This is the list you made in Reconnect — the things you wanted back.' + BEAT_SEP +
+  'You have been through three phases since you wrote it. The point now is not to check whether you stuck to ' +
+  'it. It is to read it again as the person you are now, and let it change where it should.' + BEAT_SEP +
+  'Some items will still be exactly right. Some will have quietly stopped mattering. Some were never really ' +
+  'yours. All of that is ordinary, and all of it is useful.';
+const C1_OPEN_ASK = 'Reading it now — what feels different about this list than when you wrote it?';
+
+/** The close. Their most-owned item, in their words, and what the refined list is for. */
+function c1CloseAsk(_c: Collected): string {
+  return 'Last one: of everything on there now, which single item feels most like yours?';
+}
+const C1_CLOSE =
+  'That is your list, refined — not corrected. It is what the rest of Reclaim works from, and it is on your ' +
+  'Playbook whenever you want to look at it.';
+
+// GREG'S SIX PASSES, with his own "Better Companion prompts" and follow-ups from the AI Companion Guidance for
+// [Reclaim] Science-Check Language document (13 July). His wording, not a paraphrase — he wrote these as the
+// scientifically grounded version of the six blunter questions, and the difference is the whole point of the doc.
+const C1_PASSES: readonly RevisionPass[] = [
+  {
+    id: 'c1-enduring', next: 'c1-deprioritise',
+    ask: 'When you read your original list now, which items still feel most alive or most important?',
+    followUps: [
+      'What makes that item still feel important?',
+      'Has its meaning changed, or just its priority?',
+      'Does it feel more personal now than it did before?',
+    ],
+  },
+  {
+    id: 'c1-deprioritise', next: 'c1-borrowed',
+    ask: 'Which items no longer feel as central as they once did?',
+    followUps: [
+      'What changed?',
+      'Did this goal lose meaning, or did something else become more important?',
+      'Does this feel like a pause, a release, or just a lower priority?',
+    ],
+  },
+  {
+    id: 'c1-borrowed', next: 'c1-concrete',
+    ask: 'Are there goals on the list that sound right, but do not feel fully owned?',
+    followUps: [
+      'If you rewrote that goal in your own language, what would change?',
+      'Would this still matter if nobody else expected it from you?',
+      'Is the problem that the goal is wrong, or that it was never defined clearly enough?',
+    ],
+  },
+  {
+    id: 'c1-concrete', next: 'c1-emergent',
+    ask: 'Which goals feel clearer or more tangible now than they did at the beginning?',
+    followUps: [
+      'What made it more concrete?',
+      'Did the clarity come from understanding yourself better, or from seeing your habits more clearly?',
+      'What would that goal look like in ordinary life now?',
+    ],
+  },
+  {
+    id: 'c1-emergent', next: 'c1-reorder',
+    ask: 'Has anything become important that was not fully visible to you at the beginning?',
+    followUps: [
+      'What brought that into focus?',
+      'Did this emerge from identity work, habit awareness, or seeing your health decisions more clearly?',
+      'Does this new priority feel durable, or newly fragile?',
+    ],
+  },
+  {
+    id: 'c1-reorder', next: 'c1-close',
+    ask: 'If you had to reorder the list now, what belongs near the top?',
+    followUps: [
+      'Why this one?',
+      'What makes it more central than the others right now?',
+      'Does it feel important because it is urgent, meaningful, achievable, or identity-linked?',
+    ],
+  },
+];
+
+/** The ask a pass hands ON to. The close is not a pass, so it carries its own line. */
+function nextPassAsk(next: string, c: Collected): string {
+  const p = C1_PASSES.find((x) => x.id === next);
+  if (p) return p.ask;
+  return c1CloseAsk(c);
+}
+
+/**
+ * ONE REVISION PASS — the builder, used six times.
+ *
+ * Each pass asks Greg's question for that pass, lets the model draw the member out, and accepts AT MOST ONE
+ * grounded change before handing on. The gate is propose → confirm → commit, in that order and never collapsed:
+ * a change is applied only after the member has seen it written out and said yes. [[reclaim-c1-step2-data-contract]]
+ *
+ * A PASS CAN LEGITIMATELY CHANGE NOTHING. "No, they all still matter" is a complete answer to pass one, and the
+ * beat has to hear it as one — otherwise the member learns that the way out is to invent an edit.
+ */
+type RevisionPass = {
+  id: Stage;
+  next: Stage;
+  ask: string; // Greg's better prompt for this pass
+  followUps: readonly string[]; // his follow-ups, used when the model trails into a statement
+};
+
+const PASS_MAX_TURNS = 6; // a pass is a question, not a beat to be held in
+
+function revisionPassStage(cfg: RevisionPass): StageDef {
+  type B = Parameters<NonNullable<StageDef['gather']>>[0];
+  const handOn = (b: B): void => {
+    b.stage = cfg.next;
+    b.awaitingConfirm = false;
+    b.reply = receiveThen(b.modelText, nextPassAsk(cfg.next, b.collected));
+  };
+  const gather: StageDef['gather'] = (b) => {
+    const sc = b.scratch as { turns?: number; pending?: ListChange };
+    sc.turns = (sc.turns ?? 0) + 1;
+    const list = b.collected.reclaimList ?? [];
+
+    // A grounded change from the model → PROPOSE it. Never applied on the turn it is recorded.
+    const change = groundListChange((b.model as { listChange?: unknown }).listChange, list);
+    if (change) {
+      sc.pending = change;
+      b.awaitingConfirm = true;
+      b.reply = receiveThen(b.modelText, describeListChange(change));
+      return;
+    }
+    // Nothing to change, and they have said so → move on. "Nothing" is an answer, not a failure to answer.
+    if (memberDeflecting(b.memberMessage) || sc.turns >= PASS_MAX_TURNS) return handOn(b);
+    b.reply = withQuestion(b.modelText, cfg.followUps[Math.min(sc.turns - 1, cfg.followUps.length - 1)] ?? null);
+  };
+  const confirm: StageDef['confirm'] = (b) => {
+    const sc = b.scratch as { turns?: number; pending?: ListChange };
+    const pending = sc.pending;
+    if (pending && confirmsProposal(b.memberMessage)) {
+      // COMMITTED. A NEW array — mutating in place does not survive the wire, which cost a whole beat once.
+      // [[mutating-state-vanishes-over-the-wire]]
+      b.collected.reclaimList = applyListChange(b.collected.reclaimList ?? [], pending);
+      sc.pending = undefined;
+      return handOn(b);
+    }
+    // Not a yes. The change is DROPPED rather than held — a member who did not say yes to removing something from
+    // their own list must not find it removed two turns later because the proposal was still sitting there.
+    sc.pending = undefined;
+    b.awaitingConfirm = false;
+    b.reply = withQuestion(b.modelText, cfg.followUps[0] ?? null);
+  };
+  return { id: cfg.id, mode: 'drawout', opener: () => cfg.ask, offersSubstance: () => true, gather, confirm,
+    forceProgress: (b) => handOn(b) };
+}
+
 const refineStage: StageDef = {
   id: 'refine',
   mode: 'coach',
@@ -202,6 +433,77 @@ const refineStage: StageDef = {
 };
 
 // One stage now. The arc kernel still owns the turn (crisis routing, no-repeat, persistence) — see runArcTurn.
+// C1's CLOSE — one turn. They name the item that feels most theirs; the engine closes on it.
+const c1CloseStage: StageDef = {
+  id: 'c1-close',
+  mode: 'drawout',
+  opener: (c) => c1CloseAsk(c),
+  offersSubstance: () => true,
+  gather: (b) => {
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply = receiveThen(b.modelText, C1_CLOSE);
+  },
+  confirm: (b) => {
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply = receiveThen(b.modelText, C1_CLOSE);
+  },
+};
+
+const c1EngageConfig = {
+  id: 'c1-open',
+  next: 'c1-enduring',
+  frame: () => C1_OPEN_FRAME,
+  question: () => C1_OPEN_ASK,
+  handIn: () => C1_PASSES[0]!.ask,
+};
+
+// GREG'S SEVEN STAGES, plus the close (C1.md:495). The old single 'refine' coach turn is RETIRED — it asked the
+// model to settle the whole refinement in conversation and hand back a rewritten list, which is the contract Jay
+// replaced on 2026-08-29 ("one change at a time"). Nothing is lost: every job it did is now a named pass.
+// ═══ BUILT, NOT SWITCHED ON (2026-08-29) ══════════════════════════════════════════════════════════════════════
+//
+// The engine below is complete and tested. It is NOT the live C1 arc, and must not become one until the
+// persistence seam is wired — see the block above RECLAIM_C1_ARC.
+//
+// THE GAP, precisely: a confirmed pass updates `collected.reclaimList`, which is the CONVERSATION's copy of the
+// list. The member's actual Reclaim List lives in a table with item ids, and C1's action commits to it through
+// resolveRefinement/commitRefinement — built for the whole-list contract this replaces. So a member could walk
+// all six passes, confirm every change, be told their list was refined, and have nothing reach it.
+//
+// That is the defect class we spent the week clearing — a rule that exists and does not run — except dressed as
+// a working Session, which is worse: it does not fail, it lies. Switching this on before the wiring would be the
+// single most damaging thing we could ship, because the evidence of the loss is the thing that went missing.
+//
+// TO FINISH: route each confirmed ListChange through lib/reclaim/refinement-store.ts. drop/reword/reorder map
+// onto item ids that resolveRefinement already resolves; add goes through the normal add path. Then point
+// RECLAIM_C1_ARC and reclaimC1Opening at this arc and delete refineStage + RECORD_REFINEMENT_TOOL +
+// sanitizeRefinement, which become dead the moment it flips.
+export const RECLAIM_C1_PASSES_ARC: ArcConfig = {
+  id: 'reclaim-c1-passes',
+  stageOrder: ['c1-open', ...C1_PASSES.map((p) => p.id), 'c1-close'],
+  stages: {
+    'c1-open': engagementStage(c1EngageConfig),
+    ...Object.fromEntries(C1_PASSES.map((p) => [p.id, revisionPassStage(p)])),
+    'c1-close': c1CloseStage,
+  },
+  onComplete: () => C1_CLOSE,
+};
+
+/** C1's opening under Greg's seven stages — the frame, the list, the stance, then the first pass. */
+export function reclaimC1PassesOpening(listTexts: string[] = []): Turn {
+  const collected: Collected = { reclaimList: listTexts.filter(Boolean) };
+  return { reply: engagementOpening(c1EngageConfig, collected), state: { stage: 'c1-open', collected }, complete: false };
+}
+
+/** Drive the six-pass arc. Test/wiring surface only until it becomes the live C1. */
+export function applyReclaimC1PassesTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(RECLAIM_C1_PASSES_ARC, state, history, memberMessage, model);
+}
+
+// THE LIVE C1, unchanged, until the per-pass commit reaches the store. Retiring refineStage before then would
+// leave the Session with no working path at all.
 export const RECLAIM_C1_ARC: ArcConfig = {
   id: 'reclaim-c1',
   stageOrder: ['refine'],

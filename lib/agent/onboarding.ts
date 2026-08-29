@@ -43,6 +43,15 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'c2-contraction'
   | 'c2-approach'
   | 'c2-prior-work'
+  // C1's engagement beat + Greg's six revision passes over the Reclaim List (C1.md:495 + his 13 July guidance).
+  | 'c1-open'
+  | 'c1-enduring'
+  | 'c1-deprioritise'
+  | 'c1-borrowed'
+  | 'c1-concrete'
+  | 'c1-emergent'
+  | 'c1-reorder'
+  | 'c1-close'
   | 'why-activity-talk'
   | 'why-activity'
   | 'why-eating-talk'
@@ -748,6 +757,14 @@ const STAGE_PROMPT: Record<Stage, string> = {
   'c2-contraction': 'Where does your life still feel narrower than you would want it?',
   'c2-approach': 'What are you moving toward?',
   'c2-prior-work': 'Does any of the earlier work show up in what you just described?',
+  'c1-open': 'Before we start: what feels different about this list now?',
+  'c1-enduring': 'Which items still feel most alive or most important?',
+  'c1-deprioritise': 'Which items no longer feel as central as they once did?',
+  'c1-borrowed': 'Are there goals that sound right, but do not feel fully owned?',
+  'c1-concrete': 'Which goals feel clearer or more tangible now?',
+  'c1-emergent': 'Has anything become important that was not visible at the beginning?',
+  'c1-reorder': 'If you had to reorder the list now, what belongs near the top?',
+  'c1-close': 'Which one would you want to still be true a year from now?',
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
   drift: 'What did the Fade cost you — and how far are you from that version of you?',
@@ -1043,6 +1060,10 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // `added` — goals the member named that were NOT already on their list (Greg's C1 question 5). Optional: most
   // refinements add nothing, and an absent list must read as "nothing new came up", not as a malformed call.
   refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[]; added?: { text: string; tier: string; emergedFrom?: string }[] };
+  // C1's ONE-CHANGE-AT-A-TIME contract (Jay, 2026-08-29), replacing the whole-list return above for the six
+  // revision passes. Raw and unvalidated here on purpose — groundListChange() in reclaim.ts is what decides
+  // whether it names a real item on the member's live list, and refuses it otherwise.
+  listChange?: { op?: string; target?: string; text?: string; order?: string[] };
   // R3 Legacy Letter — the drafted letter body (from record_legacy_letter). Its own channel, like `plan` and
   // `refinement`: it is a member-voiced ARTIFACT the engine holds for confirmation, never conversational text.
   legacyBody?: string;

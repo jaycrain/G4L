@@ -63,6 +63,10 @@ test('NO MEASURED SESSION IS STUCK AT A CONSTANT', () => {
   assert.deepEqual(stuck, [], `these Sessions cannot measure drop-off: ${stuck.map(([id]) => id).join(', ')}`);
 
   const open = Object.entries(sessionTotals()).filter(([, t]) => t.unit === 'turn').map(([id]) => id);
+  // C1 IS STILL HERE, and will leave this list when the six-pass arc is switched on. RECLAIM_C1_PASSES_ARC is
+  // built and tested (tests/c1-six-passes.test.ts) but is NOT the live arc until its per-pass commit reaches the
+  // Reclaim List store — see the block above RECLAIM_C1_ARC. Until then C1 remains one open conversation and
+  // turns are its honest unit. When it flips, this expectation drops to ['RBLD-B3', 'RCL-C3'].
   assert.deepEqual(open.sort(), ['RBLD-B3', 'RCL-C1', 'RCL-C3'], 'the coaching arcs, counted in turns');
 });
 
