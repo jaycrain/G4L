@@ -122,7 +122,7 @@ const BEATS: Beat[] = [
     art: 'progress',
     head: ['Track your', 'progress.'],
     body: [
-      'Your Companion helps you build a Reclaim List, setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come. All alongside a community of midlifers who get you.',
+      'Your Companion helps you build a Reclaim List, setting goals for things worth getting back. Your ID Score tracks the distance left to close, building towards 100. All alongside a community of midlifers who get you.',
     ],
     quotes: [
       'Who just completed Disinformation Audit? Did it completely stun you like it did me?',

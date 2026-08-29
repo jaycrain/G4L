@@ -56,10 +56,25 @@ test('no first-move title: beat 7 uses the generic line, still the clip-in beat'
   const beats = buildThresholdBeats({ ...base, firstMoveTitle: null });
   assert.equal(beats.length, 7);
   assert.doesNotMatch(beats[6]!.text, /small one —/); // generic line has no "— {firstMove}" tail (the gloss em-dash is fine)
-  // THE BEAT NO LONGER TEACHES THE WORD (Cowork + Jay, 2026-08-14). It used to assert /clip/i, which passed only
-  // because the beat carried the bike-pedal gloss. "Clip in" is now defined once upstream on the language screen
-  // and the threshold just hands forward — so what must hold here is that the metaphor is NOT re-explained at the
-  // moment of commitment, while the word still lives on the button the member presses.
-  assert.doesNotMatch(beats[6]!.text, /bike|pedal|cycl/i, 'the metaphor is taught upstream, never at the threshold');
+  // REVERSED 2026-08-29, and the reason is the point.
+  //
+  // This asserted the metaphor is NOT explained here, on the stated grounds that "'Clip in' is now defined once
+  // upstream on the language screen" (Cowork + Jay, 2026-08-14). That screen was later replaced, and its own
+  // successor records the loss in a comment: "The word was defined in the glossary beat these screens replace."
+  // So the definition went, the test protecting its absence stayed, and a member was left being told to clip in
+  // with nothing anywhere in the product saying what it meant. Cowork's canon check caught it from the outside.
+  //
+  // The RULE did not change — say it once, in the right place. What changed is where the right place is: the only
+  // live use of the word is the button at the end of this ceremony, so the beat that carries the button carries
+  // the gloss. (Jay, 2026-08-29: "is it no longer in the opening screen section? If not, then yes.")
+  //
+  // A test that guards an absence must name what fills it. This one didn't, so when the filler was deleted the
+  // guard silently became the bug. [[no-unreachable-rules]]
+  assert.match(beats[6]!.text, /cycl/i, 'the metaphor is explained at the one place the word is used');
+  // AND IT IS JAY'S COPY, NOT A PARAPHRASE. He rewrote this himself — the deleted source said so ("the LATER
+  // wording wins") — and my first attempt at restoring it was a fresh gloss I wrote, which would have passed the
+  // line above. Pinning the closing move ("you get up and clip back in") is what makes this a test of the
+  // original rather than of the topic. Restored from docs/canon/v3.4.51, which is what the archive is for.
+  assert.match(beats[6]!.text, /you get up and clip back in/i, "it is the founder's own wording, verbatim");
   assert.match(THRESHOLD_RESOLVE_LABEL, /clip in/i, 'the word still lives on the button they press');
 });

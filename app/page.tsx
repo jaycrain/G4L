@@ -52,7 +52,7 @@ export default async function Home() {
             source grep. Keep explanatory comments out of the element whose text is member copy. */}
         <p>
           It starts with a real conversation. Just you and a Companion built for this one thing, and nothing else.
-          What you build here is private, and it stays with you.
+          What you build here is private.
         </p>
       </div>
       <p>

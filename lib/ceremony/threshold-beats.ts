@@ -73,9 +73,26 @@ export const THRESHOLD_COPY = {
   // CONFIRMED BY JAY, 2026-08-14. Cowork drafted this line and marked it "Jay to confirm"; it shipped ahead of
   // that sign-off and was the one unconfirmed string in the batch. It is now settled copy — treat it like any
   // other authored line, and quotable as canon.
-  clipIn: 'This is where it starts — a commitment to get going, and keep going.',
+  // CLIP IN, RESTORED VERBATIM (Jay, 2026-08-29: "carefully written and important to the brand … explains the
+  // metaphor best. Find the last standing copy.").
+  //
+  // This is HIS rewrite, not Donna's shorter draft — the source it came from said so in as many words: "the LATER
+  // wording wins." It lived on the onboarding language screen, was carried in canon from v3.4.10 to v3.4.51, and
+  // went out with v3.4.53 when Donna's five intro screens replaced that screen. Nothing inherited it, so from
+  // then on a member was told to clip in and the product never once said what it meant.
+  //
+  // IT GOES HERE BECAUSE THIS IS THE ONE PLACE THE WORD IS STILL USED — the button at the end of this ceremony.
+  // Say it once, where it is needed. (I first wrote a fresh gloss for this slot; restoring the original is the
+  // right move and finding it took one search of the canon archives, which exist for exactly this.)
+  clipIn:
+    'Clip in — our founder\u2019s cycling metaphor, and more than \u201Clet\u2019s go.\u201D Shoes locked to your pedals is a ' +
+    'commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and ' +
+    'falls down once. You get up and clip back in.',
   // Donna dropped the per-member "first move" tail; keep the signature so callers don't change, ignore the arg.
-  clipInWithMove: (_firstMove: string) => 'This is where it starts — a commitment to get going, and keep going.',
+  clipInWithMove: (_firstMove: string) =>
+    'Clip in — our founder\u2019s cycling metaphor, and more than \u201Clet\u2019s go.\u201D Shoes locked to your pedals is a ' +
+    'commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and ' +
+    'falls down once. You get up and clip back in.',
 } as const;
 
 export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {
