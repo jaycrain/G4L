@@ -91,8 +91,10 @@ export const RECONNECT_SESSION_ASSETS: Record<string, string[]> = {
   // Closing only one of them is what left Jay stuck: R2 marked RCN-EXC done, RCN-FDR stayed open, and the
   // forecast lit the next OPEN row — "Nice work — The Doors is next", pointing him back into the Session he had
   // just finished, directly under a line saying he had finished it. R3 would have done the same across three.
-  r2: ['RCN-FDR', 'RCN-EXC'],
-  r3: ['RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST'],
+  // ONE ROW EACH since the Reconnect normalisation (2026-08-29). The lists survive as single-element
+  // arrays rather than being deleted so callers do not change shape; the many-to-one they existed for is gone.
+  r2: ['RCN-FDR'],
+  r3: ['RCN-DFT'],
   r4: ['RCN-CHK'],
   checkpoint: ['RCN-CHK'],
 };

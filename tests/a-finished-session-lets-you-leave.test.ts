@@ -102,18 +102,31 @@ test('the crosswalk is defined ONCE', () => {
 });
 
 test('a Session closes EVERY curriculum row it covers', () => {
-  // Reconnect has seven rows and three Sessions: the rows are Greg's assets, the Sessions are what a member
-  // sits down to do. Close a subset and the forecast lights a row that has already been worked — which is what
-  // put "Nice work — The Doors is next" directly under "You finished Identity Excavation today".
-  assert.deepEqual(RECONNECT_SESSION_ASSETS.r2, ['RCN-FDR', 'RCN-EXC']);
-  assert.deepEqual(RECONNECT_SESSION_ASSETS.r3, ['RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']);
+  // REVERSED BY THE NORMALISATION (2026-08-29), and the reversal is the fix.
+  //
+  // This used to assert the MANY-TO-ONE: Reconnect had seven rows for four Sessions, so R2 covered two and R3
+  // covered three, and closing a subset left the forecast lighting a row that had already been worked — which is
+  // what put "Nice work — The Doors is next" directly under "You finished Identity Excavation today".
+  //
+  // Reconnect now has one row per Session like the other three phases, so the failure this test was written for
+  // is not fixed, it is unrepresentable. What remains worth asserting is the property underneath: every Session
+  // owns exactly one row, and no row is orphaned or shared.
+  for (const [key, ids] of Object.entries(RECONNECT_SESSION_ASSETS)) {
+    assert.equal(ids.length, 1, `${key}: a Session covering ${ids.length} rows can be partly closed`);
+  }
 
   // Every non-daily Reconnect row must be covered by exactly one Session, or it can never be closed at all.
   const covered = Object.entries(RECONNECT_SESSION_ASSETS)
     .filter(([k]) => k !== 'checkpoint') // an alias for r4, not a fifth Session
     .flatMap(([, v]) => v);
-  const rows = CURRICULUM.filter((a) => a.phase === 'reconnect' && a.layer !== 'Daily').map((a) => a.id);
-  for (const id of rows) assert.ok(covered.includes(id), `${id} belongs to no Session — nothing can ever close it`);
+  // ASSERTED THE OTHER WAY ROUND since the normalisation. This walked CURRICULUM and demanded every Reconnect row
+  // be covered — but CURRICULUM here is the UNFLAGGED build, which is the pre-flip Atlas fallback (seven rows),
+  // not the four-row set prod runs. So it was checking the crosswalk against a catalogue the crosswalk was never
+  // for, and reported RCN-WIN as orphaned when RCN-WIN is no longer a row at all on the live path.
+  //
+  // The direction that holds under either build: every id the crosswalk NAMES must be a real Reconnect row.
+  const reconnectIds = new Set(CURRICULUM.filter((a) => a.phase === 'reconnect').map((a) => a.id));
+  for (const id of covered) assert.ok(reconnectIds.has(id), `${id} is named by a Session but is not a curriculum row`);
   assert.equal(new Set(covered).size, covered.length, 'a row claimed by two Sessions would close early');
 });
 

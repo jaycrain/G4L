@@ -1113,8 +1113,11 @@ function idqOpen(): string {
  */
 const MIRROR_FRAME =
   'Before the mirror, one thing about how to read it.\n\n' +
-  'This is a measuring stick. You take it again in a few months, and again after that — what it is for is the ' +
-  'distance between readings. Today is the first one.\n\n' +
+  // NO SCHEDULE PROMISED (Jay, 2026-08-29: "we'll make it a copy change"). This read "You take it again in a few
+  // months, and again after that" — a commitment to a retake that has no mechanism behind it. The retake is real
+  // in the frozen data contract and is post-Charter work; Session 1 must not promise a date we cannot keep.
+  // Greg's R1-41 survives intact: it is still a measuring stick, still the first of a series.
+  'This is a measuring stick — what it is for is the distance between readings, and today is the first one.\n\n' +
   'So answer from where you actually are right now, rather than where you mean to be. That is the whole ' +
   'contract.\n\n' +
   'Some of it will be uncomfortable work — thanks for being willing to look at it.';

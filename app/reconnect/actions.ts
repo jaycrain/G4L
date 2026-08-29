@@ -165,7 +165,7 @@ async function persistCheckpoint(db: Db, memberId: string, prev: ConvState, turn
 // Closed at each STAGE BOUNDARY rather than all at the end, so the open→close window per Session is the real
 // elapsed time. Idempotent (markSessionClosed upserts and only emits session_close on the first close).
 const RECONNECT_STAGE_ASSET: Record<string, string> = {
-  doors: 'RCN-EXC',       // Identity Excavation — the Doors work
+  doors: 'RCN-FDR',       // R2 — the Doors work (RCN-EXC stopped being a row at the 2026-08-29 normalisation)
   measurement: 'RCN-IDQ', // The IDQ — the baseline ID Score
 };
 

@@ -22,6 +22,7 @@ const reclaimStaged = process.env.RECLAIM === 'staged';
 // Redesign flip: with REDESIGN staged, the badge shelf is the real 16-milestone identity-framed set (Decision WW);
 // otherwise the current set (prod, untouched until the redesign flip). Keeps the redesign from changing prod's badges.
 const redesignStaged = process.env.REDESIGN === 'staged';
+const reconnectStaged = process.env.RECONNECT === 'staged';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -107,24 +108,45 @@ const meta = (
 ): Asset => ({ id, title, phase, layer, kind, order, summary, ...extra });
 
 export const CURRICULUM: Asset[] = [
-  // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
-  ...RECONNECT_SESSIONS,
-  // R1 · THE MIRROR — the FIRST Reconnect Session, and a real one (2026-08-28).
+  // ── Reconnect ── ONE ROW PER SESSION, like the other three phases (2026-08-29).
   //
-  // The engine was split into three Sessions with the IDQ first, per Greg's spec, and this entry was not moved
-  // with it. It stayed `kind: 'measurement'` with no route, and `isBuilt()` counts an asset as built only if it
-  // is a session WITH steps, a checkpoint, or route-backed — so the forecast skipped it as content-pending and
-  // lit the next thing instead. keyFromForecast then read that asset id ('…FDR') and returned 'r2'.
+  // Reconnect was the only phase never given a versioned set. It ran the original Atlas catalogue — SEVEN rows
+  // for four Sessions — so R2 covered two of them and R3 covered three, and a hand-written crosswalk in
+  // session-key.ts had to say which. That many-to-one is not a naming inconvenience; it is the direct cause of
+  // three releases on 2026-08-28:
   //
-  // Which is why Jay's dashboard offered "Reconnect › 2 of 3 · The Doors" to a member who had done neither: the
-  // arcs, the session registry and the summaries all said the Mirror was first, and the one table the dashboard
-  // actually reads still described the pre-split world. Nothing was mis-ordered — order 2 already sorted it
-  // ahead of the Doors at 3 — it simply was not a thing the member could be sent to.
+  //   · a Session could be PARTLY closed — some of its rows closed, others not — so the work was done in the
+  //     transcript and unfinished on the dashboard, and a repair function existed solely to reconcile that.
+  //   · the forecast picks what is next by reading ROWS, so it offered Jay "Reconnect · 2 of 3 · The Doors"
+  //     when he had done neither Session: it saw an unclosed row and lit it.
+  //   · a Session took its NAME from its first row, which is why R2 was called The Doors while also being the
+  //     Identity Excavation — the question Jay asked mid-walk ("is this the excavation?").
   //
-  // Route-backed and ordered 1 now, so it is both openable and unambiguously first.
-  meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions — the line we measure everything else against. Comes round again about every 60 days.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
-  IDENTITY_EXCAVATION,
-  meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
+  // THE IDS ARE THE EXISTING LEAD IDS, deliberately. Renaming to RCN-R1..R4 would have touched 33 files and
+  // every stored completion for no member-visible gain; collapsing to the row that already led each Session
+  // gets the same one-to-one and leaves step ids, harvest refs and history alone. RCN-EXC, RCN-WIN and
+  // RCN-WIN-LIST stop being catalogue rows and become what they always were — parts of a Session.
+  ...(reconnectStaged
+    ? [
+        meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1,
+          'Your starting read across four dimensions — the line we measure everything else against.',
+          { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
+        meta('RCN-FDR', 'Excavation', 'reconnect', 'Recognition', 'session', 2,
+          'The events that opened the distance, and the self underneath them.',
+          { close_type: 'reflect', produces: 'your Doors + what you are reclaiming', route: '/workspace/{memberId}/r2' }),
+        meta('RCN-DFT', 'The Drift Quiz', 'reconnect', 'Excavation', 'session', 3,
+          'What the Fade cost, the day you want back, and the list you are coming back for.',
+          { close_type: 'goal', produces: 'your inventory, your window, your Reclaim List', route: '/workspace/{memberId}/r3' }),
+        meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 4,
+          'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.',
+          { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
+      ]
+    : [
+        ...RECONNECT_SESSIONS,
+        meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
+        IDENTITY_EXCAVATION,
+        meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
+      ]),
   // ── Rewire ── v2.3 conversational flow when staged (W1→W2→W3→Checkpoint), else the old Atlas Sessions + soft gate.
   ...(rewireStaged
     ? REWIRE_V23
@@ -146,13 +168,15 @@ export const CURRICULUM: Asset[] = [
         ...RECLAIM_SESSIONS,
         meta('RCL-CHK', 'The Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — the capstone, and the Loop clips you back in.', { close_type: 'milestone', earns: 'reclaim-capstone' }),
       ]),
-  // ── The daily layer (runs across the path; layer='Daily' routes it to the forecast's across-row) ──
-  meta('DLY-SEVEN', 'The Seven Minutes', 'reconnect', 'Daily', 'pulse', 1, 'A daily short rep to keep your grit warm.'),
-  meta('DLY-CLIPIN', 'Daily clip-in', 'reconnect', 'Daily', 'pulse', 2, 'The daily rep — plus the Hardiness reps.'),
-  meta('DLY-SLEEP', 'Sleep check-in', 'reconnect', 'Daily', 'pulse', 3, 'A quick nightly check on recovery.'),
-  meta('DLY-MILES', 'First 1,000 Miles', 'reconnect', 'Daily', 'tracker', 4, 'The optional Rebuild-track mileage tool.'),
-  meta('DLY-GOALS', 'Goal trackers', 'reconnect', 'Daily', 'tracker', 5, 'Your numbers — weight, dollars, miles — logged conversationally.'),
-  meta('DLY-IDQ', 'The IDQ retake', 'reconnect', 'Daily', 'measurement', 6, 'The identity-distance read, offered again about every 60 days.'),
+  // ── The daily layer is GONE from the curriculum (Jay, 2026-08-29: "move all Cycle 2 ideas for later, post
+  // Charter launch"). Six rows — The Seven Minutes, Daily clip-in, Sleep check-in, First 1,000 Miles, Goal
+  // trackers, the IDQ retake — were metadata only: no steps, no route, and the strip that once displayed them
+  // was removed from the dashboard and never reappeared. So they were declared and unreachable, which is
+  // exactly what made Cowork's canon questions unanswerable from outside: "Seven Minutes" and "daily clip-in"
+  // were in our catalogue and in no member's app.
+  //
+  // The IDQ RETAKE is the one with a real contract behind it (the frozen 60-day cadence). It is post-Charter
+  // work, and R1's opening no longer promises a date we cannot keep.
 ];
 
 const badge = (id: string, name: string, category: BadgeCategory, icon: string, earn_rule: string, ceremony: boolean, visibility: Badge['visibility'] = 'known'): Badge => ({

@@ -128,11 +128,18 @@ test('every badge maps to a real glyph in the delivered imagery set', async () =
   }
 });
 
-test('the daily layer runs across, separate from the phase columns', () => {
+test('the daily layer is EMPTY — its six rows were declared and unreachable', () => {
+  // Jay, 2026-08-29: "move all Cycle 2 ideas for later, post Charter launch."
+  //
+  // The Seven Minutes, Daily clip-in, Sleep check-in, First 1,000 Miles, Goal trackers and the IDQ retake were
+  // metadata only — no steps, no route — and the strip that displayed them was removed from the dashboard and
+  // never returned. A catalogue row nobody can reach is worse than no row: it is what made Cowork's canon
+  // questions unanswerable from outside, because two of them appeared in our catalogue and in no member's app.
+  //
+  // The reader stays, and so does the leak check: if a daily layer comes back post-Charter it must come back
+  // reachable, and it still must not appear in the phase columns.
   const daily = dailyLayer();
-  assert.ok(daily.length >= 5);
-  assert.ok(daily.every((a) => a.layer === 'Daily'));
-  // daily ids never leak into the phase columns
+  assert.equal(daily.length, 0, 'a daily row is back — it must be reachable, not metadata');
   const colIds = new Set(phaseColumns().flatMap((c) => c.items).map((a) => a.id));
   assert.ok(daily.every((a) => !colIds.has(a.id)));
 });
