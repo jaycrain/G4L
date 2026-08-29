@@ -412,11 +412,22 @@ function auditOpener(): string {
  * could get bigger, so the doorway asks where it already HAS — which is both the honest starting point for a
  * Reclaim-phase instrument and the thing a member arriving at C2 most wants to say.
  */
+// GREG'S STAGE 1 HAS FOUR BEATS, and C2-74's testable-as is explicit: "All four beats appear before the first
+// core question." They are — opening frame · acknowledge prior module work · set the stance ("a different kind of
+// question — about the shape of life, not just tasks") · normalize mixed progress.
+//
+// THE FOURTH IS THE LOAD-BEARING ONE, and it was missing entirely. A member arriving at C2 has come through three
+// phases and will have moved in some areas and not others. Without normalizing that up front, the first domain
+// where nothing has changed reads as a failure — and the honest answer becomes the expensive one to give, at
+// question one of a twenty-item instrument.
 const C2_ENGAGE_FRAME =
   "In Reconnect the IDQ showed how far you'd drifted. This is the other side of it: where your world can get " +
   'bigger, and which area to push on first.' + BEAT_SEP +
-  'It is the longest read in the program — four areas, a few quick numbers each. Worth doing in one sitting if ' +
-  'you have it.';
+  "You've come through a lot of work to get here — the Doors, the self-talk, the pilot." + BEAT_SEP +
+  'It also asks a different kind of question from the ones you have answered so far. Not what you are doing — ' +
+  'the shape of your life, and how much room is in it.' + BEAT_SEP +
+  'Some areas will have opened up and some will be exactly where they were. That is what four phases in usually ' +
+  'looks like, and the flat ones are as useful to see as the rest.';
 const C2_ENGAGE_Q = 'Before the ratings: where has your world actually got bigger since you started?';
 
 const c2Engage = {
@@ -427,6 +438,42 @@ const c2Engage = {
   question: () => C2_ENGAGE_Q,
   handIn: () => auditOpener(),
 };
+
+/**
+ * GREG'S STAGE 6 — the expansion pattern, named BOTH ways, before the priority read (C2-79).
+ *
+ * "Generate a tentative summary of the expansion pattern / Acknowledge both opening and remaining contraction /
+ * Close with the frame: noticing where life is opening can help the Member keep moving toward it."
+ *
+ * WHAT C2 CLOSED ON UNTIL NOW was the priority alone — where to push next. That is RC-1's job and it is a good
+ * close, but it answers a different question from the one the Session asked. A member rates twenty items about
+ * how big their life is, and gets back a work assignment. The half that was missing is the half that is about
+ * them: the area that HAS opened, said out loud, next to the one that has not.
+ *
+ * THE GAP IS THE READ, and it is the honest one to use: smallest desired-minus-current is where their life is
+ * closest to the size they want it; largest is where it is still narrowest. No new instrument, no new question.
+ *
+ * TENTATIVE, in Greg's sense and his vocabulary (C2-81's allow-list: "can help you notice", "may be showing you",
+ * "people sometimes find"). It never says the ratings PROVE anything — the voice gate now reports that whole
+ * deny-list, and this authored copy has to hold the same line the model is held to.
+ */
+function expansionPattern(s: ReturnType<typeof scoreAudit>): string {
+  const byGap = [...s.domains].sort((a, b) => a.computedGap - b.computedGap);
+  const opened = byGap[0]!;
+  const narrow = byGap[byGap.length - 1]!;
+  // A perfectly flat set has no pattern to name, and inventing one from a tie would be the supplied narrative
+  // Greg forbids (C2-37: "do not supply the narrative of growth").
+  if (opened.domain === narrow.domain || opened.computedGap === narrow.computedGap) return '';
+  return (
+    `Across the four, your ${AUDIT_DOMAIN_LABEL[opened.domain]} life is the closest to the size you want it — ` +
+    `that is where room has opened up. Your ${AUDIT_DOMAIN_LABEL[narrow.domain]} life is still the narrowest. ` +
+    `Both being true at the same time is the ordinary result of a few phases in, not a contradiction.`
+  );
+}
+
+// The closing frame, verbatim in sense from C2-79 — what the noticing is FOR.
+const C2_CLOSING_FRAME =
+  'Noticing where your life is opening can help you keep moving toward it — which is what the rest of Reclaim is.';
 
 // The RC-1 classification summary (member-facing, non-judgmental) — names the Primary focus + the Momentum Lever.
 function auditSummary(responses: number[], c?: Collected): string {
@@ -459,7 +506,12 @@ function auditSummary(responses: number[], c?: Collected): string {
   // different part of their life.
   const obstacleLine = r?.obstacle ? `${BEAT_SEP}You named what tends to get in the way: “${r.obstacle}”.` : '';
   const actionLine = r?.earlyAction ? ` And the move you'd start with: “${r.earlyAction}”.` : '';
+  // THE EXPANSION PATTERN COMES FIRST (Greg's stage 6), because it is the answer to what they were asked. The
+  // priority read that follows is what to DO about it, and a member who gets the assignment before the reading
+  // has been handed homework in place of a reflection.
+  const pattern = expansionPattern(s);
   return (
+    (pattern ? `${pattern}${BEAT_SEP}` : '') +
     `Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and ` +
     `progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}` +
     `${obstacleLine}${actionLine}` +
@@ -472,7 +524,9 @@ function auditSummary(responses: number[], c?: Collected): string {
     //
     // Also cut here: "this was about finding the priority, not judging any of it" — the reassurance tic (declare
     // what a thing IS, never what it is not).
-    `${BEAT_SEP}That's your first focus now. I'll work from it, and it's what we'll build your Quality Days around.`
+    `${BEAT_SEP}That's your first focus now. I'll work from it, and it's what we'll build your Quality Days around.` +
+    // C2-79's closing frame — what the noticing is FOR. Last, because it is the sentence a member should leave on.
+    `${BEAT_SEP}${C2_CLOSING_FRAME}`
   );
 }
 

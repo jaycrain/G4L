@@ -2880,6 +2880,20 @@ export function runArcTurn(
 
   const stageAtEntry = (state.stage ?? arc.stageOrder[0]) as StageId;
   const baseScratch: Record<string, StageScratch> = { ...(state.stageScratch ?? {}) };
+  // THE GATE'S REPORT HALF, FINALLY WIRED. `detectVoiceTells` has been exported since the gate shipped and had
+  // ZERO callers — its only mention in the codebase was a comment in gate-claims.ts describing what it was for.
+  // So the measurement Donna's report asked for ("is the prompt holding, or is the gate carrying it alone?") had
+  // never once been taken, and Greg's causality deny-list would have shipped just as dead. Logged, not stored:
+  // best-effort, never on a member's path, and it cannot fail a turn. [[no-unreachable-rules]]
+  const gated = applyVoiceGate(stripLeadingDisclosure(model.text).trim());
+  if (gated.removed.length || gated.flagged.length) {
+    try {
+      console.warn('[voice-gate]', JSON.stringify({
+        arc: arc.id, stage: stageAtEntry, removed: gated.removed, flagged: gated.flagged,
+      }));
+    } catch { /* a log must never break a turn */ }
+  }
+
   const b: Beat = {
     history,
     memberMessage,
@@ -2888,7 +2902,7 @@ export function runArcTurn(
     // stripLeadingDisclosure already establishes that this is where the model's text gets cleaned; the tells she
     // reported go through the same door. Deletions only — see lib/agent/voice-gate.ts for why substitution was
     // tried, mangled a sentence in its own test, and was cut.
-    modelText: applyVoiceGate(stripLeadingDisclosure(model.text).trim()).text,
+    modelText: gated.text,
     refinedThisTurn,
     priorReclaimLen: state.collected.reclaimList?.length ?? 0,
     arc,
