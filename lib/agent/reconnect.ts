@@ -1244,6 +1244,15 @@ function legacyOpener(_c: Collected, tuesdayCarried = false): string {
 /** Shown with the draft. Never "is this good?" — an appraisal question invites a polite yes on the one artifact
  *  that has to be theirs. */
 const LEGACY_ASK_REVISION = "Read it back. What's not right — a line that isn't how you'd say it, or something missing?";
+/** Asked ONCE the member has said there is a change — it invites the words, where ASK_REVISION invites the verdict. */
+const LEGACY_INVITE_CHANGE = "Tell me what to change and I'll write it back for you to read.";
+/** Said instead of a bare "Saved" when the change could not be written — never claim an edit that isn't in it. */
+const LEGACY_CHANGE_NOT_MADE =
+  "I couldn't get that change into the letter. I'm saving what you've got so it isn't lost — the letter is yours " +
+  "to edit in your Playbook, and that change is the first thing to put in.";
+/** How many turns we will hold the beat open waiting for a redraft before saving what exists and saying so. */
+const LEGACY_MAX_REDRAFT_TRIES = 2;
+type LegacyScratch = { changeAsked?: boolean; changeTries?: number };
 
 const legacyStage: StageDef = {
   id: 'legacy',
@@ -1268,7 +1277,11 @@ const legacyStage: StageDef = {
   confirm(b) {
     // A tap is a fact. Typed replies still fall through to the classifier untouched.
     const intent = parseBeatConfirm(b.memberMessage)
-      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, () => false, 'is_this_right');
+      // `() => false` HERE DISABLED THE GATE. carriesMaterial answers "did the member bring something new?", and
+      // hardcoding it to no means a model saying 'done' always wins — which is how his addition about his kids
+      // arrived, was read as a close, and committed the unrevised draft. It reads the real predicate now, the
+      // same one the rest of this file uses for "did they say something about their life".
+      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
     const rounds = b.legacyRevisions ?? 0;
     // Set only on the capped-redraft path, so her final version is shown in the same turn it is saved.
     let capPreamble = '';
@@ -1286,6 +1299,8 @@ const legacyStage: StageDef = {
     if (b.model.legacyBody) {
       b.legacyDraft = b.model.legacyBody;
       b.legacyRevisions = rounds + 1;
+      // The redraft they asked for has arrived and is being shown — the debt is paid.
+      (b.scratch as LegacyScratch).changeAsked = false;
       if (rounds + 1 < LEGACY_MAX_REVISIONS) {
         b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
         b.awaitingConfirm = true;
@@ -1299,11 +1314,37 @@ const legacyStage: StageDef = {
       capPreamble = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}${BEAT_SEP}`;
     }
 
-    if ((intent === 'dispute' || intent === 'addition') && rounds < LEGACY_MAX_REVISIONS) {
-      // They want a change and the model has not produced one yet — stay on the draft and let it ask what.
-      b.awaitingConfirm = true;
-      b.reply = b.modelText || LEGACY_ASK_REVISION;
-      return;
+    // A CHANGE WAS ASKED FOR, SO NOTHING COMMITS UNTIL HE HAS READ IT (Jay, 2026-08-28: "Redraft and show, get
+    // confirmation so the right version gets to the Playbook. Big Deal.").
+    //
+    // What happened on his walk: he tapped "There's more" and got the SAME question back with the chips still up
+    // — no composer, nothing to type into. He typed his addition anyway (his kids) and the beat replied "Saved —
+    // dated a year from today." The stored row: 1,114 characters, `revised: false`. His words never reached the
+    // letter and we told him they had.
+    //
+    // ONE BRANCH, not two. The first version of this fix put the debt-check AFTER the addition branch, which
+    // returns — so the bound below was unreachable and a member could not get out of the beat at all. Every path
+    // through a change request has to be decided in the same place.
+    const sc = b.scratch as LegacyScratch;
+    const wantsChange = intent === 'dispute' || intent === 'addition';
+    if (wantsChange) sc.changeAsked = true;
+
+    if (sc.changeAsked && rounds < LEGACY_MAX_REVISIONS) {
+      sc.changeTries = (sc.changeTries ?? 0) + 1;
+      if (sc.changeTries <= LEGACY_MAX_REDRAFT_TRIES) {
+        b.awaitingConfirm = true;
+        // The chips come DOWN so the composer is available — a tap asking for a change must never be answered by
+        // re-offering the same tap, which is exactly what trapped him.
+        b.expects = undefined;
+        b.reply = b.modelText || LEGACY_INVITE_CHANGE;
+        return;
+      }
+      // THE MODEL WOULD NOT WRITE IT. Holding forever is its own trap and committing silently is the lie this
+      // fix exists to stop, so the letter saves AS IT STANDS and says so — naming what is missing and where to
+      // put it. A member who reads "saved, without the part about your kids" can act; one who reads "Saved"
+      // cannot.
+      sc.changeAsked = false;
+      capPreamble = `${LEGACY_CHANGE_NOT_MADE}${BEAT_SEP}`;
     }
 
     // COMMIT. Set the letter for the action to persist; nothing else in the engine writes to a member's records.
