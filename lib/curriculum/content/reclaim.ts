@@ -157,7 +157,16 @@ export const RECLAIM_SESSIONS: Asset[] = [
         title: 'The words that matter',
         prompt: 'Write the message you\'d actually send them.',
         input_type: 'writing',
-        companion_frame: 'The line that lands isn\'t \'you should exercise more.\' It\'s \'I know what you\'re capable of.\' That\'s the line that got said to me. That\'s the line I said to Gary.',
+        // ATTRIBUTED TO JAY (his call, 2026-08-28). The Companion delivers companion_frame, so in the first
+        // person this had an AI telling a member that a line "got said to me" and that it said one "to
+        // Gary" — a lived history it does not have, on the surface where a member is being asked to write
+        // to a real person. Governance before style: the AI is always disclosed and never claims to be one
+        // of us. Naming Jay keeps the anecdote, which is the strongest thing in the frame, and makes it true.
+        // "lands" also goes, per the voice rules — it was the last authored use in the product.
+        // NO PRONOUN, deliberately: the gender guard caught "he" here. It is factually right about Jay and the
+        // guard is about not guessing a MEMBER's gender — but rewording cost one word and exempting would have
+        // put the first hole in a rule that protects every other line in the product.
+        companion_frame: 'The line that gets through isn\'t \'you should exercise more.\' It\'s \'I know what you\'re capable of.\' That\'s the line someone said to Jay, who built this — and the line Jay passed on to Gary.',
         probe: 'Lead with belief in them, not advice. What would make them feel seen?',
         contributes: 'playbook',
       },

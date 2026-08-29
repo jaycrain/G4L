@@ -333,6 +333,35 @@ test('W3 · graceful degrade (no prior tools) still walks; a blank trigger is nu
   assert.equal(skip.complete, true, 'a completed arc stays completed');
 });
 
+test('W3 · appraising the offered line is accepting it — the FOURTH shape of this bug', () => {
+  // Jay, 2026-08-28. The Reframe offered his own true line and asked "want that as your bad-day line, or write a
+  // new one?" He answered "That would motivate me". It was stored as his new line, harvested as a keeper, and
+  // printed into his False Start Protocol and that week's tracker: "I reframed — That would motivate me."
+  //
+  // It cleared every existing guard. The resolver's own comment had already called this: "one list of 'yes'
+  // phrasings will always be incomplete… patching the list would be the third fix of this shape today." His is
+  // the fourth, so this one reads GRAMMAR rather than adding a phrase — a bare demonstrative subject with a modal
+  // or copula ("that would…", "it works") is a sentence ABOUT our offer, and a bad-day line is one you say to
+  // yourself.
+  const walk = (reframeMsg: string): string | undefined => {
+    let t = rewireW3Opening({ trueLines: ['A slip is the toll, not the verdict'], image: 'the trail at sunrise', reclaimList: [], identityNoun: 'Maker' });
+    const say = (msg: string, text: string) => { t = applyRewireW3Turn(t.state, [], msg, { text, replyIntent: 'done' }); };
+    for (const x of ['late nights', 'travel', 'Sundays']) say(x, 'Say more.');
+    say('Box breathing', 'Good.');
+    say(reframeMsg, 'Noted.');
+    return t.state.collected.w3Reframe;
+  };
+
+  const OFFERED = 'A slip is the toll, not the verdict';
+  for (const appraisal of ['That would motivate me', 'It works', 'That works for me', 'This helps', 'It is good'])
+    assert.equal(walk(appraisal), OFFERED, `"${appraisal}" is an appraisal of our line, not a new one`);
+
+  // THE FALSE-POSITIVE DIRECTION, which matters more: a real line that happens to open on a demonstrative must
+  // still be stored verbatim. The grammar rule requires a modal/copula next, so a noun keeps it a line.
+  assert.equal(walk('That version of me is still here'), 'That version of me is still here');
+  assert.equal(walk('One bad day is not the story'), 'One bad day is not the story');
+});
+
 test('W3 · she names the offered line instead of writing one — that is accepting it, not a new line', () => {
   // DONNA, 2026-08-22. Her stored Reframe came out as "Let's use the true line that goes with that instead." —
   // her instruction to the Companion, saved as the line, while her real true line sat in collected unused.

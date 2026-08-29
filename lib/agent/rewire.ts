@@ -282,6 +282,19 @@ const REWIRE_W1_SYSTEM =
   // The model already half-knew: its very next turn said "that one doesn't need a counter, it already is the
   // true line." So it can tell the difference; nothing told it it was ALLOWED to. The Session walks five places
   // a lie can hide, which is not a promise that five are hiding there.
+  // NO TALLIES (Jay, 2026-08-28: "counting seems problematic programmatically and doesn't have enough value").
+  // It announced "Five lies named" over answers that were not lies, and when he corrected one it recounted to
+  // "four lies named, four true lines put to them" — still wrong, because it had already conceded a second one
+  // two turns earlier. A model doing arithmetic mid-conversation will keep getting it slightly wrong, and the
+  // number adds nothing: what he needs is which lines are his, not how many.
+  "NEVER COUNT. Do not tell the member how many lies they named, how many true lines they wrote, or how many of " +
+  "anything they have done — no tallies, no \"that's four\", no \"three down\". Name the things themselves, in " +
+  "their words. If a total genuinely matters the engine will state it; you never do. " +
+  "REDIRECT IS A SUBSTITUTE, NOT A TEMPTATION. It is the thing they DO INSTEAD when the pull hits — walk the " +
+  "block, five minutes of the work, call someone, leave the room. If they answer with the thing they are pulled " +
+  "TOWARD (\"a cocktail\", \"the wrong food\", \"scrolling\"), they have named the pull, not the move: say so " +
+  "plainly in one line, thank them for naming it, and ask what they would do instead when it hits. Never accept " +
+  "a temptation as the Redirect and never write the substitute for them. " +
   "A DOMAIN MAY HOLD NO LIE. Some answers are already true lines — said plainly, with no flinch. When that " +
   "happens, say so and move on: name it as the true line it is, never call it a lie, and never manufacture a " +
   "counter for something that does not need one. Count only what was actually a lie; never assert a number of " +
@@ -843,6 +856,26 @@ function refersToTheOfferedLine(msg: string): boolean {
   return NAMES_THE_ARTIFACT.test(t) && DIRECTS_A_CHOICE.test(t);
 }
 
+/**
+ * AN APPRAISAL OF OUR OFFER, BY ITS GRAMMAR — not by another list of phrasings.
+ *
+ * Jay's walk: offered his own true line and asked "want that as your bad-day line, or write a new one?", he
+ * answered "That would motivate me". Stored as his new line, harvested as a keeper, and printed into his False
+ * Start Protocol and this week's tracker: "I reframed — That would motivate me."
+ *
+ * It cleared all three existing tests. The resolver's own comment predicted this — "one list of 'yes' phrasings
+ * will always be incomplete… patching the list would be the third fix of this shape today". His is the fourth.
+ *
+ * So this reads STRUCTURE instead. A bad-day line is something you say TO YOURSELF — first person or imperative.
+ * A reply that opens with a bare demonstrative subject and a modal or copula ("that would…", "it works",
+ * "this helps") is a sentence ABOUT our offer, which is an acceptance of it. The grammar is the tell, and it does
+ * not need to be enumerated:
+ *   "That would motivate me"          → subject = our line       → acceptance
+ *   "It works"                        → subject = our line       → acceptance
+ *   "That version of me is still here" → next word is a noun     → a real line, untouched
+ */
+const APPRAISES_THE_OFFER = /^(that|this|it)\s+(would|will|could|can|does|do|is|isn'?t|was|works?|helps?|sounds?|feels?|fits?)\b/i;
+
 function resolveReframe(msg: string, c: Collected): { line: string; reused: boolean } {
   const line0 = firstTrueLine(c);
   const m = msg.trim().replace(/[.,!?]+$/, '');
@@ -855,7 +888,7 @@ function resolveReframe(msg: string, c: Collected): { line: string; reused: bool
   // carries no content of its own CANNOT be a new true line. If there is a line on the table and they answered with
   // a reaction, they accepted it. So the enumeration stays for the phrasings it gets right, and isMemberContent —
   // the same vocabulary W1 and W2 now use — covers everything it doesn't.
-  if (line0 && (W3_CONFIRM_OFFER_RE.test(m) || refersToTheOfferedLine(msg) || !isMemberContent(msg))) {
+  if (line0 && (W3_CONFIRM_OFFER_RE.test(m) || refersToTheOfferedLine(msg) || APPRAISES_THE_OFFER.test(m) || !isMemberContent(msg))) {
     return { line: line0, reused: true };
   }
   return { line: msg.trim(), reused: false };
@@ -954,6 +987,15 @@ const protocolStage: StageDef = {
       return;
     }
     if (idx === 0) {
+      // REDIRECT IS THE THING YOU DO INSTEAD — and Jay's stored protocol reads "Redirect — A cocktail or the
+      // wrong food", which is what he'd be redirecting AWAY from. His recovery move, on his card and in his
+      // weekly tracker, is the thing he is recovering from.
+      //
+      // The engine cannot judge whether a phrase is a substitute or a temptation, and a keyword list of vices is
+      // exactly the shape that has failed four times at the Reframe. So the ENGINE stores what it is given and
+      // the MODEL is told to catch it — see the W3 steering, which now names this case and tells it to reflect
+      // and re-ask rather than accept a temptation as a swap. If the model misses it, the member still owns the
+      // words; what we must not do is invent a swap they did not name.
       b.collected.w3Redirect = msg;
       sc.moveIdx = 1;
       // Contract 3 (injected-not-generated): the Reframe serves the member's REAL true line — deterministically, never

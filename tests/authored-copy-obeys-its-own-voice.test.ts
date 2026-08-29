@@ -64,10 +64,9 @@ const isSteering = (line: string) => /RIGHT NOW/.test(line);
  * KNOWN AND KEPT, with the reason. Adding a line here is a claim that someone looked and decided.
  */
 const ALLOWED: Array<[RegExp, string]> = [
-  // A personal anecdote — "That's the line that got said to me. That's the line I said to Gary." Rewriting the
-  // wording of something a real person said to Jay to satisfy a voice rule would be the wrong trade. His call,
-  // not a sweep's.
-  [/The line that lands isn/, 'a verbatim personal anecdote in the Reclaim curriculum'],
+  // (Empty. The one entry here — the Reclaim invitation anecdote — was resolved rather than exempted: Jay had it
+  // attributed to him, which fixed a governance problem the voice rule had only incidentally surfaced. An
+  // allowlist that stays empty is the goal; an entry in it should feel like a debt.)
 ];
 const isAllowed = (line: string) => ALLOWED.some(([re]) => re.test(line));
 

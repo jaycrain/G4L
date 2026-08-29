@@ -44,3 +44,41 @@ test('the Session still says what it is FOR', () => {
   assert.match(code, /five places these lies hide/i, 'the frame is unchanged: five places a lie can hide');
   assert.match(code, /it catches self-lies, nothing else/i, 'and the Session keeps its job');
 });
+
+// ── REDIRECT IS A SUBSTITUTE, NOT A TEMPTATION ───────────────────────────────────────────────────────────────
+//
+// Jay's stored False Start Protocol reads "Redirect — A cocktail or the wrong food". That is what he would be
+// redirecting AWAY from. His recovery move, on his Playbook card and ticked in his weekly tracker, is the thing
+// he is recovering from.
+//
+// The engine cannot tell a substitute from a temptation, and a keyword list of vices is exactly the shape that
+// has now failed four times at the Reframe. The model can tell, and had never been asked to.
+test('the model is told what a Redirect is, and what to do when it gets a temptation', () => {
+  assert.match(PROMPT, /REDIRECT IS A SUBSTITUTE, NOT A TEMPTATION/, 'the steering has to say it outright');
+  assert.match(PROMPT, /ask what they would do instead/i, 'and say what to do about it — reflect, then re-ask');
+  assert.match(PROMPT, /never write the substitute for them/i, 'without writing their move for them');
+});
+
+test('the engine still stores their words, not a guess', () => {
+  // The fix is steering, deliberately. An engine that rejected answers by keyword would refuse real ones —
+  // "a cocktail" is a temptation for him and could be someone else's genuine wind-down.
+  assert.match(code, /b\.collected\.w3Redirect = msg;/, 'the member owns the words; the model owns the catch');
+});
+
+// ── NO TALLIES ───────────────────────────────────────────────────────────────────────────────────────────────
+//
+// Jay: "counting seems problematic programmatically and doesn't have enough value."
+//
+// It announced "Five lies named" over answers that were not lies. He corrected one, and it recounted to "four
+// lies named, four true lines put to them" — still wrong, because it had already conceded a SECOND one two turns
+// earlier ("that one doesn't need a counter, it already is the true line"). It subtracted the one he objected to
+// and kept the one it had objected to itself.
+//
+// A model doing arithmetic mid-conversation will keep getting it slightly wrong, and the number was never the
+// value: what a member needs is which lines are theirs, not how many.
+test('the Companion is told never to count', () => {
+  assert.match(PROMPT, /NEVER COUNT/, 'stated as a rule, not a nudge');
+  assert.match(PROMPT, /no tallies/i, 'and it names the behaviour');
+  assert.match(PROMPT, /the engine will state it; you never do/i,
+    'counting is not banned from the product — it is moved to the thing that actually knows');
+});
