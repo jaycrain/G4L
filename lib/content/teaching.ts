@@ -113,7 +113,11 @@ const ASSET_TITLE: Record<string, string> = {
   r1: 'the IDQ', r2: 'the Doors', r3: 'the Drift Quiz',
   w1: 'Disinformation Audit', w2: 'Visualization Workshop', w3: 'Mindful Monitoring',
   b1: 'What Is Your Why?', b2: 'Strengths and Weaknesses', b3: 'Monitoring Health Decisions',
-  c1: 'Reclaim Readiness', c2: 'the Bigger World Audit', c3: 'Quality Days',
+  // C1 was RETITLED BY GREG on 2026-08-07 — "I also think the term Readiness may not be a good fit anymore. I
+  // proposed a new title of 'Looking Forward' to somewhat reflect the process of reclaiming." The curriculum
+  // and the session registry both followed; this file did not, so the member-facing provenance chip kept the
+  // retired title for three weeks. The LAYER is still Readiness — that is Greg's internal gradient, not a name.
+  c1: 'Looking Forward', c2: 'the Bigger World Audit', c3: 'Quality Days',
 };
 const PHASE_TITLE: Record<string, string> = { r: 'Reconnect', w: 'Rewire', b: 'Rebuild', c: 'Reclaim' };
 
