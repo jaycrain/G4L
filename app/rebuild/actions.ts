@@ -310,9 +310,19 @@ export async function rebuildTurnAction(
       await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: b3Badge };
     }
-    // Both B1 and B2 are ADMINISTERED (deterministic Likert parse) — no model call needed.
-    const turn = session === 'b2' ? liveTurnRebuildB2(state, history, message) : liveTurnRebuildB1(state, history, message);
+    // B2 is still ADMINISTERED throughout (deterministic Likert parse, no model call). B1 is NOT any more — Greg's
+    // five stages gave it three conversational beats (2026-08-28), so it is awaited; it still skips the model
+    // entirely on its administered halves, which is decided inside liveTurnRebuildB1, not here.
     const db = (await getDb()) as unknown as Db;
+    // B1'S CARRY-FORWARD, FINALLY DELIVERABLE. UPSTREAM['b1'] has declared what B1 should arrive knowing since the
+    // retention registry was built, and it could never be delivered: B1 had no model turn for a carry-forward
+    // block to enter, and tests/retention.test.ts recorded that as a deliberate gap. Greg's five stages gave it
+    // three conversational beats (2026-08-28), so the declaration is now honoured instead of decorative.
+    // Guarded — losing the carry-forward costs the connective tissue, never the Session.
+    const b1Carry = session === 'b1' ? await carryForward(db, memberId, 'b1').catch(() => []) : [];
+    const turn = session === 'b2'
+      ? liveTurnRebuildB2(state, history, message)
+      : await liveTurnRebuildB1(state, history, message, describeCarryForward(b1Carry));
     let earnedBadge: { id: string; name: string } | null = null;
     if (turn.complete) {
       const responses = turn.state.administeredResponses ?? [];

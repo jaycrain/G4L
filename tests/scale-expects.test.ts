@@ -10,13 +10,29 @@ import { WHY_ITEM_COUNT, WHY_SCALE_MAX } from '../lib/rebuild/why-instrument.ts'
 // AND NONE ON THE ENGAGEMENT DOORWAY (2026-08-28), which is the other half of the same invariant: chips under an
 // open question would turn the doorway back into the assessment it exists to precede. That case is asserted in
 // tests/no-session-opens-on-an-assessment.test.ts; here the walk starts at the instrument, one turn in.
-const pastDoorway = () =>
-  applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.');
+// TO THE INSTRUMENT — now two beats in, not one. Greg's five stages put the ACTIVITY ELICITATION between the
+// doorway and the first item (2026-08-28): the member says why they want to move, in their own words, and the
+// six activity items follow. The elicitation holds for two substantive turns, so that is what this walks.
+// The stages themselves are covered in tests/b1-five-stages.test.ts; these tests are about the instrument.
+const pastDoorway = () => {
+  let t = applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.', { text: 'Mm.' });
+  t = applyRebuildB1Turn(t.state, [], 'I want to keep up with my kids.', { text: 'Keeping up.' });
+  return applyRebuildB1Turn(t.state, [], 'And I miss feeling strong.', { text: 'Strong.' });
+};
 
 test('the engagement doorway offers no chips — only the instrument behind it does', () => {
   assert.equal(rebuildB1Opening().expects, undefined, 'an open question is answered in words');
   assert.ok(pastDoorway().expects, 'and the instrument brings its scale with it');
 });
+
+
+/** Answer one item — and if that answer closed the activity half, cross the eating elicitation too. */
+const rateOne = (t: Turn): Turn => {
+  const next = applyRebuildB1Turn(t.state, [], '5', { text: 'Mm.' });
+  return (next.state as ConvState).stage === 'why-eating-talk'
+    ? applyRebuildB1Turn(next.state, [], 'Eating is about not feeling sluggish.', { text: 'Mm.' })
+    : next;
+};
 
 test('B1 opener carries the scale chips signal — full scale + the instrument’s pole anchors', () => {
   const t = pastDoorway();
@@ -45,14 +61,16 @@ test('B1 mid-instrument · each answered item hands the NEXT item’s chips; the
   let t = pastDoorway();
   // Answer items 0..N-2 → each turn still expects a scale (the next item).
   for (let i = 0; i < WHY_ITEM_COUNT - 1; i++) {
-    t = applyRebuildB1Turn(t.state, [], '5');
+    t = rateOne(t);
     assert.ok(t.expects, `after item ${i}, the next item still expects a scale`);
     assert.equal(t.expects!.max, WHY_SCALE_MAX);
     assert.equal(t.complete, false);
   }
-  // Answer the final item → completes → the forward-looking close is prose, no chips.
+  // Answer the final item → the instrument is done → no chips. It no longer COMPLETES the Session: Greg's
+  // teaching and consolidation beats follow (2026-08-28), and both are prose. What this test is about is the
+  // chip signal, and the signal must drop the moment the last item is answered either way.
   t = applyRebuildB1Turn(t.state, [], '5');
-  assert.equal(t.complete, true, 'the 12th answer completes B1');
+  assert.equal(t.state.stage, 'why-teach', 'the instrument hands into the teaching beat');
   assert.equal(t.expects, undefined, 'no chips on the close — it is prose, not an item');
 });
 

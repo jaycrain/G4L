@@ -1686,6 +1686,124 @@ export function checkpointEngagement(cfg: {
   };
 }
 
+/**
+ * AN ELICITATION BEAT — the member says it in their own words BEFORE the instrument asks them to rate it.
+ *
+ * Greg's stage 2 in B1 ("activity elicitation") and stage 3 ("eating elicitation"). The instrument runs INSIDE
+ * this beat: they talk, then they rate, in the same domain, which is why the items are not their own stage.
+ *
+ * A FLOOR, NOT A GATE. It holds for `floor` substantive turns and then hands over regardless. The model owns the
+ * questions — `withQuestion` keeps its own if it asked one and supplies the next scripted probe only when it
+ * trailed into a statement, which is also how it stops the model wrapping the beat up early. What it must never
+ * do is grow a completeness contract: this beat cannot fail, it can only be shorter or longer.
+ * [[drawout-rhythm-model-owns-questions]] [[completeness-never-touches-drawout]]
+ */
+export type ElicitationConfig = {
+  id: StageId;
+  next: StageId;
+  probes: readonly string[]; // the engine's follow-ups, in order — used only when the model asked nothing
+  floor: number; // substantive member turns before the instrument opens
+  handIn: (c: Collected) => string; // the instrument's framing + its first item
+};
+
+export function elicitationStage(cfg: ElicitationConfig): StageDef {
+  const talk: StageHandler = (b) => {
+    const sc = b.scratch as { said?: number };
+    // Assent and process-meta ("ok", "sure", "what do you mean") are turns, not material — counting them would
+    // let a member be walked past the beat by saying nothing, which is the failure this floor exists to prevent.
+    if (!isProcessMetaOrAssent(b.memberMessage) && b.memberMessage.trim()) sc.said = (sc.said ?? 0) + 1;
+    if ((sc.said ?? 0) >= cfg.floor) {
+      b.stage = cfg.next;
+      b.reply = receiveThen(b.modelText, cfg.handIn(b.collected));
+      return;
+    }
+    b.reply = withQuestion(b.modelText, cfg.probes[Math.min(sc.said ?? 0, cfg.probes.length - 1)] ?? null);
+  };
+  return {
+    id: cfg.id,
+    mode: 'drawout',
+    opener: (c) => cfg.handIn(c),
+    offersSubstance: (m) => !isProcessMetaOrAssent(m),
+    gather: talk,
+    confirm: talk, // no reflect-confirm loop: this beat gathers, it does not ratify
+    forceProgress: (b) => {
+      b.stage = cfg.next;
+      b.reply = cfg.handIn(b.collected);
+    },
+  };
+}
+
+/**
+ * A DIDACTIC BEAT — the one place the Companion TEACHES rather than reflects.
+ *
+ * Greg grants didactic latitude to B1 and W1 only (B1.md:85), with four permitted points and sample phrasing for
+ * each. Everything about this stage is a rail on that latitude, because a teaching Companion is one bad turn away
+ * from a lecturing one:
+ *
+ *  - PERMISSION FIRST. The stage opens on an offer. "No" advances immediately and costs nothing.
+ *  - AUTHORED WORDS. The points are Greg's, not the model's — a generated explanation of the science is the model
+ *    speaking with the professor's authority, which is the thing AI governance forbids here.
+ *  - ONE PER TURN, and each ends by handing the floor back with a question. Never two in a breath.
+ *  - A LEDGER. `shared` records which points went out, so the beat cannot repeat itself and cannot run past
+ *    `maxShared`. This is Greg's `didactic_points_shared` (B1.md:517).
+ */
+/**
+ * "That's enough of that" — the member closing the teaching beat.
+ *
+ * Deliberately generous, because the asymmetry is not close: a false positive costs one authored sentence they
+ * would probably have found useful, and a false negative is the Companion lecturing someone who has asked it to
+ * stop. `memberDeflecting` already carries the wrap vocabulary ("we're good", "let's move on"); a bare "no" to an
+ * offer is the other half and is not a correction of anything, so correctsReflection would be the wrong tool.
+ */
+function declinesTeaching(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim().replace(/[.,!]+$/, '');
+  return memberDeflecting(m) || /^(no|nope|no thanks|nah|not really|skip( it)?|i'?m good|got it)$/i.test(m);
+}
+
+export type DidacticPoint = { id: string; text: string; then: string };
+export type DidacticConfig = {
+  id: StageId;
+  next: StageId;
+  points: readonly DidacticPoint[];
+  maxShared: number;
+  handOff: (c: Collected) => string;
+};
+
+export function didacticStage(cfg: DidacticConfig): StageDef {
+  const teach: StageHandler = (b) => {
+    const sc = b.scratch as { shared?: string[]; offered?: boolean };
+    const shared = sc.shared ?? [];
+    // DECLINING IS A FIRST-CLASS ANSWER. Checked before anything is delivered, and again after every point.
+    if (sc.offered && declinesTeaching(b.memberMessage)) {
+      b.stage = cfg.next;
+      b.reply = receiveThen(b.modelText, cfg.handOff(b.collected));
+      return;
+    }
+    const next = cfg.points.find((p) => !shared.includes(p.id));
+    if (!next || shared.length >= cfg.maxShared) {
+      b.stage = cfg.next;
+      b.reply = receiveThen(b.modelText, cfg.handOff(b.collected));
+      return;
+    }
+    sc.shared = [...shared, next.id];
+    sc.offered = true;
+    // The point, then the floor handed straight back. Greg's rule and ours agree here: it is still their Session.
+    b.reply = `${next.text}${BEAT_SEP}${next.then}`;
+  };
+  return {
+    id: cfg.id,
+    mode: 'drawout',
+    opener: (c) => cfg.handOff(c),
+    offersSubstance: () => true,
+    gather: teach,
+    confirm: teach,
+    forceProgress: (b) => {
+      b.stage = cfg.next;
+      b.reply = cfg.handOff(b.collected);
+    },
+  };
+}
+
 // After this many consecutive unreadable answers, stop repeating the item alone and name the way out. (CAT-31)
 const ADMINISTERED_HELP_AFTER = 3;
 function administeredStuckHelp(max: number): string {

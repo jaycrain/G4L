@@ -20,7 +20,7 @@ import {
   applyRebuildCheckpointTurn, rebuildCheckpointOpening,
 } from '../lib/agent/rebuild.ts';
 import { claimsGateOutcome } from '../lib/agent/gate-claims.ts';
-import { walkSession, isCompleteInOrder, type SessionApply } from './walk-driver.ts';
+import { walkSession, instrumentRunIsWhole, type SessionApply } from './walk-driver.ts';
 import type { ConvState, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
 
 const COMMITTED = {
@@ -82,11 +82,13 @@ for (const s of SESSIONS) {
     // pass a coverage check while writing a wrong number to her dashboard. Grouped per stage on purpose: a flat
     // count conflates two instruments in the same phase, which is how the first Reconnect gate read 30-for-24.
     const { scaleByStage } = walkSession(s.apply, s.opening(), cooperative);
+    // ACROSS STAGES, not per stage. An instrument may be administered in halves — B1 delivers six items either
+    // side of Greg's eating elicitation — so "starts at item 1" is a property of the SESSION, and "contiguous,
+    // nothing skipped or repeated" is the property of each stage. instrumentRunIsWhole holds both.
+    const broken = instrumentRunIsWhole(scaleByStage);
+    assert.equal(broken, null, `${s.id}: ${broken}`);
     for (const [stage, items] of Object.entries(scaleByStage)) {
-      assert.ok(
-        isCompleteInOrder(items, items.length),
-        `${s.id}: the instrument at "${stage}" was not delivered in order — [${items.join(',')}]`,
-      );
+      assert.ok(items.length > 0, `${s.id}: "${stage}" expected a scale but delivered nothing`);
       assert.ok(new Set(items).size === items.length, `${s.id}: an item at "${stage}" was asked twice`);
     }
   });

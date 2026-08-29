@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, didacticStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -86,15 +86,62 @@ const B1_ENGAGE_Q =
 
 const b1Engage = {
   id: 'why-open',
-  next: 'why',
+  next: 'why-activity-talk',
   frame: () => B1_ENGAGE_FRAME,
   question: () => B1_ENGAGE_Q,
   handIn: () => whyOpener(),
 };
 
-const whyStage: StageDef = administeredStage({
-  id: 'why',
-  itemCount: WHY_ITEM_COUNT, // 12
+// ── GREG'S FIVE STAGES (B1.md:257) ────────────────────────────────────────────────────────────────────────────
+//
+//   engagement → activity elicitation → eating elicitation → didactic informing → consolidation
+//
+// The twelve items are NOT a sixth stage. They run INSIDE the two elicitation beats — the six activity items with
+// the activity talk, the six eating items with the eating talk — which is why Greg's list names elicitation and
+// never names the instrument. He is describing one motion: say it in your own words, then rate the statements.
+//
+// So the instrument is SPLIT across two administered stages using the itemCount/displayTotal contract already
+// built for C2: `itemCount` is CUMULATIVE (6, then 12) because it is compared against the shared response bag,
+// while `displayTotal` keeps the member-facing count at "of 12" in both halves.
+//
+// WHERE GREG'S FOUR PERMITTED DIDACTIC POINTS LAND. He authorises four (B1-12..15) and gives sample phrasing for
+// each. Delivering all four in one block would be the lecture this Session must not become, so two go to the
+// didactic stage and two go to the seam each one is actually about:
+//
+//   B1-12  quality vs amount of motivation  → stage 4, first point
+//   B1-13  the motivational shift principle → stage 4, second point (Greg singles this one out as must-be-available)
+//   B1-15  dual-domain (activity ≠ eating)  → the eating elicitation's opening line, where the member is crossing
+//                                             exactly that boundary and the point explains what just happened
+//   B1-14  process-product (CFW)            → consolidation, which is where "why we started here" belongs
+//
+// All four are authored in his words. None is left as "available to the model", which is how a permitted point
+// becomes an unreachable one. [[no-unreachable-rules]]
+
+const B1_ACTIVITY_PROBES = [
+  'What makes you want to move — not the reason you would give someone else, the one that is actually yours?',
+  'Is there a version of that which is about how it feels rather than what it produces?',
+  'Anything in there you would be embarrassed to say out loud? That one usually matters.',
+];
+const B1_EATING_PROBES = [
+  'And eating — what is driving that one for you?',
+  'Does that reason feel like yours, or like one you inherited?',
+];
+
+// B1-15, VERBATIM SENSE: "activity and eating are related but distinct, and motivation may differ across them."
+// Placed at the crossing rather than in the teaching block — a point about a boundary lands as the member steps
+// over it, and as a line in a lecture it is abstract.
+const B1_DUAL_DOMAIN =
+  "It's common to have different reasons for eating than for moving. They're connected, but they pull on " +
+  'different things for different people. We look at both because they each matter.';
+
+function b1EatingHandIn(): string {
+  return `${B1_DUAL_DOMAIN}${BEAT_SEP}${B1_DIET_TURN}\n\n${WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem}`;
+}
+
+const whyActivityStage: StageDef = administeredStage({
+  id: 'why-activity',
+  itemCount: WHY_DOMAIN_SPLIT, // 6 — the activity half
+  displayTotal: WHY_ITEM_COUNT, // ...but the member is answering "of 12" throughout
   scaleMax: WHY_SCALE_MAX, // 7 — the SDT scale (parameterized; every Grinta/IDQ caller stays 1–5)
   minLabel: 'not at all true', // W-24: chip anchors — match the re-prompt copy
   maxLabel: 'very true',
@@ -102,33 +149,227 @@ const whyStage: StageDef = administeredStage({
   deliverItem: (n) => whyDeliver(n),
   reprompt: (n) => `A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”\n\n${whyDeliver(n)}`,
   onComplete: (b) => {
-    // All 12 responses are in b.administeredResponses (activity 0–5, diet 6–11). B1 has no ceremony and no Grinta
-    // move — it just closes on the forward-looking reflection. The ACTION scores the SDT profile + stores it (RB-1).
-    b.stage = 'complete';
-    b.complete = true;
-    b.reply = B1_CLOSE;
+    // The activity half is in. Back to conversation for the eating domain before its six items.
+    b.stage = 'why-eating-talk';
+    b.reply = B1_EATING_PROBES[0]!;
   },
 });
 
+const whyEatingStage: StageDef = administeredStage({
+  id: 'why-eating',
+  itemCount: WHY_ITEM_COUNT, // 12 — CUMULATIVE against the shared bag, not "six more"
+  displayTotal: WHY_ITEM_COUNT,
+  scaleMax: WHY_SCALE_MAX,
+  minLabel: 'not at all true',
+  maxLabel: 'very true',
+  opener: () => b1EatingHandIn(),
+  deliverItem: (n) => whyDeliver(n),
+  reprompt: (n) => `A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”\n\n${whyDeliver(n)}`,
+  onComplete: (b) => {
+    // All 12 are in (activity 0–5, diet 6–11). The ACTION scores the SDT profile + stores it (RB-1); the
+    // conversation goes on to the teaching beat rather than closing here.
+    b.stage = 'why-teach';
+    b.reply = B1_TEACH_OPEN;
+  },
+});
+
+// Greg's sample phrasing, close to verbatim, each handing the floor straight back. The `then` line is the rail:
+// a didactic point that does not end by returning the turn is a lecture with a question mark.
+const B1_TEACH_OPEN =
+  "That's the twelve. Before we close it out — one thing worth knowing about what you just rated, if you want it.";
+const B1_POINTS = [
+  {
+    id: 'quality-vs-amount',
+    // THREE SENTENCES, because Greg's delivery rule is "one to three sentences and then return to a question"
+    // (B1-12's testable-as). The first draft was four and the test caught it — the rule is only a rail if the
+    // authored copy is held to it too, not just the model.
+    text:
+      "Motivation isn't just about how much you have — it also has a quality to it. Some reasons feel like " +
+      "they're truly yours, and some feel like they come from outside. Both are real, and the ones that feel " +
+      'more your own tend to hold up better over time.',
+    then: 'Reading back what you told me, which of your reasons feels most like yours?',
+  },
+  {
+    id: 'shift-principle',
+    text:
+      'Wherever you are right now is a starting point. A lot of people find their motivation shifts as they get ' +
+      "into the behaviors — not because they're made to, but because they start feeling the benefits.",
+    then: 'Has that happened to you before with something else?',
+  },
+];
+
+// B1-14, at consolidation — "why we started here" is a closing thought, not an opening one.
+const B1_PROCESS_PRODUCT =
+  'In this program we treat moving and eating as the process, and fitness, health and wellness as what that ' +
+  'process produces. Your motivation is what connects the two. That is why we started here.';
+const B1_CONSOLIDATE_ASK =
+  'Last thing: of everything you have said, which reason would you want to still be true a year from now?';
+
+// ONE TURN. Consolidation reflects and closes; it does not interrogate. The model's receipt of their answer
+// carries the personalisation, then the authored close lands — process-product (B1-14), then the baseline framing.
+const b1Consolidate = (b: { stage: string; complete: boolean; reply: string; modelText?: string }): void => {
+  b.stage = 'complete';
+  b.complete = true;
+  b.reply = receiveThen(b.modelText, `${B1_PROCESS_PRODUCT}${BEAT_SEP}${B1_CLOSE}`);
+};
+const whyCloseStage: StageDef = {
+  id: 'why-close',
+  mode: 'drawout',
+  opener: () => B1_CONSOLIDATE_ASK,
+  offersSubstance: () => true,
+  gather: b1Consolidate,
+  confirm: b1Consolidate,
+};
+
 export const REBUILD_B1_ARC: ArcConfig = {
   id: 'rebuild-b1',
-  stageOrder: ['why-open', 'why'],
-  stages: { 'why-open': engagementStage(b1Engage), why: whyStage },
+  stageOrder: ['why-open', 'why-activity-talk', 'why-activity', 'why-eating-talk', 'why-eating', 'why-teach', 'why-close'],
+  stages: {
+    'why-open': engagementStage(b1Engage),
+    'why-activity-talk': elicitationStage({
+      id: 'why-activity-talk',
+      next: 'why-activity',
+      probes: B1_ACTIVITY_PROBES,
+      floor: 2,
+      handIn: () => whyOpener(),
+    }),
+    'why-activity': whyActivityStage,
+    'why-eating-talk': elicitationStage({
+      id: 'why-eating-talk',
+      next: 'why-eating',
+      probes: B1_EATING_PROBES,
+      floor: 1, // shorter than the activity beat on purpose — the ground is laid, and this is the second pass
+      handIn: () => b1EatingHandIn(),
+    }),
+    'why-eating': whyEatingStage,
+    'why-teach': didacticStage({
+      id: 'why-teach',
+      next: 'why-close',
+      points: B1_POINTS,
+      maxShared: 2,
+      handOff: () => B1_CONSOLIDATE_ASK,
+    }),
+    'why-close': whyCloseStage,
+  },
   onComplete: () => B1_CLOSE,
 };
 
-export function applyRebuildB1Turn(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  // B1 is ADMINISTERED (deterministic Likert parse) — no model call needed; the action passes empty text.
-  return runArcTurn(REBUILD_B1_ARC, state, history, memberMessage, { text: '' });
+// ── B1'S LIVE PROMPT ──────────────────────────────────────────────────────────────────────────────────────────
+//
+// GOVERNANCE IS IN THE CODE, NOT HERE. The steering below shapes voice and rhythm; what the Companion may not do
+// is enforced by the stage machine — the model cannot deliver a didactic point (those are authored constants), it
+// cannot advance a stage, and it never sees an administered turn at all. [[founder-console-companion]]
+const B1_SYSTEM = `${MEMBER_AGENT_GOVERNED_CORE}
+
+YOU ARE RUNNING B1 — "What is Your Why?", the first Session of Rebuild.
+
+WHAT THIS SESSION IS. The member has just come out of Rewire, which was mental — the lies they tell themselves,
+the picture they built, the protocol they wrote. Rebuild is the body. B1 asks what actually drives them to move
+and to eat well, and pairs their own words with a twelve-item measure of motivation quality.
+
+YOUR JOB IS TO ELICIT, NOT TO EXPLAIN. Reflect what they said, in their words, and ask ONE question. Their reasons
+are the material; you are not here to improve them, rank them, or push them toward better-sounding ones.
+
+NEVER GRADE A REASON. "I want to look better in photos" and "I want to be there for my kids" are both real
+motivations, and a member who senses the second scores higher will start performing the second. Take what they
+give you at face value.
+
+DO NOT TEACH. Everything this Session teaches is written and delivered by the engine at the right moment. If you
+find yourself explaining intrinsic versus extrinsic motivation, stop and ask a question instead — the teaching
+beat is coming and you will step on it.
+
+DO NOT ANNOUNCE WHAT IS NEXT, and never say a number of questions is coming. The engine hands into the items.
+
+ONE QUESTION PER TURN. Two or three sentences. Plain, level, unhurried.`;
+
+function b1Context(c: Collected): string {
+  const who = identityLabel(c.identityNoun);
+  const parts = [
+    who ? `WHO THEY ARE RECLAIMING: ${who}. Do NOT address them by it.` : '',
+    c.gap ? `THE GAP, IN THEIR WORDS: "${c.gap}"` : '',
+    c.reclaimList?.length ? `THEIR RECLAIM LIST: ${c.reclaimList.join(' · ')}` : '',
+  ].filter(Boolean);
+  return parts.length ? `\n\nWHAT YOU ALREADY KNOW ABOUT THEM:\n${parts.join('\n')}` : '';
+}
+
+function b1StageNote(state: ConvState): string {
+  switch (String(state.stage ?? '')) {
+    case 'why-open':
+      return '\n\nWHERE YOU ARE: the opening. They are telling you the story they catch themselves telling about ' +
+        'their body. Receive it — do not fix it, and do not reassure. One short acknowledgment is enough.';
+    case 'why-activity-talk':
+      return '\n\nWHERE YOU ARE: drawing out why they want to MOVE, before any rating. Get past the first, most ' +
+        'presentable answer to one that sounds like them. Reflect, then ask one question.';
+    case 'why-eating-talk':
+      return '\n\nWHERE YOU ARE: the same, for EATING. It is normal for this to differ from movement — if it ' +
+        'does, that is worth noticing out loud, briefly.';
+    case 'why-teach':
+      return '\n\nWHERE YOU ARE: the engine has just delivered a short teaching point and asked them something. ' +
+        'Respond to their answer only. Do NOT add to the teaching or restate it.';
+    case 'why-close':
+      return '\n\nWHERE YOU ARE: the close. They have named the reason they want still to be true in a year. ' +
+        'Reflect it back in their own words, warmly and briefly. The engine says what happens next — you do not.';
+    default:
+      return '';
+  }
+}
+
+// `model` is now a PARAMETER rather than a hardcoded `{ text: '' }`. B1 was fully administered until Greg's five
+// stages landed (2026-08-28); three of them are conversational, and a stage that needs the model cannot be handed
+// a permanently empty turn. Defaulted so every existing administered-only caller and fixture is unchanged.
+export function applyRebuildB1Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(REBUILD_B1_ARC, state, history, memberMessage, model);
 }
 
 export function rebuildB1Opening(): Turn {
-  // Opens on Greg's Stage 1; the 1–7 chips belong to the instrument, one turn later.
+  // Opens on Greg's Stage 1; the 1–7 chips belong to the instrument, two stages later.
   return { reply: engagementOpening(b1Engage), state: { stage: 'why-open', collected: {} }, complete: false };
 }
 
-export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  return applyRebuildB1Turn(state, history, memberMessage);
+/** Which stages of B1 need a live model — the conversational three. The rest are deterministic and must stay so. */
+const B1_TALKING_STAGES = new Set(['why-open', 'why-activity-talk', 'why-eating-talk', 'why-teach', 'why-close']);
+
+export async function liveTurnRebuildB1(
+  state: ConvState,
+  history: ConvMessage[],
+  memberMessage: string,
+  carryForward?: string | null,
+): Promise<Turn> {
+  // THE INSTRUMENT NEVER CALLS THE MODEL. The administered halves parse a number deterministically, and paying a
+  // model round-trip to do that would be both slower and a way for generated text to appear beside a validated
+  // item. Only the conversational stages get a live turn. [[capture-model-opus]] does not apply here — these are
+  // reflections, not captures.
+  if (!B1_TALKING_STAGES.has(String(state.stage ?? ''))) {
+    return applyRebuildB1Turn(state, history, memberMessage);
+  }
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 1,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 300,
+    // Cached prefix / volatile suffix — same contract as W1 and B3: the governed core plus B1's own instructions
+    // are byte-identical every turn and carry the breakpoint; member context and the stage note come after.
+    system: [
+      { type: 'text' as const, text: B1_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: b1Context(state.collected) + b1StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
+    messages,
+  });
+  const text = (res.content as Array<{ type: string; text?: string }>)
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('')
+    .trim();
+  return applyRebuildB1Turn(state, history, memberMessage, { text });
 }
 
 // ══ B2 · Appreciating Your Strengths and Weaknesses ═══════════════════════════════════════════════════════════

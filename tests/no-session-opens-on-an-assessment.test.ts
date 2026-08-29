@@ -73,7 +73,12 @@ test('the instrument is still what the doorway opens onto', () => {
   for (const [name, arc] of INSTRUMENT_LED) {
     const admin = arc.stageOrder.filter((s) => arc.stages[s]?.mode === 'administered');
     assert.ok(admin.length >= 1, `${name}: no administered stage left — the instrument went missing`);
-    assert.equal(arc.stageOrder[1], admin[0], `${name}: the doorway does not open directly onto the instrument`);
+    // NOT "stageOrder[1] is the instrument" any more. That held while a doorway was the only thing in front of
+    // an instrument, and B1 now has Greg's ACTIVITY ELICITATION between the two — the member says why they want
+    // to move before rating it. What must stay true is that the instrument is still downstream of the doorway,
+    // not that it is the very next thing. Pinning the tighter version would have made Greg's stage 2 fail a test
+    // written to protect Greg's stage 1.
+    assert.ok(arc.stageOrder.indexOf(admin[0]!) >= 1, `${name}: the instrument is not behind the doorway`);
   }
 });
 
@@ -152,8 +157,10 @@ test('every 1-5 agreement instrument carries Greg’s anchors, from one definiti
 
 test('and the instruments on other scales keep their own anchors', () => {
   const anchorsOf = (arc: ArcConfig, id: string) => arc.stages[id]!.scale!;
+  // 'why-activity' since B1's instrument was split across Greg's two elicitation beats — same instrument, same
+  // anchors, same twelve-item member-facing length (displayTotal), now administered in two halves.
   assert.deepEqual(
-    { ...anchorsOf(REBUILD_B1_ARC, 'why') },
+    { ...anchorsOf(REBUILD_B1_ARC, 'why-activity') },
     { max: 7, minLabel: 'not at all true', maxLabel: 'very true', itemCount: 12 },
     'B1 is SDT on 1–7 — agreement anchors would be the wrong instrument',
   );

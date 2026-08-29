@@ -103,3 +103,28 @@ export function walkSession(
 export function isCompleteInOrder(items: number[], expected: number): boolean {
   return items.length === expected && items.every((n, i) => n === i + 1);
 }
+
+/**
+ * THE SAME CONTRACT, FOR AN INSTRUMENT SPLIT ACROSS STAGES — 1..n across the whole Session, in order, with each
+ * stage carrying one contiguous run of it.
+ *
+ * `isCompleteInOrder` asserts every stage starts at item 1, which was true while a stage held a whole instrument.
+ * B1 now administers its twelve items in two halves either side of Greg's eating elicitation (2026-08-28), so its
+ * second half legitimately runs 7–12 — and the old check read that as a broken instrument. The property that
+ * actually matters is unchanged and is what this states: nothing skipped, nothing repeated, nothing out of order,
+ * across however many stages the Session chooses to deliver it in.
+ *
+ * Returns null when whole, or the reason it is not — so the caller reports what was actually delivered.
+ */
+export function instrumentRunIsWhole(scaleByStage: Record<string, number[]>): string | null {
+  const runs = Object.entries(scaleByStage).filter(([, items]) => items.length);
+  if (!runs.length) return null; // a Session with no instrument has nothing to be wrong about
+  for (const [stage, items] of runs) {
+    const contiguous = items.every((n, i) => n === items[0]! + i);
+    if (!contiguous) return `"${stage}" is not one contiguous run — [${items.join(',')}]`;
+  }
+  const all = runs.flatMap(([, items]) => items).sort((a, b) => a - b);
+  const whole = all.every((n, i) => n === i + 1);
+  if (!whole) return `the Session's items are not 1..${all.length} — [${all.join(',')}]`;
+  return null;
+}

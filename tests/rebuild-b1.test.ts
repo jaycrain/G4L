@@ -10,26 +10,48 @@ import { parseLikert } from '../lib/agent/onboarding-staged.ts';
 // PAST THE ENGAGEMENT DOORWAY (2026-08-28). B1 now opens on Greg's Stage 1 — the Rewire→Rebuild shift and one open
 // question — and the instrument arrives on the next turn. The doorway itself is covered in
 // tests/no-session-opens-on-an-assessment.test.ts; these tests are about the instrument behind it.
-const pastDoorway = () =>
-  applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.', { text: '' } as never);
+// TO THE INSTRUMENT — now two beats in, not one. Greg's five stages put the ACTIVITY ELICITATION between the
+// doorway and the first item (2026-08-28): the member says why they want to move, in their own words, and the
+// six activity items follow. The elicitation holds for two substantive turns, so that is what this walks.
+// The stages themselves are covered in tests/b1-five-stages.test.ts; these tests are about the instrument.
+const pastDoorway = () => {
+  let t = applyRebuildB1Turn(rebuildB1Opening().state, [], 'That I left it too late.', { text: 'Mm.' });
+  t = applyRebuildB1Turn(t.state, [], 'I want to keep up with my kids.', { text: 'Keeping up.' });
+  return applyRebuildB1Turn(t.state, [], 'And I miss feeling strong.', { text: 'Strong.' });
+};
+
+
+/** Answer one item — and if that answer closed the activity half, cross the eating elicitation too. */
+const rateOne = (t: Turn): Turn => {
+  const next = applyRebuildB1Turn(t.state, [], '5', { text: 'Mm.' });
+  return (next.state as ConvState).stage === 'why-eating-talk'
+    ? applyRebuildB1Turn(next.state, [], 'Eating is about not feeling sluggish.', { text: 'Mm.' })
+    : next;
+};
 
 test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items → forward-looking close', () => {
   assert.match(rebuildB1Opening().reply, /Rewire was your head/i, 'the doorway names the shift into Rebuild');
 
   let t = pastDoorway();
-  assert.equal(t.state.stage, 'why');
+  assert.equal(t.state.stage, 'why-activity', 'the activity half of the instrument');
   assert.match(t.reply, /a simple place to start/i, 'the warm frame is in');
   assert.match(t.reply, /1 \(not at all true for you\) to 7/i, 'the 1–7 scale is set, not 1–5');
   assert.doesNotMatch(t.reply, /Why do you want to be physically active/i, 'the activity framing prompt is removed (Donna)');
   assert.ok(t.reply.includes(WHY_ITEMS[0]!.stem), 'item 0 verbatim');
 
-  // Answer all 12 with valid 1–7 values.
+  // Answer all 12 with valid 1–7 values, crossing the eating elicitation at the halfway seam.
   for (let i = 0; i < WHY_ITEM_COUNT; i++) {
-    assert.equal(t.state.stage, 'why', `still administering at item ${i}`);
     assert.equal(t.complete, false, 'not complete mid-instrument');
-    t = applyRebuildB1Turn(t.state, [], '5', { text: '' } as never);
+    t = rateOne(t);
   }
-  assert.equal(t.complete, true, 'after the 12th, B1 completes');
+  // THE INSTRUMENT NO LONGER ENDS THE SESSION. Greg's stages 4 and 5 follow it — the teaching beat, then
+  // consolidation — so the twelfth answer hands on rather than closing. (tests/b1-five-stages.test.ts owns those.)
+  assert.equal(t.complete, false, 'the items are in, but the Session is not over');
+  t = applyRebuildB1Turn(t.state, [], 'The kids one.', { text: 'That one.' });
+  t = applyRebuildB1Turn(t.state, [], 'Yes, years ago.', { text: 'It has.' });
+  t = applyRebuildB1Turn(t.state, [], 'Being strong enough to say yes.', { text: 'Saying yes.' });
+  t = applyRebuildB1Turn(t.state, [], 'That I can still do hard things.', { text: 'Still can.' });
+  assert.equal(t.complete, true, 'after consolidation, B1 completes');
   assert.equal(t.state.stage, 'complete');
   assert.equal((t.state.administeredResponses ?? []).length, 12, 'all 12 responses captured');
   assert.match(t.reply, /starting why/i, 'the forward-looking close');
@@ -38,8 +60,12 @@ test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items �
 
 test('B1 arc · the domain transition frame fires when the diet items begin (index 6)', () => {
   let t = pastDoorway();
-  // answer the first 6 (activity) — the 6th answer should deliver the diet transition + prompt + first diet item.
+  // The 6th activity answer now hands into the EATING ELICITATION, not straight to the diet items — they say why
+  // eating matters before rating it, which is Greg's stage 3.
   for (let i = 0; i < WHY_DOMAIN_SPLIT; i++) t = applyRebuildB1Turn(t.state, [], '4', { text: '' } as never);
+  assert.equal(t.state.stage, 'why-eating-talk', 'the eating beat opens before the eating items');
+  t = applyRebuildB1Turn(t.state, [], 'Eating is about not feeling sluggish.', { text: 'Mm.' });
+  assert.match(t.reply, /different reasons for eating than for moving/i, "Greg's dual-domain point, at the crossing");
   assert.match(t.reply, /Now the other half of it — eating/i, 'the domain transition frame');
   assert.doesNotMatch(t.reply, /Why do you want to eat/i, 'the diet framing prompt is removed too (symmetry with activity)');
   assert.ok(t.reply.includes(WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem), 'the first diet item, verbatim');

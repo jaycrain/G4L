@@ -38,6 +38,12 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'why-open'
   | 'skills-open'
   | 'audit-open'
+  | 'why-activity-talk'
+  | 'why-activity'
+  | 'why-eating-talk'
+  | 'why-eating'
+  | 'why-teach'
+  | 'why-close'
   | 'measurement'
   // §2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz, RCN-DFT) then 'window' (The Window, RCN-WIN —
   // the two-Tuesdays vision), with the turn-toward-hope BRIDGE at the drift→window seam. (The Legacy Letter is a
@@ -722,6 +728,14 @@ const STAGE_PROMPT: Record<Stage, string> = {
   doors: 'What feels like it opened the distance — take me into it.',
   'mirror-open': 'Before we start: which part of this do you expect to read hardest?',
   'checkpoint-open': "Before the numbers — what's different now that wasn't when you started?",
+  // B1's five stages (Greg B1.md:257). Fallback prompts only — the arc supplies its own openers; these exist so a
+  // tool-only model turn never renders a blank reply.
+  'why-activity-talk': 'What makes you want to move — the reason that is actually yours?',
+  'why-activity': 'A number from 1 to 7 — how true does that feel for you?',
+  'why-eating-talk': 'And eating — what is driving that one for you?',
+  'why-eating': 'A number from 1 to 7 — how true does that feel for you?',
+  'why-teach': 'Which of your reasons feels most like yours?',
+  'why-close': 'Which reason would you want to still be true a year from now?',
   'why-open': 'Coming out of Rewire, what is the story you catch yourself telling about your body?',
   'skills-open': 'Think of something you made stick once. What did you actually do to hold it?',
   'audit-open': 'Before the ratings: where has your world actually got bigger since you started?',

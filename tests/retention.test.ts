@@ -142,21 +142,39 @@ test('THE SEAM — both fan-ins are actually wired into their Sessions, not just
   );
 });
 
-test('B1, B2 and C2 are NOT wired — they have no model turn to wire into', () => {
-  // Their memos DO declare a prior_module_context load, so this looks like a gap and is not one: B1 (12 items),
-  // B2 (24) and C2 (20) are ADMINISTERED Likert reads. `liveTurnRebuildB1/B2` and `liveTurnReclaimC2` are
-  // synchronous and never call the model, so there is no system prompt for a carry-forward block to enter.
-  // Wiring them would mean giving those Sessions a conversational turn they deliberately do not have — a program
-  // decision, not a plumbing one. Recorded so the next reader does not "fix" it.
+test('B1 IS wired now — the declaration it carried for months is honoured', () => {
+  // THIS TEST USED TO ASSERT THE OPPOSITE, and the reason it flipped is the point.
+  //
+  // It read: "B1, B2 and C2 are NOT wired — they have no model turn to wire into", and recorded that as a
+  // deliberate program decision rather than a gap. That was honest at the time and it was also a description of
+  // a declaration that could never fire: UPSTREAM['b1'] named what B1 should arrive knowing, and nothing could
+  // ever deliver it, because B1 was a twelve-item Likert read with no conversational turn.
+  //
+  // Greg's five stages (B1.md:257) gave B1 three conversational beats on 2026-08-28, so the model turn exists and
+  // the block goes in. A declaration nothing can deliver is the defect class this codebase keeps paying for; it
+  // is worth noticing that it was sitting inside a passing test the whole time. [[no-unreachable-rules]]
+  const src = readFileSync('lib/agent/rebuild.ts', 'utf8');
+  assert.match(src, /export async function liveTurnRebuildB1\(/, 'B1 has a model turn');
+  assert.match(src, /carryForward \? `\\n\\n\$\{carryForward\}` : ''/, 'and appends the carry-forward block');
+  // The ACTION must actually resolve and pass it, or the parameter is decoration — which is exactly the shape
+  // this test previously documented.
+  const action = readFileSync('app/rebuild/actions.ts', 'utf8');
+  assert.match(action, /carryForward\(db, memberId, 'b1'\)/, 'the action resolves B1 upstreams');
+  assert.match(action, /liveTurnRebuildB1\(state, history, message, describeCarryForward/, 'and hands them over');
+});
+
+test('B2 and C2 remain unwired — they still have no model turn to wire into', () => {
+  // Unchanged and deliberate: both are ADMINISTERED reads end to end (B2's 24 items, C2's 20). Their live turns
+  // are synchronous and call no model, so there is no system prompt for a block to enter. Wiring them would mean
+  // giving those Sessions a conversational turn they do not have — a program decision, not plumbing. B2 gets its
+  // five stages next, and this assertion is expected to flip the same way B1's just did.
   for (const [file, fn] of [
-    ['lib/agent/rebuild.ts', 'liveTurnRebuildB1'],
     ['lib/agent/rebuild.ts', 'liveTurnRebuildB2'],
     ['lib/agent/reclaim.ts', 'liveTurnReclaimC2'],
   ]) {
     const src = readFileSync(file!, 'utf8');
     assert.match(src, new RegExp(`export function ${fn}\\(`), `${fn} is synchronous — an administered read`);
   }
-  // And no UPSTREAM entry exists for them, so nothing resolves a block that could never be delivered.
   for (const k of ['b1', 'b2', 'c2']) {
     assert.ok(UPSTREAM[k], `${k} still DECLARES its upstreams (the map is complete)`);
   }
