@@ -59,7 +59,6 @@ app/onboarding/reclaim-list-builder.tsx
 app/password-field.tsx
 app/playbook/[memberId]/outcome-cards.tsx
 app/playbook/[memberId]/playbook-view.tsx
-app/program/[memberId]/page.tsx
 app/pwa-client.tsx
 app/quality-day/actions.ts
 app/rebuild/actions.ts
@@ -96,9 +95,6 @@ lib/connect/write.ts
 lib/content/explore.ts
 lib/content/retention.ts
 lib/curriculum/badge-glyphs.tsx
-lib/curriculum/content/rebuild.ts
-lib/curriculum/content/reclaim.ts
-lib/curriculum/content/reconnect.ts
 lib/curriculum/crossing.ts
 lib/curriculum/view.ts
 lib/daily-beat/reflections.ts

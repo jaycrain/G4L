@@ -1,0 +1,414 @@
+# CHANGES — authored copy, v3.5.48 (since v3.4.62)
+
+App @ `9acd0e2`. 367 added · 35 removed, out of 1415 authored strings.
+
+**This is the reconciliation list.** A line that appears in both ADDED and REMOVED in a similar form is an
+edit, not a pair of separate changes — read them together.
+
+## Added (367)
+
+- It starts with a real conversation. Just you and a Companion built for this one thing, and nothing else. What you build here is private.
+- Then let's find out what happened. So how did it go — what pulled you away from yourself? Take me through it.
+- Have I got that right the way it happened — or is there more?
+- Was anything else tangled up in that same period, or does that cover how the distance opened?
+- Go on — what else was going on?
+- I'm listening. What else was part of it?
+- Tell me the rest of it.
+- You've painted a vivid picture of who you were, and what pulled you from it. Now the next move — what would
+- Your Reclaim List is exactly that — who you're reclaiming, turned into concrete goals. A mix is perfect:
+- We'll start with three — add as many as you want, and change them anytime with your Companion. It's the list
+- the whole program works toward, one step at a time, and how you'll watch yourself getting closer.
+- 1 (strongly disagree) to 5 (strongly agree)
+- 1 to 5 — 1 is strongly disagree, 5 is strongly agree
+- Before the numbers — what's different now that wasn't when you started?
+- I used to race bikes
+- Your Companion helps you build a Reclaim List, setting goals for things worth getting back. Your ID Score tracks the distance left to close, building towards 100. All alongside a community of midlifers who get you.
+- Your starting ID Score
+- The Doors
+- Look at the door (or doors) the Fade came in through — and sharpen them.
+- Your Doors (refined on the dashboard)
+- How the gap opened
+- When we first talked, you told me how the gap opened. Does that still feel right — or is there more to it now?
+- You already gave this a name once, when we first met. You know yourself better a few steps in, so let's look at it together — keep what fits, sharpen the wording, and we can add one if another's been in the room the whole time.
+- The Door is the category; what it actually was for you is the part that matters. Tell me your version.
+- More than one
+- Did more than one door open around the same time? If another fits, tell me.
+- Most people walked through more than one — the body starts saying no AND the role ends; the house quiets AND a parent gets sick. There's no prize for keeping it simple; the fuller picture is what lets me meet you where you actually are.
+- Even if it feels smaller — which other one's been in the room?
+- Saying it back
+- Say it back in a sentence: 'The Fade came in through ___.'
+- A lot of good people have walked through these — and most never had a word for it. Putting a word to the Door doesn't fix it; it just means you stop pretending it isn't there.
+- Own it as yours — not only a thing that happened to you, but a door you walked through and can walk back out of.
+- Your Doors are sharpened and current now, up on your dashboard. You can't close a door you won't look at. I've put what surfaced in your Playbook to keep or cut.
+- Ready to dig for what's underneath?
+- Let's go
+- Give me a second
+- The Drift Quiz
+- A clear read of what the Fade cost, and how far you've drifted.
+- What it cost
+- Name three things the Fade cost you — be specific.
+- Every life you build costs something. Be specific about what you traded away to get here: morning rides, deep friendships, the feeling of being in your body instead of trapped in your head. This isn't regret — it's inventory.
+- Past the obvious. What's the one you don't usually let yourself miss?
+- How far
+- How far are you from that version of you right now?
+- On a normal week right now — how far are you from that buried version of you? A little dusty, or a stranger? There's no failing grade. The distance is just the starting line, and you can't close a gap you won't look at.
+- Don't soften it to feel better. The real distance is the one we get to close.
+- That's your inventory — what it cost, and how far the Fade ran. Not to sit in, to push off from. I've put it in your Playbook to keep or cut.
+- Ready to see what's on the other side?
+- The Window
+- See the two Tuesdays — who you become if nothing changes, and if it does.
+- Picture the Tuesday a year out if nothing changes. What does it look like?
+- There's a window between who you are today and who you keep saying you'll be. Most people never look through it. Today you look: picture an ordinary Tuesday a year from now if nothing changes. Sit with that profile for a second.
+- Not the disaster version — the ordinary one. How do you wake up, what do you reach for?
+- The other window
+- Now the Tuesday where you did the work — what's different by 7am?
+- Now the other Tuesday — same year out, but you've been doing the work. What's different by 7am? Not the highlight reel. The ordinary stuff: how you wake up, what you reach for, how you move. That's the spark we're going to protect.
+- Make it ordinary and real — not the medal, the morning.
+- That second Tuesday is the spark. Hold onto it — everything from here is about making it the real one.
+- Ready to turn it into something you can chase?
+- Build Your Reclaim List
+- Turn the vision into specific, checkable things you want back.
+- Build the Reclaim List
+- List the specific things you want back — three to start.
+- Turn that second Tuesday into real, specific things you want back. Riding before work without dreading it. Keeping up on the trail. Recognizing the person in the mirror. Give me a few — three to start, more if they keep coming. This becomes your Reclaim List.
+- Make them things you'd notice when they happen, not vague wishes. What's checkable?
+- Make each one checkable
+- Take one item and make it checkable — what would it look like in your week?
+- Let's sharpen one. Say you want to 'feel like an athlete again' — what would the Athlete actually be doing on a Tuesday that you're not doing now? We do this for each item, so every goal is something we can both see when it happens.
+- If you couldn't tell whether you'd done it, sharpen it. What's the version you'd both see?
+- That's your Reclaim List — the whole point, in your own words. It lives on your dashboard, and we'll check things off it together as you win them back.
+- Lock these onto your dashboard?
+- Let me add more first
+- The First Step Assessment
+- Pick the movement you'll actually do, and set a starting line.
+- Pick the vehicle
+- What's your vehicle — the movement you'll actually come back to?
+- Time to move — but the best exercise isn't the 'optimal' one, it's the one you'll actually do on a cold Wednesday. Walking is the most popular for a reason; cycling's right behind it.
+- Think about your real life, not your ideal one. What fits the week you actually have?
+- Where you're starting
+- How far or how long can you go today before it gets hard?
+- A baseline — how long can you go before it gets hard? No target, no judgment. We build from where you actually are, because that's the only place a foundation holds.
+- Don't inflate it. The real number is the one we can build on.
+- That's your vehicle and your starting line. I've put your starting line in your Playbook to keep or cut.
+- Want me to track this so you can watch it climb?
+- The Invisible Foundations
+- Shore up one of the unseen basics that hold everything together.
+- The stuff nobody sees
+- Pick one invisible foundation to shore up this week — water, mobility, or breaking up sitting.
+- The work that actually holds is invisible: hydration, a little mobility, not sitting for nine hours. Cutting your sedentary hours buys you benefits beyond your workout minutes.
+- Which one are you worst at? Start there.
+- Small and invisible, but it's the base the visible stuff stands on. I've put your pick in your Playbook to keep or cut.
+- Make this a daily clip-in?
+- Sleep & Recover
+- Treat recovery as part of the work — and pull one lever to sleep better.
+- Recovery is the work
+- How's your sleep right now?
+- You don't get stronger during the effort — you get stronger during the recovery, when the body rebuilds. Skip it and you keep almost none of the gains.
+- Past 'fine.' How many real hours, and how often do you wake up?
+- Pick one lever
+- Pick your one sleep lever for this week.
+- We don't fix sleep all at once — we pull one lever. A fixed wind-down, screens off earlier, a darker room. Just one. The one you'll actually do tonight.
+- Make it the easy one you'll actually do tonight.
+- Recovery isn't time off from the work — it is the work. I've saved your sleep lever to your Playbook to keep or cut.
+- Run this lever every night this week?
+- The Fuel Plan
+- Build a way of eating you have, not one you go on.
+- A diet you have
+- What's one swap you'd actually keep — for good, not for a month?
+- A diet isn't something you go on and white-knuckle until you fail — it's something you have. More real food, less added sugar and ultra-processed stuff. Not perfect. Sustainable.
+- If it sounds like a punishment, you won't keep it. What's a swap you'd barely miss?
+- The thermostat
+- Write the one line that keeps you off the crash-diet cycle.
+- Keeping weight off means moving your set point — slowly, like a thermostat. Crash diets fight it and lose. We move it instead, and it stays moved.
+- Make it yours — the line you'll remember at week three when the scale stalls.
+- That's a way of eating you can actually keep. I've put your swap and your line in your Playbook to keep or cut.
+- Start with this swap this week?
+- The Movement Menu
+- Build your real week of movement around the floor, not the ceiling.
+- Build the week
+- Lay out your week — what days, what times does the movement happen?
+- Aim for the floor first: about 150 minutes of moderate movement — roughly thirty minutes, five days. That's the floor that changes your health. Lock the floor before you chase the ceiling.
+- Put it on real days at real times. When this week, specifically?
+- That's your week, on real days. I've put it in your Playbook to keep or cut.
+- Turn on the daily movement check-in?
+- What's Your Why?
+- Name the reasons for movement and eating that are actually yours — your starting why.
+- the member's motivation baseline (stored, not scored)
+- Take honest stock of your self-management skills — then watch them show up in your week.
+- The Lifestyle Pilot
+- Build one small movement change and one small eating change — and run them for a week.
+- the member's pilot plan (their two small changes)
+- Rebuild Checkpoint
+- A read on the control you built — the close of the Phase, and the door to Reclaim.
+- Notice the reclaimed you starting to show up — and choose what to build next.
+- Are you carrying it yet
+- Where have you caught a glimpse of the reclaimed you lately — even for a second?
+- Reclaim isn't a finish line — it's the moment the person you've been rebuilding starts showing up in the wider world. Are you starting to feel like the person on your list — even a little?
+- Don't wait for the dramatic version. When did you last surprise yourself?
+- Agency, not arrival
+- Which of the three do you most want to build next?
+- Reclaiming means you've got the wheel. Aging well comes down to meaningful activity, close relationships, and a sense of purpose. Reclaim goes after all three, deliberately.
+- Pick the one that's been quietest lately. That's usually the one calling.
+- You're not arriving — you're taking the wheel. I've put your direction in your Playbook to keep or cut.
+- Build toward that next?
+- Let me sit with it
+- Your Success Story
+- Say the story of one thing you got back, in your own words.
+- Say it in your words
+- Tell the story of one thing you reclaimed — and what it felt like to notice it.
+- Tell me the story of one thing you got back — out loud, in your own words. Not the metrics. What it felt like the first time you noticed the old you was back in the room.
+- You gave me the what. Give me the moment — where were you when you felt it?
+- That's your story now, in your own words.
+- Keep this one close?
+- Adventure Planning
+- Put a measuring-stick event on the calendar, and back-plan the build.
+- Put a measuring stick on the calendar
+- Name a real event or trip — with a date — that scares and excites you.
+- A reclaimed identity needs a proving ground — something real on the calendar that scares and excites you. The thing that lets you say 'I did this.' when it's done. Half the joy is the build-up.
+- Put a date on it. A someday isn't a measuring stick — when?
+- Back-plan the build
+- Work backward — what does the first build week look like?
+- Work backward from the date. What does your body need to handle that day, and what's the base you build in the weeks before? You prepare so the day is a celebration, not a survival.
+- Start with this week. What's the very first session toward it?
+- Now it's real — a date, and a path to it. I've added the event to your Reclaim List and put the plan in your Playbook to keep or cut.
+- Add the event to your Reclaim List?
+- Find where your world went small, and push one edge back out.
+- Widen the circle
+- Where has your world gone small — and what's one edge you'd push back out this month?
+- The Fade shrinks your world — the places you stopped going, the things you stopped saying yes to. Reclaim widens it back. Where has your world gone small? Then we pick one edge to push back out.
+- Not the easy one. What's the yes that scares you a little?
+- That's the circle widening again — on purpose, by your hand. I've put your edge in your Playbook to keep or cut.
+- Go after that edge this month?
+- Invitation Exercise
+- Bring someone with you — and find the words that actually land.
+- Come do this with me
+- Who would you invite to do this with you?
+- Here's how this stops being a solo act: you bring someone. The door opens through relationships, not credentials. Who would you say 'come do this with me' to? Not to coach them — just to share the thing that gave you yourself back.
+- Picture their face. Who came to mind first? Trust that.
+- The words that matter
+- Write the message you'd actually send them.
+- The line that gets through isn't 'you should exercise more.' It's 'I know what you're capable of.' That's the line someone said to Jay, who built this — and the line Jay passed on to Gary.
+- Lead with belief in them, not advice. What would make them feel seen?
+- That's how the comeback spreads — one person, one real message. I've put it in your Playbook to keep or cut.
+- Send it this week?
+- Social Connection
+- Find the place you actually belong — not just attend.
+- Find your people
+- Where's one place you could really belong — and show up for real?
+- Belonging beats attending. Social support is one of the strongest predictors of change that sticks — and a real buffer against stress. Where do you belong, or want to? Not where you show up — where you're missed when you don't.
+- Belonging, not attending. Where would they notice if you were gone?
+- That's the difference between attending and belonging — and belonging holds the whole thing up. I've put your place in your Playbook to keep or cut.
+- Show up there this month?
+- Legacy Letter
+- Write it forward — and name the Loop.
+- Write it forward
+- Write your letter — short is fine. What do you want them to know is still possible?
+- Write a short letter to someone who'll read it later — a kid, a friend, the next person walking through the door you came through. What did you reclaim, and what do you want them to know is still possible in midlife?
+- Write it to one real person, not 'whoever.' Who needs to hear this from you?
+- The Loop, named
+- What's the next thing the Loop is already calling you toward?
+- The finish line moves. You'll reclaim these things, life will shift, the list will re-form, and you'll go again. That's not failure — that's the design. It's why it's Grinta for Life.
+- You're not done — you're between laps. What's pulling at you next?
+- That's a letter forward and a name for what comes next. The work doesn't end — it loops, and you're stronger at the start of each one. This one, I'd keep.
+- Ready to name the next lap?
+- I need a minute
+- Looking Forward
+- Revisit your Reclaim List with clearer eyes, now that you know yourself better.
+- the member's refined Reclaim List (re-tiered, member-confirmed)
+- Map where your world can get bigger across four areas — and find where to push first.
+- the member's Reclaim priorities (primary + momentum lever)
+- Define what makes a day yours — then track it for a week.
+- Reclaim Checkpoint
+- A read on the challenge you built — the close of the cycle, and the door to the Loop.
+- Doors — identify the Doors you walked through that caused you to Fade
+- Visioning — See your Fade clearly, then put words to who you’re becoming.
+- Checkpoint — take stock of how it’s going, see progress in your Grinta Index
+- Ceremony — the earned reveal, move to Rewire
+- Disinformation Audit — Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.
+- Visualization Workshop — Build a picture of who you’re becoming vivid enough to pull you forward.
+- False Start Protocol — Learn to notice a slip early and clip back in fast.
+- What’s Your Why? — Find your reasons to care for your body.
+- Strengths & Weaknesses — Evaluate your skills that can make change stick.
+- The Lifestyle Pilot — Watch your everyday choices for a week and learn how your lifestyle actually works.
+- Checkpoint.
+- Looking Forward — Revisit your Reclaim List now that you know yourself better.
+- Bigger World Audit — Check in on how your world has expanded from where you started
+- Quality Days — Track the days that feel like the life you’re building.
+- Transition — your Success Story
+- You're here
+- ← Session
+- Midlife Identity Loss — and the Comeback
+- It rarely happens all at once. Career, kids, caregiving, a body that changes the rules. A hundred reasonable decisions, not one of them a failing — and slowly you drift from the person you used to be. That drift is Midlife Identity Loss. We call it the Fade. Most people never notice it, because it looks like getting older.
+- Identity and health are tied together. Stop being someone in particular, and you stop doing the things that keep you well. It shows up in your healthspan — the years you live in good health, not just the years you live. In the U.S. that gap has grown to about 12.4 years, the widest of any nation studied. Wellness is how you feel about your life. So closing the identity gap and getting healthier are the same work.
+- The Program is how you do it — four phases, the 4Rs, each one building on the last.
+- How it works
+- Change holds when it’s built on skills you can practice. The Program builds your self-management skills — the practical ones every healthy life runs on: setting goals, planning, handling what gets in the way, watching how it’s going, getting back on after a slip. Like any skill, they get stronger with use. That’s the real thing you’re building, and it outlasts any single habit.
+- One principle runs under all of it: practice the process, and the product follows. Move, eat, reflect, notice — do the behaviors, and over time they build three things you keep. Rewire builds mindfulness. Rebuild builds fitness. Reclaim builds the wellness those two feed. (Reconnect comes first, the gateway — you see clearly before you build.) Wellness is the outcome, what the work produces over time.
+- Each building phase runs the same three moves. You take a read — a clear look at where you stand. You build a tool you keep — a true line, a picture, a plan. You practice it for a week, in real life. A read, a tool, a tracked week — the same three, every phase.
+- Cycle 1 · The Foundation
+- One pass through all four phases, built to take about six weeks. A few stretches run a full week, on purpose — some things only change by being lived. Go at the pace that’s real for you.
+- Every phase has three Sessions — each a guided conversation with your AI G4L Companion — then a Checkpoint, and a reveal that moves you on. One Session at a time.
+- You’re here
+- Opens when you’re ready
+- ) : ( p.coming && !here &&
+- → and the loop comes back around. Grinta for Life.
+- Clip in — our founder\u2019s cycling metaphor, and more than \u201Clet\u2019s go.\u201D Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
+- This one comes in two parts — first what the Fade actually cost, then a letter you'll write to yourself a year out.
+- Here is the whole set — every Door we see people come through. Mark the ones that are yours. There is no wrong answer here, and most people mark more than one.
+- Have I got that right — or is it not quite?
+- Have I got that right?
+- That's the Door work done — the part that asks you to remember. Your Doors are in your Playbook now, under Who you are, and you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to yourself a year out.
+- Before the mirror, one thing about how to read it.
+- This is a measuring stick — what it is for is the distance between readings, and today is the first one.  So answer from where you actually are right now, rather than where you mean to be. That is the whole contract.  Some of it will be uncomfortable work — thanks for being willing to look at it.
+- Before we start: which part of this do you expect to read hardest?
+- Next is the Reconnect Checkpoint — a short read on what this work has built, and the close of the Phase.
+- Next are your Doors — the events that opened the distance — and after that the Drift Quiz.
+- Tell me what to change and I'll write it back for you to read.
+- I couldn't get that change into the letter. I'm saving what you've got so it isn't lost — the letter is yours to edit in your Playbook, and that change is the first thing to put in.
+- You did the real work of Reconnect — you took an honest measure of where you are, named the Doors that opened the distance, and put down the day you want back.
+- You just did the work in Reconnect — and your Grinta Index, your grit, went up because of it.
+- Now look at what you just laid out. The ones that sound most reasonable are the trick — they keep you exactly
+- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol.
+- Now a quick read on where your commitment sits. Six of these, one to five. They set your Rewire read — you'll see how it moved your Grinta Index at the close.
+- Rewire was your head — the lies, the picture, the protocol. Rebuild is your body: how you move, how you eat, how you sleep.
+- What comes next is a read on where your motivation actually sits today. Answer it the way things are, rather than the way they ought to be — a starting mark is only worth having if it is honest.
+- First, though: coming out of Rewire, what is the story you catch yourself telling about your body?
+- What makes you want to move — not the reason you would give someone else, the one that is actually yours?
+- Is there a version of that which is about how it feels rather than what it produces?
+- Anything in there you would be embarrassed to say out loud? That one usually matters.
+- And eating — what is driving that one for you?
+- Does that reason feel like yours, or like one you inherited?
+- It's common to have different reasons for eating than for moving. They're connected, but they pull on different things for different people. We look at both because they each matter.
+- That's the twelve. Before we close it out — one thing worth knowing about what you just rated, if you want it.
+- Motivation isn't just about how much you have — it also has a quality to it. Some reasons feel like they're truly yours, and some feel like they come from outside. Both are real, and the ones that feel more your own tend to hold up better over time.
+- Reading back what you told me, which of your reasons feels most like yours?
+- Wherever you are right now is a starting point. A lot of people find their motivation shifts as they get into the behaviors — not because they're made to, but because they start feeling the benefits.
+- Has that happened to you before with something else?
+- In this program we treat moving and eating as the process, and fitness, health and wellness as what that process produces. Your motivation is what connects the two. That is why we started here.
+- Last thing: of everything you have said, which reason would you want to still be true a year from now?
+- What is Your Why?
+- I want to look better in photos
+- I want to be there for my kids
+- These are the practical skills — the ones that decide whether a good intention survives a bad week.
+- Rating yourself on them only works if you are straight about it. What comes out is a map of what to build next, and a map drawn generously takes you somewhere you are not.
+- Before that: think of something you made stick once. What did you actually do to hold it?
+- Looking at how you answered — which of those felt truest about you?
+- And was there one you wanted to rate higher than you honestly could?
+- That's the twenty-four. One or two things worth knowing about what you just rated, if you want them.
+- One thing that's useful to know: these aren't personality traits. They're skills. And skills can be developed.
+- Does any of them feel more learnable than it did ten minutes ago?
+- A weakness here isn't a flaw. It's just information about where you might want to focus your effort.
+- Which one would you actually want to put effort into first?
+- In this framework we group the skills into three categories — Predisposing, Enabling and Reinforcing — because different skills tend to matter at different points in the change process.
+- Before we close: which skill would you want to be better at by the end of Rebuild?
+- Self-management is the bridge between wanting something and doing it — which is exactly what the pilot in your next Session is for.
+- Appreciating Your Strengths and Weaknesses
+- You need to improve your Reinforcing skills.
+- Your Predisposing scores are low, so you're not ready to change.
+- Self-management is what separates people who succeed from those who don't.
+- Your Reclaim List, from Reconnect — the things you said you wanted back.
+- You have been through three phases since you wrote it. The point now is not to check whether you stuck to it. It is to read it again as the person you are now, and let it change where it should.
+- Some items will still be exactly right. Some will have quietly stopped mattering. Some were never really yours. All of that is ordinary, and all of it is useful.
+- Reading it now — what feels different about this list than when you wrote it?
+- Last one: of everything on there now, which single item feels most like yours?
+- That is your list, refined — not corrected. It is what the rest of Reclaim works from, and it is on your Playbook whenever you want to look at it.
+- When you read your original list now, which items still feel most alive or most important?
+- What makes that item still feel important?
+- Has its meaning changed, or just its priority?
+- Does it feel more personal now than it did before?
+- Which items no longer feel as central as they once did?
+- What changed?
+- Did this goal lose meaning, or did something else become more important?
+- Does this feel like a pause, a release, or just a lower priority?
+- Are there goals on the list that sound right, but do not feel fully owned?
+- If you rewrote that goal in your own language, what would change?
+- Would this still matter if nobody else expected it from you?
+- Is the problem that the goal is wrong, or that it was never defined clearly enough?
+- Which goals feel clearer or more tangible now than they did at the beginning?
+- What made it more concrete?
+- Did the clarity come from understanding yourself better, or from seeing your habits more clearly?
+- What would that goal look like in ordinary life now?
+- Has anything become important that was not fully visible to you at the beginning?
+- What brought that into focus?
+- Did this emerge from identity work, habit awareness, or seeing your health decisions more clearly?
+- Does this new priority feel durable, or newly fragile?
+- If you had to reorder the list now, what belongs near the top?
+- Why this one?
+- What makes it more central than the others right now?
+- Does it feel important because it is urgent, meaningful, achievable, or identity-linked?
+- In Reconnect the IDQ showed how far you'd drifted. This is the other side of it: where your world can get bigger, and which area to push on first.
+- You've come through a lot of work to get here — the Doors, the self-talk, the pilot.
+- It also asks a different kind of question from the ones you have answered so far. Not what you are doing — the shape of your life, and how much room is in it.
+- Some areas will have opened up and some will be exactly where they were. That is what four phases in usually looks like, and the flat ones are as useful to see as the rest.
+- Before the ratings: where has your world actually got bigger since you started?
+- Both being true at the same time is the ordinary result of a few phases in, not a contradiction.
+- Noticing where your life is opening can help you keep moving toward it — which is what the rest of Reclaim is.
+- That's the sort done. Now the part the numbers can't tell me: what feels possible now that didn't a while ago?
+- Where do you notice yourself being more willing than you used to be?
+- Anything you have stopped avoiding, even a little?
+- What has made that possible — is it something that would hold if this week got hard?
+- And the other direction: where does your life still feel narrower than you would want it?
+- What would a slightly bigger day look like there — one with a bit more room in it?
+- One more angle. Some of this is moving away from things. What are you moving toward?
+- What makes that worth moving toward?
+- Thinking back to the work you did earlier in the program — does any of it show up in what you just described?
+- The Bigger World Audit
+- Quality Days is a different shape from everything you have done so far.
+- The other Sessions were a conversation that ended. This one ends and then asks you for about a week — a short check-in a day, tracking over time rather than reflecting once.
+- That is the point of it. What a good day is made of is not something you can work out in one sitting; it shows up across days, in the ones that went well and the ones that did not.
+- Before we define anything: what does a good day look like for you right now?
+- Two things about the week, and then we set it up.
+- Consistency matters more than completeness — four honest days beat seven tidy ones. And you will forget a day. That is normal, it is not a failure, and a missed day never counts against you.
+- When in the day would you do it? Hang it off something you already do, so it has somewhere to live.
+- And on a day you forget until it is too late — what do you want to do then? Skip it, or catch it up the next morning?
+- That is the setup. Ready to start tomorrow?
+- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get bigger, and defined what makes a day yours.
+- Now a quick read on where your challenge sits — the pull toward what's possible. Six of these, one to five. They set your Reclaim read — you'll see how it moved your Grinta Index at the close.
+- Your starting ID Score is on your dashboard. Every later reading is measured against it.
+- Your Doors are in your Playbook, under Who you are, and you can change them any time.
+- Your Legacy Letter is in your Playbook, under Who you are. Open it a year from now and see how far the distance closed.
+- Your Reclaim List and your starting ID Score are on your dashboard — that is the ground everything else builds on.
+- Your true lines are in your Playbook, under What worked. Reach for them when the old voice starts up.
+- The Mirror
+- Your starting read across four dimensions — the line we measure everything else against.
+- The events that opened the distance, and the self underneath them.
+- What the Fade cost, the day you want back, and the list you are coming back for.
+- Your starting read across four dimensions.
+
+## Removed (35)
+
+- It starts with a real conversation. Just you and a Companion built for this one thing, and nothing else. What you build here is private, and it stays with you.
+- Does that land the way it happened — or is there more?
+- I hear you. Was anything else tangled up in that same period, or does that capture the shape of how the distance opened?
+- Let's write down what you want back — your Reclaim List, the thing the whole program works toward.
+- Put them down as they come. Big or small, three to start is plenty, and you can add as many as you want.
+- Your Companion helps you build a Reclaim List, setting goals for things worth getting back. Your ID Score shows exactly how far you’ve come. All alongside a community of midlifers who get you.
+- This is where it starts — a commitment to get going, and keep going.
+- Before we go deeper, here is the whole set — every Door we see people come through. Mark the ones that are yours. There is no wrong answer here, and most people mark more than one.
+- Does that land the way it happened — or is it not quite right?
+- 1 to 5 — 1 for not at all, 5 for completely
+- A quick check-in before we close. Six short statements about what this work is making you think about. You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment. Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.
+- You just did the work in Reconnect — and your Grinta, your grit, went up because of it.
+- Now look at what you just laid out. Every one of those sounds reasonable — that's the trick. And every one keeps
+- — and that's the first real move.
+- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close the Phase, a quick read on where your commitment sits now. Six of these, one to five. They set your Rewire read — you'll see how it moved your Grinta Index at the close.
+- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits now — the pull toward what's possible. Six of these, one to five. They set your Reclaim read — you'll see how it moved your Grinta Index at the close.
+- Your Reclaim List, your Doors and your starting ID Score are on your dashboard — that is the ground everything else builds on.
+- Your true lines are in your Playbook, under Your Moves. Reach for them when the old voice starts up.
+- Five minutes with your picture
+- The IDQ
+- The mirror — your starting read across four dimensions. Comes round again about every 60 days.
+- The Seven Minutes
+- A daily short rep to keep your grit warm.
+- The daily rep — plus the Hardiness reps.
+- A quick nightly check on recovery.
+- First 1,000 Miles
+- The optional Rebuild-track mileage tool.
+- Goal trackers
+- Your numbers — weight, dollars, miles — logged conversationally.
+- The IDQ retake
+- The identity-distance read, offered again about every 60 days.
+- Your triggers this week
+- The skills you’re building
+- Your Lifestyle Pilot
+- Your Quality Days

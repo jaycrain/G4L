@@ -29,6 +29,22 @@ export const SECTIONS = [
     'app/reclaim/reclaim-chat.tsx', 'app/reconnect/reconnect-chat.tsx',
   ] },
   { title: 'Email verification', files: ['app/login/verify/page.tsx'] },
+  // THE SESSION NAMES, for three of the four phases — off the backlog 2026-08-30.
+  //
+  // Rewire's had been in the list since it was written; Reconnect's, Rebuild's and Reclaim's never had. So canon
+  // held the names and summaries for ONE phase and marketing wrote the other three from whatever it could infer.
+  // Cowork measured it from outside and called it the flag: "the Session, Checkpoint and asset names for three of
+  // the four phases. Only Rewire is in the transcript."
+  //
+  // It is the most quotable copy we own — every Session a member opens is named here, and this cycle renamed two
+  // of them (R2 became Excavation, C1 became Looking Forward on Greg's own retitle). Without these files a change
+  // list CANNOT report either rename, which is how canon ends up describing a product that no longer exists.
+  { title: 'The Sessions — names, summaries and what each produces', files: [
+    'lib/curriculum/content/reconnect.ts', 'lib/curriculum/content/rebuild.ts', 'lib/curriculum/content/reclaim.ts',
+  ] },
+  // The Program page — the member-facing map of the whole four-phase arc, and the surface that carries the AI
+  // disclosure Cowork could not verify for ten bundles because it was not in the transcript.
+  { title: 'The Program page (the four-phase map)', files: ['app/program/[memberId]/page.tsx'] },
   // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
   //
   // The Threshold ceremony is the seven beats a member reads the moment they finish onboarding, and the Opening
