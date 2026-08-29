@@ -11,6 +11,7 @@ import { reclaimC2Opening, applyReclaimC2Turn } from '../lib/agent/reclaim.ts';
 import { AUDIT_ITEMS, AUDIT_DOMAINS, type AuditDomain, type AuditFacet } from '../lib/reclaim/bigger-world-instrument.ts';
 import { detectVoiceTells, applyVoiceGate } from '../lib/agent/voice-gate.ts';
 import { readFileSync } from 'node:fs';
+import { C2_EVOCATION } from './c2-evocation-tail.ts';
 import type { ConvState } from '../lib/agent/onboarding.ts';
 
 const SEP = String.fromCharCode(30);
@@ -46,6 +47,8 @@ function closeWith(responses: number[]): string {
     for (const a of ['an obstacle', 'a first move']) t = applyReclaimC2Turn(t.state as ConvState, [], a);
   }
   for (let q = 0; q < 5; q++) t = applyReclaimC2Turn(t.state as ConvState, [], 'physical');
+  // Then Greg's evocation stages, which now stand between the sort and the summary.
+  for (const m of C2_EVOCATION) t = applyReclaimC2Turn(t.state as ConvState, [], m, { text: 'Mm.' });
   assert.equal(t.complete, true, 'the audit reached its close');
   return t.reply;
 }
@@ -148,4 +151,120 @@ test('the gate’s report half is actually WIRED — not exported into the void'
   assert.ok(r.removed.includes('quietly'), 'the deletable tell was deleted');
   assert.ok(r.flagged.includes('causality:proves'), 'the un-deletable one was reported');
   assert.match(r.text, /This proves it/, 'and report-only means the sentence is left intact');
+});
+
+// ── GREG'S EVOCATION STAGES (C2-75..78) ───────────────────────────────────────────────────────────────────────
+//
+// "This is where most of C2 lives" (C2-37) — and none of it existed. C2 ran its ratings, its per-domain
+// reflections and its sort, then closed, so every reflective turn came AFTER a block of numbers and was about the
+// domain just rated. The question the Session actually asks — has your world got bigger — was never put directly.
+//
+// Jay, 2026-08-28: "Build stages 2-4, don't cut C2 short now. I'll feel it when I walk it, Greg can too and trim
+// it if he wants. Let's put it all out there to decide." Stage 5 is built with them: it is one turn, and it is
+// the stage that makes the carry-forward mean anything.
+
+/** Drive to the end of the sort, where the evocation begins. */
+function toSort(): ConvState {
+  let t = applyReclaimC2Turn(reclaimC2Opening().state as ConvState, [], 'The mornings, mostly.');
+  for (let d = 0; d < AUDIT_DOMAINS.length; d++) {
+    for (let k = 0; k < 2; k++) t = applyReclaimC2Turn(t.state as ConvState, [], '5');
+    t = applyReclaimC2Turn(t.state as ConvState, [], 'a gap');
+    for (let k = 0; k < 3; k++) t = applyReclaimC2Turn(t.state as ConvState, [], '5');
+    for (const a of ['an obstacle', 'a first move']) t = applyReclaimC2Turn(t.state as ConvState, [], a);
+  }
+  for (let q = 0; q < 5; q++) t = applyReclaimC2Turn(t.state as ConvState, [], 'physical');
+  return t.state as ConvState;
+}
+
+test('the sort hands into the evocation, not into the close', () => {
+  const st = toSort();
+  assert.equal(st.stage, 'c2-expansion', 'the Session no longer ends the moment the ratings stop');
+});
+
+test('all four evocation stages run, in Greg’s order', () => {
+  let st = toSort();
+  const seen: string[] = [st.stage as string];
+  for (const m of C2_EVOCATION) {
+    const t = applyReclaimC2Turn(st, [], m, { text: 'Mm.' });
+    st = t.state as ConvState;
+    seen.push(st.stage as string);
+    if (t.complete) break;
+  }
+  const order = ['c2-expansion', 'c2-contraction', 'c2-approach', 'c2-prior-work', 'complete'];
+  for (const stage of order) assert.ok(seen.includes(stage), `${stage} never ran`);
+  assert.deepEqual([...new Set(seen)].filter((x) => order.includes(x)), order, 'and in his order');
+});
+
+test('C2-75 · expansion asks three questions PLUS the conditions-and-stability follow-up', () => {
+  // Greg's testable-as, and the reason the floor is four rather than three: "Follow up on conditions and
+  // stability" is a separate beat from the three noticing questions, and it is the one that asks whether what
+  // opened will hold.
+  let st = toSort();
+  const asked: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const t = applyReclaimC2Turn(st, [], C2_EVOCATION[i]!, { text: '' });
+    asked.push(t.reply);
+    st = t.state as ConvState;
+  }
+  const joined = asked.join('\n');
+  assert.match(joined, /more willing/i, 'where they are more willing');
+  assert.match(joined, /stopped avoiding/i, 'what they have stopped avoiding');
+  assert.match(joined, /would it hold|hold if/i, 'the conditions-and-stability follow-up');
+  assert.equal(st.stage, 'c2-contraction', 'and only then does it move on');
+});
+
+test('C2-76 · the contraction beat proposes no fix — in the engine AND in the prompt', () => {
+  // Greg's testable-as: "A contraction stage exists and the Companion does not propose fixes inside it." A member
+  // who has just said where their life is still too small is exactly who a helpful model wants to rescue, and
+  // rescuing them ends the beat — the honest answer becomes a task, and the next one becomes what we want to hear.
+  let st = toSort();
+  for (let i = 0; i < 4; i++) st = applyReclaimC2Turn(st, [], C2_EVOCATION[i]!, { text: '' }).state as ConvState;
+  assert.equal(st.stage, 'c2-contraction');
+  const t = applyReclaimC2Turn(st, [], 'Social is still thin.', { text: '' });
+  // The ENGINE's own probe must not offer a remedy — it asks what slightly bigger looks like, which is still
+  // their picture, not our plan.
+  assert.doesNotMatch(t.reply, /you (should|could|might want to)|why not|have you tried|what if you/i, 'a fix was proposed');
+  assert.match(t.reply, /slightly bigger/i, "and it asks for THEIR picture of it");
+  // The prompt half, which the engine cannot enforce on generated prose.
+  const src = readFileSync(new URL('../lib/agent/reclaim.ts', import.meta.url), 'utf8');
+  assert.match(src, /Do not fix, plan, encourage or reframe/i, 'the contraction stage note forbids it');
+});
+
+test('C2-77 · approach is distinct from expansion, not a rephrasing of it', () => {
+  // Greg says so explicitly ("Stage 4 is present and distinct from stage 2"), and the distinction is real: what
+  // has already opened is not the same as what pulls you. A member can have either without the other.
+  let st = toSort();
+  for (let i = 0; i < 6; i++) st = applyReclaimC2Turn(st, [], C2_EVOCATION[i]!, { text: '' }).state as ConvState;
+  assert.equal(st.stage, 'c2-approach');
+  const t = applyReclaimC2Turn(st, [], 'Toward being someone my kids call.', { text: '' });
+  assert.match(t.reply, /worth moving toward/i, 'the follow-up asks what makes it worth it');
+});
+
+test('C2-78 · the prior-work connection is asked as a QUESTION, never asserted', () => {
+  // "Only to support the Member's own noticing, never to override it." Our conclusion about their earlier work,
+  // stated, is the override — the same failure as supplying the narrative of growth, one stage later.
+  let st = toSort();
+  for (let i = 0; i < 8; i++) st = applyReclaimC2Turn(st, [], C2_EVOCATION[i]!, { text: '' }).state as ConvState;
+  assert.equal(st.stage, 'c2-prior-work');
+  // The probe that opened this stage is the last reply before it; assert the authored text itself.
+  const src = readFileSync(new URL('../lib/agent/reclaim.ts', import.meta.url), 'utf8');
+  const probe = src.match(/const C2_PRIOR_WORK_PROBES = \[\s*'([^']+)'/)![1]!;
+  assert.match(probe, /\?$/, 'phrased as a question');
+  assert.doesNotMatch(probe, /you have|this shows|clearly/i, 'and makes no claim about them');
+});
+
+test('the evocation never claims cause, and never supplies the growth narrative', () => {
+  // The deny-list applies to the authored probes too — the gate only sees MODEL text, so this copy is exactly
+  // where a forbidden formulation could ship unchallenged.
+  let st = toSort();
+  const replies: string[] = [];
+  for (const m of C2_EVOCATION) {
+    const t = applyReclaimC2Turn(st, [], m, { text: '' });
+    replies.push(t.reply);
+    st = t.state as ConvState;
+    if (t.complete) break;
+  }
+  const all = replies.join('\n');
+  assert.deepEqual(detectVoiceTells(all).filter((x) => x.startsWith('causality:')), [], 'the evocation overclaims');
+  assert.doesNotMatch(all, /you'?re clearly doing more|real progress|you'?ve grown/i, 'the narrative was supplied');
 });

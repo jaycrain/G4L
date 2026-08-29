@@ -38,6 +38,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'why-open'
   | 'skills-open'
   | 'audit-open'
+  // C2's evocation stages (Greg C2-75..78) — after the instrument, before the summary.
+  | 'c2-expansion'
+  | 'c2-contraction'
+  | 'c2-approach'
+  | 'c2-prior-work'
   | 'why-activity-talk'
   | 'why-activity'
   | 'why-eating-talk'
@@ -739,6 +744,10 @@ const STAGE_PROMPT: Record<Stage, string> = {
   'why-open': 'Coming out of Rewire, what is the story you catch yourself telling about your body?',
   'skills-open': 'Think of something you made stick once. What did you actually do to hold it?',
   'audit-open': 'Before the ratings: where has your world actually got bigger since you started?',
+  'c2-expansion': "What feels possible now that didn't a while ago?",
+  'c2-contraction': 'Where does your life still feel narrower than you would want it?',
+  'c2-approach': 'What are you moving toward?',
+  'c2-prior-work': 'Does any of the earlier work show up in what you just described?',
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
   drift: 'What did the Fade cost you — and how far are you from that version of you?',

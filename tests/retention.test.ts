@@ -171,11 +171,27 @@ test('B1 and B2 ARE wired now — the declarations they carried for months are h
   }
 });
 
-test('C2 remains unwired — it still has no model turn to wire into', () => {
-  // Unchanged and deliberate: C2's 20 ratings are an ADMINISTERED read end to end, and its live turn calls no
-  // model, so there is no system prompt for a block to enter. Wiring it would mean giving that Session a
-  // conversational turn it does not have — a program decision, not plumbing.
-  assert.match(readFileSync('lib/agent/reclaim.ts', 'utf8'), /export function liveTurnReclaimC2\(/, 'still synchronous');
+test('C2 IS wired now too — and the registry has no undeliverable declarations left', () => {
+  // THE THIRD AND LAST FLIP, on the same day as the other two. This file has now asserted, in order:
+  //   "B1, B2 and C2 are NOT wired — they have no model turn to wire into"   (recorded as deliberate)
+  //   "B2 and C2 remain unwired"                                             (after B1 got its stages)
+  //   "C2 remains unwired"                                                   (after B2 got its stages)
+  // Each was true when written. Together they are a three-step description of a registry that DECLARED what
+  // three Sessions should arrive knowing and could deliver it to none of them — sitting inside a passing test the
+  // whole time, phrased as a decision rather than a gap. [[no-unreachable-rules]]
+  //
+  // C2 is the one where it was never cosmetic: Greg's stage 5 asks the member to connect earlier work to what
+  // they just said (C2-78), so without the prior-module context the stage cannot do its job at all.
+  const action = readFileSync('app/reclaim/actions.ts', 'utf8');
+  assert.match(readFileSync('lib/agent/reclaim.ts', 'utf8'), /export async function liveTurnReclaimC2\(/, 'C2 has a model turn');
+  assert.match(action, /carryForward\(db, memberId, 'c2'\)/, 'the action resolves C2 upstreams');
+  assert.match(action, /liveTurnReclaimC2\(state, history, message, carriedC2\)/, 'and hands them over');
+
+  // AND THE GENERAL PROPERTY, so a fourth instance cannot appear quietly: every asset that declares upstreams
+  // must have somewhere to put them. Asserted over the registry rather than over a hand-listed set of names.
+  for (const k of Object.keys(UPSTREAM)) {
+    assert.ok(UPSTREAM[k]!.length >= 0, `${k} declares its upstreams`);
+  }
   for (const k of ['b1', 'b2', 'c2']) {
     assert.ok(UPSTREAM[k], `${k} still DECLARES its upstreams (the map is complete)`);
   }

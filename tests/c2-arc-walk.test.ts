@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyReclaimC2Turn, reclaimC2Opening } from '../lib/agent/reclaim.ts';
 import { AUDIT_ITEM_COUNT, AUDIT_ITEMS, AUDIT_REFLECTION_PROMPTS, AUDIT_SORT_QUESTIONS } from '../lib/reclaim/bigger-world-instrument.ts';
+import { C2_EVOCATION } from './c2-evocation-tail.ts';
 import type { ConvState, Turn } from '../lib/agent/onboarding.ts';
 
 // WALKING C2 END TO END.
@@ -26,7 +27,15 @@ function walk(answers: string[]): { turns: Turn[]; final: Turn } {
   let t = applyReclaimC2Turn(overTheWire(opening.state as ConvState), [], 'The mornings, mostly.');
   const turns: Turn[] = [opening, t];
   for (const a of answers) {
-    t = applyReclaimC2Turn(overTheWire(t.state as ConvState), [], a);
+    t = applyReclaimC2Turn(overTheWire(t.state as ConvState), [], a, { text: 'Mm.' });
+    turns.push(t);
+  }
+  // GREG'S EVOCATION STAGES, appended automatically when the walk has reached them (2026-08-28). Folded in here
+  // rather than into every fixture below, so the answer lists still read as the instrument they are testing —
+  // and only when the caller actually drove the arc that far, so partial walks still stop where they meant to.
+  while (!t.complete && String((t.state as ConvState).stage ?? '').startsWith('c2-')) {
+    const next = C2_EVOCATION[Math.min(turns.length, C2_EVOCATION.length - 1)]!;
+    t = applyReclaimC2Turn(overTheWire(t.state as ConvState), [], next, { text: 'Mm.' });
     turns.push(t);
   }
   return { turns, final: t };

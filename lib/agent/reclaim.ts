@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -776,9 +776,12 @@ const sortStage: StageDef = (() => {
       b.expects = domainPick();
       return;
     }
-    b.stage = 'complete';
-    b.complete = true;
-    b.reply = auditSummary(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT), b.collected);
+    // THE SORT NO LONGER ENDS C2. Greg's evocation stages come between the instrument and the summary — and
+    // C2-37 says that is where most of C2 lives: "Draw out the Member's own perception of where life is opening,
+    // where it is still narrow, and what conditions seem to support expansion." Closing here handed a member the
+    // priority read the moment the ratings stopped, which is the whole Session skipping its own middle.
+    b.stage = 'c2-expansion';
+    b.reply = C2_EXPANSION_PROBES[0]!;
   };
   return {
     id: 'sort',
@@ -789,6 +792,61 @@ const sortStage: StageDef = (() => {
     confirm: advance,
   };
 })();
+
+// Greg's stage 5 is the LAST beat before the summary, so it owns the close. One turn: receive their connection,
+// then the expansion-pattern summary + the priority read + the closing frame (C2-79, built in auditSummary).
+const c2Consolidate = (b: { stage: string; complete: boolean; reply: string; modelText?: string; administeredResponses: number[]; collected: Collected }): void => {
+  b.stage = 'complete';
+  b.complete = true;
+  b.reply = receiveThen(b.modelText, auditSummary(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT), b.collected));
+};
+const c2PriorWorkStage: StageDef = {
+  id: 'c2-prior-work',
+  mode: 'drawout',
+  opener: () => C2_PRIOR_WORK_PROBES[0]!,
+  offersSubstance: () => true,
+  gather: c2Consolidate,
+  confirm: c2Consolidate,
+};
+
+// ── GREG'S EVOCATION STAGES (C2-75, C2-76, C2-77, C2-78) ──────────────────────────────────────────────────────
+//
+// "This is where most of C2 lives" (C2-37), and none of it existed. C2 ran its twenty ratings, its per-domain
+// reflections and its sort, and closed — so every reflective turn in the Session came AFTER a block of numbers
+// and was about the domain that had just been rated. The question the Session is actually asking, whether the
+// member's world has got bigger, was never put to them directly. (Jay, 2026-08-28.)
+//
+// THEY RUN AFTER THE INSTRUMENT, not before it. Greg's stage 1 testable-as fixes the order — "all four beats
+// appear before the first CORE QUESTION" — and by the time a member has rated where they are and where they want
+// to be across four domains, they have the vocabulary to answer these. Asked cold, "what feels possible now that
+// didn't before" is a question most people cannot answer about themselves.
+//
+// FOUR STAGES, NOT ONE, because Greg separates them and the separations do real work:
+//   2 · EXPANSION   — what has opened. Three questions plus a conditions-and-stability follow-up (C2-75).
+//   3 · CONTRACTION — what has not. Held WITHOUT proposing a fix, which is the whole discipline of the beat.
+//   4 · APPROACH    — moving TOWARD, not just away from. "Distinct from stage 2" (C2-77) — expansion is what has
+//                     already happened, approach is what pulls them; a member can have one without the other.
+//   5 · PRIOR WORK  — one connection back, PHRASED AS A QUESTION (C2-78), never as our conclusion about them.
+//
+// The probes are the engine's floor, not its script: withQuestion keeps the model's own follow-up whenever it
+// asked one, so these are what gets asked when it trails into a statement. [[drawout-rhythm-model-owns-questions]]
+const C2_EXPANSION_PROBES = [
+  "That's the sort done. Now the part the numbers can't tell me: what feels possible now that didn't a while ago?",
+  'Where do you notice yourself being more willing than you used to be?',
+  'Anything you have stopped avoiding, even a little?',
+  'What has made that possible — is it something that would hold if this week got hard?',
+];
+const C2_CONTRACTION_PROBES = [
+  'And the other direction: where does your life still feel narrower than you would want it?',
+  'What would a slightly bigger day look like there? Not a transformed one — slightly bigger.',
+];
+const C2_APPROACH_PROBES = [
+  'One more angle. Some of this is moving away from things. What are you moving toward?',
+  'What makes that worth moving toward?',
+];
+const C2_PRIOR_WORK_PROBES = [
+  'Thinking back to the work you did earlier in the program — does any of it show up in what you just described?',
+];
 
 /** One administered stage per domain. `itemCount` is CUMULATIVE — it is compared against the shared bag. */
 function ratingsStage(d: AuditDomain, half: 'a' | 'b'): StageDef {
@@ -822,6 +880,11 @@ const C2_STAGE_ORDER: Stage[] = [
   'audit-open',
   ...AUDIT_DOMAINS.flatMap((d) => [rateAId(d), gapStageId(d), rateBId(d), closeStageId(d)]),
   'sort',
+  // Greg's evocation stages — after the instrument, before the summary. See C2_EXPANSION_PROBES above.
+  'c2-expansion',
+  'c2-contraction',
+  'c2-approach',
+  'c2-prior-work',
 ];
 
 export const RECLAIM_C2_ARC: ArcConfig = {
@@ -855,13 +918,33 @@ export const RECLAIM_C2_ARC: ArcConfig = {
       ];
     }),
     ['sort', sortStage],
+    ['c2-expansion', elicitationStage({
+      id: 'c2-expansion', next: 'c2-contraction',
+      probes: C2_EXPANSION_PROBES,
+      floor: 4, // C2-75: three questions PLUS the conditions-and-stability follow-up
+      handIn: () => C2_CONTRACTION_PROBES[0]!,
+    })],
+    ['c2-contraction', elicitationStage({
+      id: 'c2-contraction', next: 'c2-approach',
+      probes: C2_CONTRACTION_PROBES,
+      floor: 2,
+      handIn: () => C2_APPROACH_PROBES[0]!,
+    })],
+    ['c2-approach', elicitationStage({
+      id: 'c2-approach', next: 'c2-prior-work',
+      probes: C2_APPROACH_PROBES,
+      floor: 2,
+      handIn: () => C2_PRIOR_WORK_PROBES[0]!,
+    })],
+    ['c2-prior-work', c2PriorWorkStage],
   ]),
   onComplete: () => 'Here’s what stands out from the audit.',
 };
 
-export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  // C2 is ADMINISTERED (deterministic 1–10 parse) — no model call needed; the action passes empty text.
-  return runArcTurn(RECLAIM_C2_ARC, state, history, memberMessage, { text: '' });
+// `model` is a PARAMETER now. C2 was administered end to end until Greg's evocation stages landed (2026-08-28);
+// four of its stages are conversational. Defaulted, so every administered-only caller and fixture is unchanged.
+export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(RECLAIM_C2_ARC, state, history, memberMessage, model);
 }
 
 export function reclaimC2Opening(): Turn {
@@ -869,8 +952,98 @@ export function reclaimC2Opening(): Turn {
   return { reply: engagementOpening(c2Engage), state: { stage: 'audit-open', collected: {} }, complete: false };
 }
 
-export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  return applyReclaimC2Turn(state, history, memberMessage);
+// ── C2'S LIVE PROMPT ──────────────────────────────────────────────────────────────────────────────────────────
+//
+// THE CONTRACTION STAGE IS THE ONE TO GET RIGHT. C2-76's testable-as is "the Companion does not propose fixes
+// inside it", and a member who has just said where their life is still too small is exactly who a helpful model
+// wants to rescue. Rescuing them ends the beat: the honest answer gets converted into a task, and the next
+// question is answered with what they think we want to hear.
+const C2_SYSTEM = `${MEMBER_AGENT_GOVERNED_CORE}
+
+YOU ARE RUNNING C2 — "The Bigger World Audit", in Reclaim.
+
+WHAT JUST HAPPENED. The member rated twenty items across four areas of life — where they are, where they want to
+be, how much it matters, how ready they feel, what it would ripple into — and sorted them. They now have the
+language for this, which they did not have an hour ago.
+
+WHAT YOU ARE DOING NOW. Drawing out THEIR perception of where life has opened and where it is still narrow. This
+is the part the numbers cannot tell us.
+
+DO NOT SUPPLY THE NARRATIVE OF GROWTH. Never say a version of "you're clearly doing more now" or "that's real
+progress". If their world has got bigger they are the one who gets to notice it — take that away and the noticing
+was ours, not theirs.
+
+NEVER CLAIM CAUSE OR PROOF. Not "this proves", "this reveals", "this shows", "that's evidence of". Use: can help
+you notice · may be showing you · people sometimes find that · it often becomes easier to see.
+
+DO NOT PROPOSE A FIX, A PLAN, OR A NEXT STEP — in any stage, but above all when they are telling you where life
+is still narrow. Normalize it and stay there. The Session has a close that handles what comes next; you do not.
+
+NEVER NAME A SCORE, A RANKING, OR WHICH AREA "WON". The engine reads the pattern back at the close.
+
+ONE QUESTION PER TURN. Two or three sentences. Reflect what they actually said before you ask.`;
+
+function c2StageNote(state: ConvState): string {
+  switch (String(state.stage ?? '')) {
+    case 'audit-open':
+      return '\n\nWHERE YOU ARE: the opening. They have just named where their world has got bigger. Receive it ' +
+        'plainly — do not celebrate it, and do not extend it into a claim they did not make.';
+    case 'c2-expansion':
+      return '\n\nWHERE YOU ARE: what has OPENED. Draw out what feels possible now, where they are more willing, ' +
+        'what they have stopped avoiding — and what has made that possible. Their words, not a summary of them.';
+    case 'c2-contraction':
+      return '\n\nWHERE YOU ARE: what is still NARROW. Do not fix, plan, encourage or reframe. Normalize the gap ' +
+        'and let it stand. This is the beat most likely to be ruined by being helpful.';
+    case 'c2-approach':
+      return '\n\nWHERE YOU ARE: what they are moving TOWARD, as distinct from what they are moving away from. ' +
+        'If they answer in avoidance terms, ask once what the toward-version would be.';
+    case 'c2-prior-work':
+      return '\n\nWHERE YOU ARE: connecting earlier work to what they just said — ALWAYS AS A QUESTION, never as ' +
+        'our conclusion about them. The engine closes the Session on your next turn.';
+    default:
+      return '';
+  }
+}
+
+/** Which stages of C2 talk. The twenty ratings and the sort stay deterministic. */
+const C2_TALKING_STAGES = new Set(['audit-open', 'c2-expansion', 'c2-contraction', 'c2-approach', 'c2-prior-work']);
+
+export async function liveTurnReclaimC2(
+  state: ConvState,
+  history: ConvMessage[],
+  memberMessage: string,
+  carryForward?: string | null,
+): Promise<Turn> {
+  // Same wall as B1 and B2: the instrument never calls the model.
+  if (!C2_TALKING_STAGES.has(String(state.stage ?? ''))) {
+    return applyReclaimC2Turn(state, history, memberMessage);
+  }
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 1,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 300,
+    system: [
+      { type: 'text' as const, text: C2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: c2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
+    ],
+    messages,
+  });
+  const text = (res.content as Array<{ type: string; text?: string }>)
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('')
+    .trim();
+  return applyReclaimC2Turn(state, history, memberMessage, { text });
 }
 
 // ══ C3 · Quality Days Practice · Step 1 — Defining a Quality Day (COACH mode) ═════════════════════════════════

@@ -18,6 +18,7 @@ import {
   liveTurnReclaimRefine,
   reclaimC2Opening,
   applyReclaimC2Turn,
+  liveTurnReclaimC2,
   reclaimC3Opening,
   liveTurnReclaimC3,
   reclaimCheckpointOpening,
@@ -150,10 +151,15 @@ export async function reclaimTurnAction(
       await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
-    // C2 · Bigger World Audit — administered (deterministic 1–10). On completion, persist the durable priorities (RC-4).
+    // C2 · Bigger World Audit — the 20 ratings are administered (deterministic 1–10); Greg's evocation stages
+    // around them are conversational (2026-08-28). On completion, persist the durable priorities (RC-4).
     if (session === 'c2') {
-      const turn = applyReclaimC2Turn(state, history, message);
       const db = (await getDb()) as unknown as Db;
+      // C2's carry-forward, deliverable at last — and NOT optional here: Greg's stage 5 asks the member to
+      // connect earlier work to what they just said, which the Companion cannot do without the prior-module
+      // context UPSTREAM['c2'] has declared all along. Guarded; losing it costs the connection, not the Session.
+      const carriedC2 = describeCarryForward(await carryForward(db, memberId, 'c2').catch(() => []));
+      const turn = await liveTurnReclaimC2(state, history, message, carriedC2);
       let c2Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
         const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);

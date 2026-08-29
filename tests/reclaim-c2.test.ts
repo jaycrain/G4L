@@ -4,6 +4,7 @@ import { reclaimC2Opening, applyReclaimC2Turn } from '../lib/agent/reclaim.ts';
 import { scoreAudit, auditResponsesMap } from '../lib/reclaim/bigger-world-scoring.ts';
 import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_DOMAINS, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, type AuditDomain, type AuditFacet } from '../lib/reclaim/bigger-world-instrument.ts';
 import { parseLikert } from '../lib/agent/onboarding-staged.ts';
+import { C2_EVOCATION } from './c2-evocation-tail.ts';
 
 // C2 · The Bigger World Audit — the administered four-domain priority audit (20 ratings, 1–10), the RC-1 scoring
 // (computed gap × importance + readiness + ripple), and the classification (Primary / Momentum Lever).
@@ -61,6 +62,8 @@ test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summa
   assert.equal(answered, AUDIT_ITEM_COUNT, 'all 20 items were administered');
   assert.equal(t.complete, false, 'the cross-domain sort still has to happen');
   for (let q = 0; q < 5; q++) t = applyReclaimC2Turn(t.state, [], 'physical');
+  // Greg's evocation stages (2026-08-28) run between the sort and the close.
+  for (const m of C2_EVOCATION) t = applyReclaimC2Turn(t.state, [], m, { text: 'Mm.' });
 
   assert.equal(t.complete, true, 'after the sort, C2 completes');
   assert.equal((t.state.administeredResponses ?? []).length, 20, 'all 20 ratings captured');
@@ -144,7 +147,10 @@ test('the cross-domain sort offers the four areas as CHIPS on every question, in
   for (let i = 0; i < 5; i++) {
     const t = applyReclaimC2Turn(st, [], 'Physical');
     st = t.state;
-    if (t.complete) break;
+    // Stop when the SORT ends, not when the Session does. Since Greg's evocation stages landed (2026-08-28) the
+    // fifth sort answer hands into a conversational beat instead of completing — which legitimately carries no
+    // chips, and would otherwise be counted as a sort question that lost them.
+    if (t.complete || st.stage !== 'sort') break;
     kinds.push(t.expects?.kind ?? 'NONE');
   }
   assert.ok(kinds.length >= 3, 'the sort ran');
