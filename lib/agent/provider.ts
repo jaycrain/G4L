@@ -92,7 +92,23 @@ function anthropicProvider(): AgentProvider {
                 ? `Propose ${identityLabel(i.identityNoun)} as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). Use natural case for the identity ("the Athlete", never all-caps). `
                 : "They haven't named the identity yet — they'll find it through the work; frame it as a person they're reclaiming, without putting a single word to it. ") +
               'No metrics, no praise.\n\n' +
-              `Past self: ${i.athleticPast}\nThe gap${i.doorDisplayName ? ` (${i.doorDisplayName})` : ''}: ${i.gap}\n\n` +
+              // A MISSING PAST SELF IS TOLD, NOT LEFT BLANK (2026-08-30).
+              //
+              // The identity line two lines up already handles its own absence — "They haven't named the identity
+              // yet… without putting a single word to it." This one did not: with no athleticPast it rendered
+              // "Past self: " and said nothing about it, then asked the model to write the member's identity
+              // paragraph from it. A blank field under an instruction to describe someone is an invitation to
+              // invent them, and inventing a past self is the one thing this paragraph must never do — it becomes
+              // the "true north" every later surface points at.
+              //
+              // Reachable: a member who deflects five times at the identity beat is skipped by the backstop with
+              // nothing captured, and can then complete onboarding. Confirmed by walking the live engine.
+              // One fact, two sites, guarded at one. [[one-fact-many-sites]]
+              (i.athleticPast?.trim()
+                ? `Past self: ${i.athleticPast}\n`
+                : 'Past self: they did not describe one — they moved past that question. Do NOT invent a past self ' +
+                  'or infer one from the gap. Write about where they are now and what they want back.\n') +
+              `The gap${i.doorDisplayName ? ` (${i.doorDisplayName})` : ''}: ${i.gap}\n\n` +
               'Output ONLY the paragraph itself — plain text, second person ("you"). ' +
               'No preamble, no heading, no labels, no markdown, no quotation marks.',
           },
