@@ -115,6 +115,46 @@ export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>, w3?: W3CloseE
     return { kind: grid.kind, lines: [...lines, ...extra], opener, keeperBody: keeperBodyFrom([...lines, ...extra]) };
   }
 
+  // C3 · QUALITY DAYS gets its own close, carrying Greg's review stages (C3.md:608–622). The generic close reads
+  // the week back as counts and stops; his stages 6–8 are the point of the week:
+  //
+  //   6 · PATTERN REVIEW — what stands out, what CONDITIONS supported quality, what BARRIERS interfered, and a
+  //       TENTATIVE summary. Tentative is not a hedge for its own sake: the member tracked seven days, which
+  //       cannot support a claim about their life, and C2-81's causality rule applies here as everywhere.
+  //   7 · PROCESS AND PRODUCT — tracking is the process, wellness is the product, and the parallel to B3 is his.
+  //       "Avoid promising wellness as an outcome of tracking" (C3-87) is the one thing this close must not do,
+  //       and it is exactly what a close about good days is tempted to do.
+  //   8 · CLOSING — affirm the HABIT of self-monitoring (not the results), and hand forward.
+  //
+  // IT ASKS RATHER THAN CONCLUDES. The conditions and the barriers are the member's to name — a summary that
+  // supplied them would be the narrative of growth C2-37 forbids, one Session later.
+  if (grid.kind === 'c3_quality') {
+    const best = [...grid.rows].sort((a, b) => b.done - a.done)[0];
+    const thin = [...grid.rows].sort((a, b) => a.done - b.done)[0];
+    // The tentative summary, and only when the days can actually carry one. A single marked day is not a pattern,
+    // and naming one from it would be inventing the thing this stage exists to draw out.
+    const pattern =
+      anyMarked && best && thin && best.label !== thin.label && best.done > thin.done + 1
+        ? `Across the week, ${best.label.toLowerCase()} showed up most and ${thin.label.toLowerCase()} least. ` +
+          `That may be telling you something about what a good day of yours is actually made of.`
+        : anyMarked
+          ? 'A week is short, and yours does not fall into an obvious shape — which is itself worth knowing.'
+          : '';
+    const opener = anyMarked
+      ? "That's the week of tracking done. Here is what got marked —"
+      : "That's the week done. Nothing got marked, which might mean a hard week or just that the logging slipped.";
+    const extra = [
+      ...(pattern ? [pattern] : []),
+      'What was going on in the days that felt like quality — and what got in the way on the ones that did not?',
+      // Stage 7, in his terms. The B3 parallel is his; the refusal to promise wellness is C3-87.
+      'Tracking is the process here; the quality is what the process is for. Same shape as the pilot week in ' +
+        'Rebuild — the logging was never the point, noticing was.',
+      // Stage 8 — the HABIT, not the results.
+      'Either way, you watched your own days for a week. That is the habit this was for, and it is yours now.',
+    ];
+    return { kind: grid.kind, lines: [...lines, ...extra], opener, keeperBody: keeperBodyFrom([...lines, ...extra]) };
+  }
+
   const opener = anyMarked
     ? "That's your week. Here's how it actually went —"
     : // The hardest case to get right. A week with nothing marked is where a product is most tempted to console or
