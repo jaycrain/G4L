@@ -12,6 +12,8 @@ import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage, ty
 import { ritaDoorConcerns, ritaRaisedDoors } from './rita-criterion.ts';
 import { ONBOARDING_HARD_CEILING } from '../lib/agent/onboarding-staged.ts';
 import { GAP_CONFIRM_CHOICES, serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 /** Far enough past the engine's backstop to SEE it fire, so "did not complete" means the product, not the cap. */
 const MEMBER_TURN_CAP = ONBOARDING_HARD_CEILING + 4;
@@ -329,13 +331,27 @@ async function runPersona(p: Persona): Promise<boolean> {
   // Five live runs were read as summaries alone before anyone looked at what the Companion actually SAID, and
   // two of those summaries turned out to be harness artifacts rather than product bugs. A concern count is a
   // pointer, never a diagnosis: the only thing that says WHY is the turn the member was reacting to.
+  const lines = history.map((h) => `${h.role === 'agent' ? 'COMPANION' : 'MEMBER   '} | ${(h.text ?? '').replace(/\n+/g, ' ⏎ ')}`);
   if (process.argv.includes('--transcript')) {
     console.log(`\n----- transcript: ${p.name} -----`);
-    for (const h of history) {
-      const who = h.role === 'agent' ? 'COMPANION' : 'MEMBER   ';
-      console.log(`${who} | ${(h.text ?? '').replace(/\n+/g, ' ⏎ ')}`);
-    }
+    for (const l of lines) console.log(l);
     console.log('----- end transcript -----');
+  }
+  /* ALWAYS KEEP THE EVIDENCE — an intermittent defect is only ever caught in the act.
+     Donna's "didn't we just do that" fired on the full sweep, and the transcript that would have said WHERE was
+     discarded because --transcript wasn't passed. Chasing it afterwards cost a run that came back clean, which
+     proves nothing: one passing trace is not evidence of absence for a defect that isn't deterministic. So the
+     transcript is written for EVERY persona, every run, and the path is printed next to the concern that needs
+     it. Reproduction is the expensive way to get something we already had. (These are scripted personas, never
+     member data; dist/ is gitignored.) */
+  const dir = new URL('../dist/eval-runs/', import.meta.url);
+  let saved = '';
+  try {
+    mkdirSync(dir, { recursive: true });
+    saved = fileURLToPath(new URL(`${p.name}.txt`, dir));
+    writeFileSync(saved, lines.join('\n'), 'utf8');
+  } catch {
+    saved = ''; // never let bookkeeping fail a run
   }
   const turns = history.filter((h) => h.role === 'member').length;
   console.log(`\n### ${p.name} — ${issues.length ? '⚠ ' + issues.length + ' concern(s)' : '✓ clean'}  (member turns: ${turns}, complete: ${turn.complete})`);
@@ -344,6 +360,7 @@ async function runPersona(p: Persona): Promise<boolean> {
   console.log('   reclaim:', (c.reclaimList ?? []).length, 'items');
   console.log('   gap    :', (c.gap ?? '(none)').slice(0, 280));
   for (const iss of issues) console.log('   ⚠ ', iss);
+  if (issues.length && saved) console.log('   ↳ transcript:', saved); // the only thing that says WHY
   return issues.length === 0;
 }
 
