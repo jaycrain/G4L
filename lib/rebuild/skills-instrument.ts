@@ -30,7 +30,16 @@ export type SkillItem = { code: string; skillNo: number; skill: string; domain: 
 // we disagreed with, and if he ever wants them back the originals are right here.
 
 export const SKILLS_SCALE_MAX = 4; // 1 = strongly disagree → 4 = strongly agree
+// GREG'S 1-4 ANCHORS, ONCE. This constant existed with NO callers while `rebuild.ts` typed the same words out at
+// four sites — the opener prose, the chip minLabel, the chip maxLabel and the re-prompt — so the chips and the
+// sentence introducing them could drift apart, and a fifth use would have been a fifth copy. Exactly the shape
+// already fixed for the 1-5 family (AGREEMENT_1_5, which replaced TWELVE copies). The wording is the professor's
+// and is not ours to vary per call site. (Found by scripts/unrun-rules.mjs.) [[one-fact-many-sites]]
 export const SKILLS_SCALE_ANCHORS = '1 (strongly disagree) to 4 (strongly agree)';
+/** The chip anchors — the same scale as the words beside it, by construction. */
+export const SKILLS_AGREEMENT = { minLabel: 'strongly disagree', maxLabel: 'strongly agree' } as const;
+/** The same scale for a RE-ASK, where the range leads and the parentheses read as clutter. */
+export const SKILLS_SCALE_REPROMPT = '1 to 4 — 1 is strongly disagree, 4 is strongly agree';
 
 // Greg's meta-category grouping (skill numbers): Predisposing 6,7,12 · Enabling 1,3,4,5,8,11 · Reinforcing 2,9,10.
 // Exported since 2026-08-17 for the member-facing map (skills-map.ts) — the grouping IS the read Greg asks for,

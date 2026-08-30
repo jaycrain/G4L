@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SESSION_KEYS } from '../lib/workspace/session-key.ts';
-import { teachingFor, teachingKeeper, reconnectTaughtSoFar } from '../lib/content/teaching.ts';
+import { teachingFor, teachingKeeper } from '../lib/content/teaching.ts';
 import { exploreFor } from '../lib/content/explore.ts';
 import { sessionAsset } from '../lib/content/summaries.ts';
 
@@ -86,19 +86,11 @@ test('gates keep nothing', () => {
   }
 });
 
-test('Reconnect cards PERSIST as the arc moves on, and never appear early', () => {
-  // Rendering only the current beat's card would make it vanish when the arc advanced — in a continuous thread
-  // that reads as the product retracting something it just said. Derived from the beat rather than held in
-  // component state, so a member who leaves and comes back sees the same thread.
-  const seen = (stage: string) => reconnectTaughtSoFar(stage);
-  assert.deepEqual(seen('entry'), [], 'nothing before R1 closes');
-  assert.deepEqual(seen('doors'), ['r1'], "R1's card lands when R1 closes");
-  assert.deepEqual(seen('drift'), ['r1', 'r2'], 'R1 stays visible while R2 lands');
-  assert.deepEqual(seen('window'), ['r1', 'r2'], 'both stay through the middle of R3');
-  assert.deepEqual(seen('ceremony'), ['r1', 'r2', 'r3'], 'all three by the close');
-  // An unknown beat must not silently show everything.
-  assert.deepEqual(seen('nonsense-beat'), [], 'an unmapped beat shows nothing rather than guessing');
-});
+// REMOVED 2026-08-29 with `reconnectTaughtSoFar`. This asserted that Reconnect's cards ACCUMULATE as the arc
+// advances — R1's card staying visible while R2 lands, all three by the close. That rule is superseded: every
+// phase now shows ONE CARD, AT THE CLOSE, and the beat-order derivation is what put two cards on question one.
+// tests/reconnect-opens-on-the-mirror.ts asserts the machinery cannot return. The assertion was stale by design
+// change, not by bug — it was green the whole time, guarding a rule we had already replaced.
 
 test('Reconnect files THREE reads, one per SESSION — they cannot collide on one key', async () => {
   // RECONNECT'S "Got it" WAS A NO-OP while the card promised "we'll keep the takeaway in your Playbook" — the

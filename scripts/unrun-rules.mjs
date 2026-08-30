@@ -69,11 +69,27 @@ const countRefs = (name, exclude, corpus) => {
   return n;
 };
 
-const prodCorpus = files.map((f) => [f, readFileSync(f, 'utf8')]);
+// EXCLUDE THIS FILE FROM ITS OWN CORPUS. The PARKED reasons below name the very symbols they park, and since the
+// corpus includes scripts/, every parked name read as "referenced in production" and vanished from the report
+// entirely — the parking lot silently disabling the check, which is this exact defect class one level up.
+const prodCorpus = files.filter((f) => !f.endsWith('unrun-rules.mjs')).map((f) => [f, readFileSync(f, 'utf8')]);
 const testCorpus = testFiles.map((f) => [f, readFileSync(f, 'utf8')]);
+
+// PARKED — unrun ON PURPOSE, with the reason recorded here.
+//
+// A gate that can never reach zero is a gate nobody reads, which is exactly how nine of these accumulated. So
+// there is a parking lot — but every space needs a REASON, which makes it a decision record rather than a
+// suppression. If you cannot write the reason, it is not parked; it is forgotten, and it belongs in DEAD.
+const PARKED = {
+  EVIDENCE_ITEMS: 'C-phase evidence instrument, Greg\'s items verbatim — built for Cycle 2, which Jay moved to post-Charter (2026-08-29). Deleting would throw away his content; wiring it would ship Cycle 2 early.',
+  EVIDENCE_ITEM_COUNT: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
+  EVIDENCE_PART_LABEL: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
+  EVIDENCE_PART_STARTS: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
+};
 
 const dead = [];
 const testOnly = [];
+const parked = [];
 for (const [name, file] of declared) {
   // A default-exported React component or a Next.js route export is invoked by the framework, never by name.
   if (/^(default|GET|POST|PUT|PATCH|DELETE|metadata|generateMetadata|revalidate|dynamic)$/.test(name)) continue;
@@ -88,6 +104,7 @@ for (const [name, file] of declared) {
   if (usesInOwnFile > 1) continue; // the declaration itself is the first match
   const prod = countRefs(name, file, prodCorpus);
   if (prod > 0) continue;
+  if (PARKED[name]) { parked.push({ name, file: relative(ROOT, file), reason: PARKED[name] }); continue; }
   const tests = countRefs(name, file, testCorpus);
   (tests > 0 ? testOnly : dead).push({ name, file: relative(ROOT, file), tests });
 }
@@ -96,13 +113,15 @@ const byFile = (a, b) => a.file.localeCompare(b.file) || a.name.localeCompare(b.
 dead.sort(byFile); testOnly.sort(byFile);
 
 if (process.argv.includes('--json')) {
-  console.log(JSON.stringify({ dead, testOnly }, null, 2));
+  console.log(JSON.stringify({ dead, testOnly, parked }, null, 2));
 } else {
   console.log(`\nTEST-ONLY — green in CI, does nothing for a member (${testOnly.length})`);
   for (const r of testOnly) console.log(`  ${r.name.padEnd(34)} ${r.file}`);
   console.log(`\nDEAD — nothing runs it and nothing checks it (${dead.length})`);
   for (const r of dead) console.log(`  ${r.name.padEnd(34)} ${r.file}`);
-  console.log(`\n${testOnly.length + dead.length} unrun export(s).`);
+  if (parked.length) console.log(`\nPARKED — unrun on purpose, reason on file (${parked.length})`);
+  for (const r of parked) console.log(`  ${r.name.padEnd(34)} ${r.file}`);
+  console.log(`\n${testOnly.length + dead.length} unrun export(s), ${parked.length} parked.`);
   console.log('Each is one of: a rule that should be WIRED, or code that should be DELETED. Neither is "leave it".\n');
 }
 

@@ -14,11 +14,15 @@ export type SdtFacet = 'autonomous' | 'controlled' | 'amotivation';
 
 export type WhyItem = { code: string; domain: WhyDomain; facet: SdtFacet; stem: string };
 
-// The two domain prompts (Greg's, verbatim) — shown once as the header before each domain's six items.
-export const WHY_PROMPTS: Record<WhyDomain, string> = {
-  activity: 'Why do you want to be physically active regularly?',
-  diet: 'Why do you want to eat healthier?',
-};
+// REMOVED, and the constant with it. Greg's two domain prompts — "Why do you want to be physically active
+// regularly?" and "Why do you want to eat healthier?" — were cut on Donna's walk: the member answers the
+// statements as they see fit, and the eating half keeps only its light transition (B1_DIET_TURN, see whyDeliver).
+//
+// The constant outlived the decision by weeks, still exported, still describing itself as "shown once as the
+// header before each domain's six items" — which had stopped being true. A stale declaration that reads as live
+// is worse than no declaration: the next person to touch this file would have believed it. The prompts survive
+// verbatim in Greg's source and in this comment, so nothing of his is lost.
+// (Found by scripts/unrun-rules.mjs, 2026-08-29.)
 
 export const WHY_SCALE_MAX = 7; // 1 = Not at all true for me → 7 = Very true for me
 

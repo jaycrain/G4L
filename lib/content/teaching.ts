@@ -157,22 +157,11 @@ export function reconnectTeachesHere(stage?: string | null): boolean {
 /** Reconnect's beats in order — the arc's own sequence, used to decide what has already been taught. */
 const RECONNECT_BEAT_ORDER = ['entry', 'doors', 'drift', 'measurement', 'window', 'checkpoint', 'ceremony'];
 
-/**
- * The science cards a member should be able to SEE at this point in Reconnect — every asset whose close they have
- * already passed, in order.
- *
- * DERIVED, NOT REMEMBERED. Rendering only the card for the CURRENT beat would make it vanish the moment the arc
- * moved on, which in a continuous thread reads as the product retracting something it just said. Holding it in
- * component state instead would lose it on refresh — and Reconnect is the one arc a member is most likely to
- * leave and come back to. Deriving it from the beat means the thread is the same after a reload as before it.
- */
-export function reconnectTaughtSoFar(stage?: string | null): AssetId[] {
-  const at = RECONNECT_BEAT_ORDER.indexOf(stage ?? 'entry');
-  if (at < 0) return [];
-  return (['r1', 'r2', 'r3'] as AssetId[]).filter(
-    (a) => RECONNECT_BEAT_ORDER.indexOf(RECONNECT_LAST_BEAT_FOR_ASSET[a]!) <= at,
-  );
-}
+// REMOVED with the multi-card teaching layer, 2026-08-29. `reconnectTaughtSoFar` derived WHICH cards to show
+// from how far through the beat order the member had got — the machinery that showed two cards on question one.
+// Every phase now uses ONE CARD, AT THE CLOSE, and tests/reconnect-opens-on-the-mirror.ts already asserts this
+// name cannot come back. It outlived that rule as a tested, exported, never-called function: green in CI, doing
+// nothing for a member. (Found by scripts/unrun-rules.mjs.)
 
 /** Which Reconnect asset a beat's science belongs to — mirrors explore.ts's stage map, kept here for the label. */
 function reconnectAssetForStage(stage?: string | null): string | undefined {

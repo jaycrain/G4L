@@ -17,6 +17,9 @@ import {
   SKILLS_ITEM_COUNT,
   SKILLS_DOMAIN_SPLIT,
   SKILLS_SCALE_MAX,
+  SKILLS_SCALE_ANCHORS,
+  SKILLS_SCALE_REPROMPT,
+  SKILLS_AGREEMENT,
   scoreSkills,
   skillHighlights,
   skillLabel,
@@ -410,8 +413,8 @@ const B2_OPEN =
   "So before you change anything: which of those skills are already yours, and which are thin?" + BEAT_SEP +
   "They aren't fixed. A skill is something you practice and get better at, so where you stand today is a starting " +
   "mark rather than a verdict on you." + BEAT_SEP +
-  "There are twelve of them. You'll rate each one twice — once for movement, once for eating — from 1 (strongly " +
-  "disagree) to 4 (strongly agree). Answer honestly rather than well; none of it is graded." + BEAT_SEP +
+  `There are twelve of them. You'll rate each one twice — once for movement, once for eating — from ${SKILLS_SCALE_ANCHORS}. ` +
+  "Answer honestly rather than well; none of it is graded." + BEAT_SEP +
   // NOT "which ones carry you" — b2Close already says "when a strong skill carries you", and carry/carrying is one
   // of the four words Donna flagged as reading like AI (2026-08-22). One use in a Session is voice; the same word
   // opening and closing it is the density she reported.
@@ -481,11 +484,10 @@ const skillsStage: StageDef = administeredStage({
   id: 'skills',
   itemCount: SKILLS_ITEM_COUNT, // 24
   scaleMax: SKILLS_SCALE_MAX, // 4 (strongly disagree → strongly agree)
-  minLabel: 'strongly disagree', // W-24: chip anchors
-  maxLabel: 'strongly agree',
+  ...SKILLS_AGREEMENT, // W-24: chip anchors — the same words as the opener prose, by construction
   opener: () => skillsOpener(),
   deliverItem: (n) => skillsDeliver(n),
-  reprompt: (n) => `A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.\n\n${skillsDeliver(n)}`,
+  reprompt: (n) => `A number from ${SKILLS_SCALE_REPROMPT}.\n\n${skillsDeliver(n)}`,
   onComplete: (b) => {
     // All 24 responses are in b.administeredResponses (activity 0–11, diet 12–23). The SCORING now happens at
     // consolidation, not here: Greg's evocation stage comes between, and reading a member their profile before
