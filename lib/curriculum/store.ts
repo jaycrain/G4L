@@ -46,14 +46,38 @@ export async function saveAnswer(db: Db, memberId: string, sessionId: string, st
   );
 }
 
-/** Close a Session (one close at the end). Returns false if there's no progress row to close. */
-export async function closeSession(db: Db, memberId: string, sessionId: string): Promise<boolean> {
-  const { rows } = await db.query<{ session_id: string }>(
-    `update session_progress set status='closed', closed_at=now(), updated_at=now()
-     where member_id=$1 and session_id=$2 returning session_id`,
+/**
+ * Close a Session (one close at the end).
+ *
+ * Returns `{ closed }` — whether there was a progress row to close at all — and `{ firstClose }` — whether THIS
+ * call is the one that completed it. The two are different questions and the caller needs both: `closed` says the
+ * write landed, `firstClose` says whether a completion just happened. Only the second may drive an event.
+ *
+ * THE STEP-PLAYER PATH HAD NEITHER GUARD (found by sweep, 2026-08-30). Its two siblings — markSessionClosed and
+ * markCheckpointClosed — each compute `alreadyClosed` so a re-close cannot double-count. This one re-stamped
+ * closed_at AND its caller logged session_close unconditionally, so re-closing a step-player Session both moved
+ * its completion time and counted the completion twice. The rule "a re-close is not a new completion" was stated
+ * at three sites, half-held at two, and absent at the third.
+ */
+export async function closeSession(
+  db: Db,
+  memberId: string,
+  sessionId: string,
+): Promise<{ closed: boolean; firstClose: boolean }> {
+  const prior = await db.query<{ status: string }>(
+    `select status from session_progress where member_id = $1 and session_id = $2`,
     [memberId, sessionId],
   );
-  return rows.length > 0;
+  const alreadyClosed = prior.rows[0]?.status === 'closed';
+  const { rows } = await db.query<{ session_id: string }>(
+    // FIRST CLOSE WINS — see markSessionClosed for the walk this was found on and why closed_at is not bookkeeping.
+    `update session_progress
+        set status='closed', closed_at = coalesce(closed_at, now()), updated_at = now()
+      where member_id=$1 and session_id=$2 returning session_id`,
+    [memberId, sessionId],
+  );
+  const closed = rows.length > 0;
+  return { closed, firstClose: closed && !alreadyClosed };
 }
 
 // Force a session CLOSED even when no in-flight progress row exists — for the v2.3 conversational Rewire Sessions,
@@ -123,7 +147,13 @@ export async function markCheckpointClosed(
   await db.query(
     `insert into session_progress (member_id, session_id, status, closed_at)
      values ($1, $2, 'closed', now())
-     on conflict (member_id, session_id) do update set status = 'closed', closed_at = now(), updated_at = now()`,
+     on conflict (member_id, session_id) do update set
+       status = 'closed',
+       -- FIRST CLOSE WINS, same as markSessionClosed — see there for the walk this was found on. A member who
+       -- re-reads a ceremony has not crossed the checkpoint a second time, which the event guard below already
+       -- says in so many words; the timestamp has to agree with it.
+       closed_at = coalesce(session_progress.closed_at, now()),
+       updated_at = now()`,
     [memberId, assetId],
   );
   await setGate(db, memberId, `${phase}_checkpoint_passed`);

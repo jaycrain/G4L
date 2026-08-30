@@ -185,7 +185,9 @@ test('session progress: save answers, advance, close', async () => {
   assert.equal(p!.answers['2'], 'The racer they drafted off');
   assert.equal(p!.status, 'in_progress');
   assert.equal(await isSessionClosed(db, memberId, 'RCN-EXC'), false);
-  assert.equal(await closeSession(db, memberId, 'RCN-EXC'), true);
+  // closeSession now reports BOTH facts (2026-08-30): the row closed, and THIS call is what completed it. The
+  // second gates session_close, so a re-close can no longer double-count a completion.
+  assert.deepEqual(await closeSession(db, memberId, 'RCN-EXC'), { closed: true, firstClose: true });
   assert.equal(await isSessionClosed(db, memberId, 'RCN-EXC'), true);
   assert.deepEqual(await closedSessionIds(db, memberId), ['RCN-EXC']);
   // closing keeps answers, and a later save doesn't reopen a closed session

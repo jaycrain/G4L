@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { markSessionClosed, closedSessionIds } from '../lib/curriculum/store.ts';
+import { markSessionClosed, markCheckpointClosed, closeSession, closedSessionIds } from '../lib/curriculum/store.ts';
 
 // PRODUCTION BUG, 2026-07-31. Reconnect runs as one conversational arc, so it bypasses both the step-player's
 // close and the checkpoint action. Badges were re-wired for that bypass; SESSION CLOSES were not. Greg opened
@@ -130,4 +130,57 @@ test('the ceremony self-heal still closes what IS open, without disturbing what 
     `select closed_at::text as closed_at from session_progress where member_id=$1 and session_id='RCN-IDQ'`, [m],
   )).rows[0]!.closed_at;
   assert.equal(idqAfter, idqClosedAt, "the already-closed Session keeps its own completion time");
+});
+
+// THE RULE, HELD AT EVERY CLOSE PATH — swept 2026-08-30 after the markSessionClosed fix.
+//
+// "A re-close is not a new completion" was stated at three sites and held at none of them fully:
+//   · markSessionClosed    — event guarded, timestamp not
+//   · markCheckpointClosed — event guarded, timestamp not
+//   · closeSession         — NEITHER guarded; its caller logged session_close unconditionally, so re-closing a
+//                            step-player Session both moved the completion time and counted it twice
+//
+// One fact, three sites, three different amounts of wrong. This test takes them together on purpose: a per-site
+// test is what let the step-player path sit unguarded while its two siblings looked correct.
+test('EVERY close path: a re-close preserves the original completion time', async () => {
+  const d = await db();
+  const m = await member(d, 'sweep-allpaths@example.test');
+
+  await markSessionClosed(d, m, 'RWR-W1');
+  await markCheckpointClosed(d, m, { assetId: 'RCN-CHK', eventRef: 'RCN-CHK', phase: 'reconnect' });
+  await d.query(
+    `insert into session_progress (member_id, session_id, status, current_step) values ($1,'STEP-1','in_progress',1)`, [m]);
+  await closeSession(d, m, 'STEP-1');
+
+  // Backdate all three, then re-close each the way its own self-heal / re-entry does.
+  await d.query(`update session_progress set closed_at = closed_at - interval '42 minutes' where member_id=$1`, [m]);
+  const before = new Map((await d.query<{ session_id: string; closed_at: string }>(
+    `select session_id, closed_at::text as closed_at from session_progress where member_id=$1`, [m],
+  )).rows.map((r) => [r.session_id, r.closed_at]));
+
+  await markSessionClosed(d, m, 'RWR-W1');
+  await markCheckpointClosed(d, m, { assetId: 'RCN-CHK', eventRef: 'RCN-CHK', phase: 'reconnect' });
+  await closeSession(d, m, 'STEP-1');
+
+  for (const { session_id, closed_at } of (await d.query<{ session_id: string; closed_at: string }>(
+    `select session_id, closed_at::text as closed_at from session_progress where member_id=$1`, [m],
+  )).rows) {
+    assert.equal(closed_at, before.get(session_id), `${session_id} kept its original completion time`);
+  }
+});
+
+test('closeSession reports whether IT completed the Session — so the event fires once', async () => {
+  const d = await db();
+  const m = await member(d, 'sweep-firstclose@example.test');
+  await d.query(
+    `insert into session_progress (member_id, session_id, status, current_step) values ($1,'STEP-2','in_progress',1)`, [m]);
+
+  const first = await closeSession(d, m, 'STEP-2');
+  assert.deepEqual(first, { closed: true, firstClose: true }, 'the close that completed it');
+
+  const again = await closeSession(d, m, 'STEP-2');
+  assert.deepEqual(again, { closed: true, firstClose: false }, 're-close: the row is closed, but nothing completed');
+
+  const missing = await closeSession(d, m, 'NO-SUCH-SESSION');
+  assert.deepEqual(missing, { closed: false, firstClose: false }, 'no row to close is not a completion either');
 });

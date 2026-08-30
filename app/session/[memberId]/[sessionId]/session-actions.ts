@@ -155,8 +155,12 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
         /* never break the close over a door reconcile */
       }
     }
-    await closeSession(db, memberId, sessionId);
-    await logEvent(db, memberId, 'session_close', { surface: 'session', ref: sessionId }); // closes the time-on-asset window
+    // FIRST CLOSE ONLY. This logged unconditionally, so re-closing a Session counted the completion twice — the
+    // one close path of three that had no guard at all. Its siblings (markSessionClosed, markCheckpointClosed)
+    // have computed `alreadyClosed` for exactly this since they were written.
+    const { firstClose } = await closeSession(db, memberId, sessionId);
+    // Closes the time-on-asset window opened by session_open.
+    if (firstClose) await logEvent(db, memberId, 'session_close', { surface: 'session', ref: sessionId });
     // Best-effort, concurrent (neither breaks the close): harvest the member's words into their Playbook
     // (every Session), and — for identity Sessions only — re-sharpen the dashboard mirror.
     const tasks: Promise<unknown>[] = [
