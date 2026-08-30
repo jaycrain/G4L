@@ -23,8 +23,12 @@ export const CRISIS_HOTLINE_US = '988';
 //      stranger's first name arriving in the worst moment of their week, and it quietly promises that one
 //      specific person is now watching. "Someone here" is both kinder and truer — the escalation goes to whoever
 //      is working the queue, which was already what the second half of the sentence said.
+//   5. TAKE THE NUMBER FROM THE CONSTANT. It was typed as a literal here while CRISIS_HOTLINE_US sat two lines
+//      above with no callers — one fact at two sites, in the most sensitive string we ship. Nobody would have
+//      noticed until a locale variant or a changed number updated the constant and left this line saying 988.
+//      (Found by scripts/unrun-rules.mjs, 2026-08-29.)
 export const CRISIS_RESPONSE_US =
-  "If you're in crisis, please call or text 988 for the Suicide and Crisis Lifeline. " +
+  `If you're in crisis, please call or text ${CRISIS_HOTLINE_US} for the Suicide and Crisis Lifeline. ` +
   "You can reach a real person there any time. I'm not able to help with this directly, " +
   'but they can. ' +
   "I've also let someone here know, so we can check in with you.";
