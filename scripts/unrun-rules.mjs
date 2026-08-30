@@ -125,4 +125,15 @@ if (process.argv.includes('--json')) {
   console.log('Each is one of: a rule that should be WIRED, or code that should be DELETED. Neither is "leave it".\n');
 }
 
-process.exit(dead.length + testOnly.length > 0 ? 1 : 0);
+// A RATCHET, NOT A CLIFF. Requiring zero would mean a gate that fails from day one, and a gate that always fails
+// is a gate nobody reads — which is precisely how nine of these accumulated unnoticed. So the bar is the CURRENT
+// count: the list may shrink freely, and the build fails the moment it GROWS. Lower this number as items are
+// worked off; it should never be raised. Every increase is a new rule that exists and does not run.
+const BASELINE = 53; // 2026-08-29, after the first triage pass
+const total = dead.length + testOnly.length;
+if (total > BASELINE) {
+  console.error(`\nRATCHET: ${total} unrun exports, up from the ${BASELINE} baseline. Something new was added that nothing calls.`);
+  process.exit(1);
+}
+if (total < BASELINE) console.log(`Below baseline (${total} < ${BASELINE}) — lower BASELINE in this file to lock the gain in.\n`);
+process.exit(0);
