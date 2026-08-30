@@ -553,13 +553,21 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
             <IdentityPicker expects={expects} disabled={pending} onPick={(word) => void submit(word)} />
           ) : expects?.kind === 'scale' ? (
             <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />
+          ) : expects?.kind === 'gap_confirm' ? (
+            /* THE DOORS DECISION IS ALWAYS HERS, AND ALWAYS EXPLICIT. (Jay, 2026-08-30: "There should be NO
+               alternative to a Member than accepting or de-selecting chips offered up in Onboarding Doors.")
+               This used to render the chips ALONGSIDE the text box, on the reasoning that the chips were the easy
+               path and not a gate. The hole that left: the kept-Doors list is only sent when she TAPS. Answer in
+               words — "yes, that's the whole of it" — and no list arrives, so the engine keeps every Door it
+               inferred. The final say silently reverted to the Companion, which is the one thing this gate exists
+               to prevent.
+               She can still say anything: "There's more" and "Not quite right" both clear the confirm and hand the
+               composer straight back. She just has to rule on the Doors on the way past, which takes one tap.
+               The shared rule already said so — showComposer's own note lists the Doors board under "the answer IS
+               the structure. No composer" — it simply never reached this surface. */
+            <GapConfirm expects={expects} disabled={pending} onChoose={(m) => void submit(m)} />
           ) : (
-            /* The gap confirm is the ONE structured surface that does not replace the box — the chips are the easy
-               path, not a gate, so anything she wants to say instead still goes where it always went. */
             <>
-              {expects?.kind === 'gap_confirm' && (
-                <GapConfirm expects={expects} disabled={pending} onChoose={(m) => void submit(m)} />
-              )}
               <form className="chat-input" onSubmit={send}>
               <textarea
                 ref={taRef}
