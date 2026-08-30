@@ -791,7 +791,7 @@ test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (
 });
 
 // --- Increment 2: the decline-vs-Acceptance fork (Decision E — supersedes the Jun-26 admit-at-floor) --------
-test('STAGED fade gate — a genuinely-thriving no-fade optimizer is gracefully DECLINED (out of scope, never admitted)', () => {
+test('STAGED fade gate — a genuinely-thriving no-fade optimizer is ADMITTED with no Door, never with an invented one', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a founder', identitySkipped: true } };
   // Theo-shaped: no loss, only forward ambition — the no-deficit member we don't serve.
   const { turns } = replayStaged(
@@ -801,24 +801,32 @@ test('STAGED fade gate — a genuinely-thriving no-fade optimizer is gracefully 
     ],
     atGap,
   );
+  // REVERSED BY RULING, 2026-08-29 (Jay: "let him in with no Door"). This used to assert a terminal decline. The
+  // invariant it was really protecting is untouched and still asserted below: we never fabricate a fade to admit
+  // anyone. What changed is what happens to a man who has none — he is admitted at baseline with the absence
+  // RECORDED, instead of being refused, or (what actually happened most of the time) asked for a story he did not
+  // have until he gave up.
   const last = turns.at(-1)!;
-  assert.equal(last.declined, true, 'genuinely thriving → gracefully declined');
-  assert.equal(last.state.stage, 'declined', 'terminal off-ramp, not admitted into Reclaim');
-  assert.equal(last.complete, false, 'a decline is not a completion');
-  assert.match(last.reply, /door stays open|kind of distance|keep building/i, 'warm, honest, non-pathologizing decline');
-  assert.ok(!last.state.collected.gap, 'no fabricated fade captured into their record');
+  assert.equal(last.state.collected.noDoorYet, true, 'the absence is recorded as a state, not argued with');
+  assert.equal(last.state.stage, 'reclaim', 'he goes on to the ordinary path');
+  assert.notEqual(last.declined, true, 'nobody is turned away at the scope gate any more');
+  assert.ok(!last.state.collected.gap, 'THE INVARIANT: no fabricated fade captured into their record');
+  assert.deepEqual(last.state.collected.doors ?? [], [], 'and no fabricated Door either');
+  assert.doesNotMatch(last.reply, /kind of distance|keep building/i, 'the old decline copy is gone');
 });
 
-test('STAGED fade gate — note_no_fade → DECLINE even over an incidentally-tagged prose "gap"', () => {
+test('STAGED fade gate — note_no_fade admits with NO DOOR, and still refuses an incidentally-tagged prose "gap"', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a founder', identitySkipped: true } };
   const turn = applyStagedTurn(atGap, [], "There's no distance at all — career, marriage, kids are all genuinely great, I just want more.", {
     text: "Sounds like you're thriving.",
     record: { gap: 'career, marriage, kids all genuinely great' },
     noFade: true,
   });
-  assert.equal(turn.declined, true, 'the model’s no-fade judgement declines, even with a prose gap tagged');
-  assert.equal(turn.state.stage, 'declined');
-  assert.equal(turn.complete, false);
+  // Same reversal: the model's no-fade judgement no longer refuses him, but it must still refuse to let an
+  // incidentally-tagged prose "gap" become a Fade on his record. That half is the point of the test.
+  assert.equal(turn.state.collected.noDoorYet, true, 'recorded as having no Door yet');
+  assert.notEqual(turn.declined, true);
+  assert.ok(!turn.state.collected.gap, 'the tagged prose is NOT kept as his fade story');
 });
 
 test('STAGED fade gate — a RESIGNED member is admitted as a real Fade, and is NOT labelled', () => {

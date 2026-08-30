@@ -43,9 +43,16 @@ underneath is engineered.
 **Who we're for (scope — locked Jun 2026):** people experiencing **midlife identity loss** — a real
 **Fade** (felt distance from who they still are underneath). We are **not** for the no-deficit,
 forward-looking optimizer ("no drift, I just want more"). Serving everyone makes us a generic
-flourishing product in a crowded field; our edge is a specific demographic + a specific problem. A
-member with no Fade stalling at intake is the system **correctly declining a non-member** — not a bug
-to engineer around. (See `docs/onboarding-open-issues.md` Issue 2.)
+flourishing product in a crowded field; our edge is a specific demographic + a specific problem. **The scope is
+unchanged — but as of 2026-08-29 (v3.5.59) intake no longer TURNS ANYONE AWAY** (Jay: *"let him in with no
+Door"*). A prospect with no Fade is admitted at baseline with the absence recorded as **No Door yet** — descriptive
+of the record, never a label said back to him, and "yet" is load-bearing: a Door surfacing later is an ordinary
+update, not a correction. This supersedes the previous rule that "a member with no Fade stalling at intake is the
+system correctly declining a non-member — not a bug to engineer around." **Stalling was never declining.** In
+practice he was neither admitted nor refused: the decline needed him to declare himself thriving in so many words,
+so a man who simply had no story was asked for one until he left (Theo, live eval: *"four times!"*). What stays
+absolute is that **we never fabricate a Fade to admit anyone** — nothing writes a gap or a Door for him, and the
+Reclaim List is what the program routes on. (See `docs/onboarding-open-issues.md` Issue 2.)
 
 **Launch plan:** charter MVP Oct 2026 → paid public launch Jan 1 2027.
 **MVP scope = the 12 gated assets** across all four Rs (see the Authoring Brief).

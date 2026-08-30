@@ -129,6 +129,19 @@ export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
   identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
+  /**
+   * NO DOOR YET — he came through intake without a Fade to point at. (Jay's ruling, 2026-08-29: "let him in with
+   * no Door.")
+   *
+   * It describes the RECORD, not the man: we have not found the event that opened a distance, and "yet" is doing
+   * real work — nothing here is a verdict, and a Door added later is an ordinary update, not a correction. It is
+   * NEVER a label the Companion says back to him, by the same rule that governs his Identity.
+   *
+   * Before this he was neither admitted nor declined — the gap stage kept looking for a story he did not have and
+   * asked him for it until he gave up. He complained of being asked "four times!". Nobody chose that; it was just
+   * what the code did when it could not find what it was looking for.
+   */
+  noDoorYet?: boolean;
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
   // MODEL-VOICED WANTS, HELD FOR HER TO RULE ON — proposed, never committed. A second-person sentence ("get YOUR
   // fitness back") is proof the model composed the line rather than quoting her, so it must not be stored as her

@@ -378,7 +378,7 @@ test('a terse member is NOT declined on the model\'s hint alone (Tim, 2026-08-14
 
 // The other half: someone who genuinely IS out of scope must still be let go, briefly and without a fabricated
 // hardship. Turning the gate up is only correct if it does not trap the people it was built to release.
-test('an affirmative thriving declaration still declines immediately, however brief', () => {
+test('an affirmative thriving declaration is acted on immediately, however brief', () => {
   const at: ConvState = { stage: 'gap', collected: { identityNoun: null }, stageScratch: {} };
   // Phrasing that trips the member-words branch. (Deliberately NOT "nothing has faded" — that no longer reads as
   // a loss after 2026-08-24, but it is not in THRIVING_RE either, so it admits rather than releases. After Tim,
@@ -386,5 +386,9 @@ test('an affirmative thriving declaration still declines immediately, however br
   const t = applyStagedTurn(at, [],
     "Nothing is missing — life is great and I just want more.",
     { text: '' });
-  assert.equal(t.state.stage, 'declined', 'her OWN words decide it on the first turn — we never manufacture a fade');
+  // She used to be declined on this turn; since Jay's ruling she is admitted with no Door. The assertion that
+  // matters is the one that was always the point: HER OWN WORDS decide it, on the first turn, and we never
+  // manufacture a fade to keep the conversation going.
+  assert.equal(t.state.collected.noDoorYet, true, 'her own words decide it on the first turn');
+  assert.ok(!t.state.collected.gap, 'we never manufacture a fade');
 });

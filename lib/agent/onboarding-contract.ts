@@ -67,7 +67,12 @@ export function contractGaps(c: Collected): ContractGap[] {
   if (!c.athleticPast && !c.identitySkipped) missing.push('athleticPast');
   if (!hasIdentity(c)) missing.push('identity');
   if ((c.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) missing.push('reclaimList');
-  if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) missing.push('gap');
+  // THE NO-DOOR-YET MEMBER HAS NO GAP TO GIVE, and demanding one is exactly what stranded him. He is admitted
+  // BECAUSE there is no Fade story here (Jay, 2026-08-29: "let him in with no Door"), so requiring the narrative
+  // would re-close the door the ruling opened — and the only way to satisfy it would be to invent one, which is
+  // the thing we never do. Everything else still stands: the identity slot and the Reclaim List are required of
+  // him exactly as they are of anyone, and the List is what the program routes on for him.
+  if (!c.noDoorYet && !gapIsNarrative(c.gap, c.reclaimList ?? [])) missing.push('gap');
   // Doors (routing) are deliberately optional — see the ContractGap note above. A null Door is a valid
   // completed state for a real-Fade member; the gap narrative carries recognition.
   return missing;

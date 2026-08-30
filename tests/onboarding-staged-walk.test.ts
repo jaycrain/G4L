@@ -62,9 +62,11 @@ test('GATE/CAT-01 — a Doors-accumulation fade (marriage→kids→work, no loss
   assert.notEqual(last.declined, true, 'the member was turned away at the front door despite three named Doors');
 });
 
-test('GATE/CAT-03 — a genuinely thriving no-fade optimizer must STILL be declined (guard cuts both ways)', () => {
-  // The other direction: no loss, no Doors, pure forward optimizer. This one SHOULD decline — the fix for CAT-01 must
-  // not over-correct into admitting everyone and fabricating a fade.
+test('GATE/CAT-03 — a genuinely thriving no-fade optimizer is admitted with NO fade fabricated for him', () => {
+  // The other direction: no loss, no Doors, pure forward optimizer. He used to be DECLINED here; since Jay's ruling
+  // (2026-08-29) he is admitted at baseline with the absence recorded. What CAT-03 was really guarding is unchanged
+  // and is what this now asserts: the fix for CAT-01 must not over-correct into FABRICATING a fade for him. Getting
+  // in is fine; getting a story he never told is not.
   const { finalState, last } = replayStaged(
     [
       { member: 'Honestly nothing went wrong — great marriage, career I love, kids are thriving', model: { text: 'That is a good place to be.' } },
@@ -73,7 +75,10 @@ test('GATE/CAT-03 — a genuinely thriving no-fade optimizer must STILL be decli
     ],
     atGap(),
   );
-  assert.equal(finalState.stage === 'declined' || last.declined === true, true, 'a genuine no-fade optimizer was wrongly ADMITTED — a fabricated fade (CAT-03)');
+  assert.equal(finalState.collected.noDoorYet, true, 'his lack of a Door is recorded, not argued with');
+  assert.notEqual(last.declined, true, 'nobody is turned away at the scope gate any more');
+  assert.ok(!finalState.collected.gap, 'CAT-03, the part that still matters: no fade is fabricated for him');
+  assert.deepEqual(finalState.collected.doors ?? [], [], 'and no Door is invented to justify admitting him');
 });
 
 test('GATE/CAT-04 — one note_no_fade misfire must not permanently strand a genuine-loss member', () => {
@@ -136,11 +141,15 @@ test('CRISIS/CAT-22 — explicit self-harm / overdose / planning phrasings all r
   assert.equal(detectCrisis('I want to cut back on drinking').flagged, false, 'ordinary "cut back" does not false-fire');
 });
 
-test('DECLINE/CAT-26 — a declined session stays terminal on resume; never dragged into a completion', () => {
+test('CAT-26 — a session parked in the OLD decline is let in, not refused a second time', () => {
+  // Nothing produces 'declined' any more, but real sessions may still be sitting in it. A man we turned away last
+  // week must not be turned away again this week because his row is old — the ruling that admits him admits him
+  // whenever he comes back. CAT-26's own point survives intact: never force-complete an empty declined session.
   const declined: ConvState = { stage: 'declined', collected: {} };
   const t = applyStagedTurn(declined, [], 'actually wait', { text: '' });
-  assert.equal(t.declined, true, 're-asserts the decline');
-  assert.equal(t.complete, false, 'never force-completes an empty declined session');
+  assert.notEqual(t.declined, true, 'the refusal is not re-asserted');
+  assert.equal(t.state.collected.noDoorYet, true, 'he is migrated onto the ordinary path with the absence recorded');
+  assert.equal(t.complete, false, 'CAT-26: still never force-completes an empty session');
 });
 
 // ---------------------------------------------------------------------------

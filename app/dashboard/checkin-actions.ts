@@ -391,6 +391,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     doorProfileLine: describeDoorProfile(doorProfileRows),
     quietDriftClaimed: !!quietDriftClaimedAt,
+    // Derived, not stored — see CheckinContext.noDoorYet. Every other member must have an intake gap to finish
+    // onboarding, so "no gap and no Doors" is unambiguous, and it stops being true by itself if either arrives.
+    noDoorYet: !(prof?.intake_gap ?? '').trim() && dash.doors.length === 0,
     openDoorNames: openDoors2.map((d) => d.displayName),
     legacyLetter: legacyLetterRow ? { body: legacyLetterRow.body, datedFor: legacyLetterRow.datedFor } : null,
     // Their words only — the empty fields of a sparse day would otherwise read as a form they half-filled.

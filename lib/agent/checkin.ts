@@ -63,6 +63,13 @@ export type CheckinContext = {
   doorProfileLine?: string | null;
   /** She claimed the quiet-drift card on the R2 board. NOT a Door — a stance she named about herself. */
   quietDriftClaimed?: boolean;
+  /**
+   * NO DOOR YET — admitted without a Fade to point at (Jay, 2026-08-29). DERIVED, never stored: no intake gap and
+   * no Doors IS the state, since every other member is required to have a gap narrative to complete intake. Deriving
+   * it means the "yet" takes care of itself — the moment a Door or a gap appears, the state ends on its own, with no
+   * stored flag left behind to contradict the record.
+   */
+  noDoorYet?: boolean;
   /** Doors she says are STILL OPEN — Greg's active Fade. Display names, already filtered. */
   openDoorNames?: string[];
   /** R3's Legacy Letter — theirs, to themselves. Null until they write one. */
@@ -540,6 +547,14 @@ export function contextBlock(c: CheckinContext): string {
     // recited back at her as a finding. Held, not used.
     c.quietDriftClaimed
       ? "They marked the quiet-drift card on the Doors board: no single event, just years of routine without looking up. That is a stance they named about themselves, NOT a Door, and it is the hardest of these to admit. Let it inform how you hear them — never name it back to them as a label, never treat it as less real than an event, and never imply they simply were not paying enough attention."
+      : null,
+    // NO DOOR YET — he came in without a Fade to point at, and was admitted that way on purpose (Jay, 2026-08-29).
+    // The Companion has to know, or it will do exactly what intake used to do: go looking for a story he does not
+    // have and ask him for it until he stops answering. He told us four times. The absence is a fact about the
+    // RECORD, never a deficiency in him, and "yet" is load-bearing — a Door may surface later, and if it does it
+    // is an ordinary update, not the correction of something he got wrong.
+    c.noDoorYet
+      ? "There is NO DOOR on their record yet: nothing has pulled them away from who they are, and they were brought in on exactly that basis. Do not go hunting for a Fade, do not treat the blank as something missing to be filled, and never say 'no Door yet' back to them as a label. Work from what they want NEXT — their Reclaim List is the whole of what you have, and it is enough. If they ever name a real loss of their own accord, receive it as new, not as the answer you were waiting for."
       : null,
     // THE ACTIVE FADE. Greg, R2-11: "A door that closed years ago carries different meaning than a door the member
     // is actively walking through right now. That distinction matters for everything that follows: a closed door

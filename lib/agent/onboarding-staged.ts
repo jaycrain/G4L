@@ -432,12 +432,19 @@ function gapGoOn(history: ConvMessage[]): string | null {
 // Acceptance Door, a real quiet Fade served via the normal path; GENUINELY THRIVING (forward optimizer, no loss,
 // no resignation) → gracefully DECLINED, out of scope, door left open. We never fabricate a fade to admit a
 // thriving member — the honest, non-pathologizing move is to say this isn't their season yet.
-const DECLINE_REPLY =
-  "Honestly? From everything you've shared, you're not carrying the kind of distance this program is built for — " +
-  "you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place " +
-  "to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that " +
-  'changes — when something real has pulled you away from who you were. If that day comes, this door stays open ' +
-  "and I'll be right here. Until then — keep building.";
+// REPLACED THE DECLINE, 2026-08-29 (Jay: "let him in with no Door"). The old copy told him he was not carrying the
+// distance this program is built for and closed the conversation — and in practice most people like him never even
+// reached it, because it needed them to declare themselves thriving in so many words. They just got asked for a
+// story they did not have until they left.
+//
+// What this must do: say plainly that there is no Door here YET, without manufacturing a problem he does not have
+// and without reading as a consolation prize. No praise, no verdict — a receipt and a next step, same as any other
+// beat. The absence is a fact about the record, not a mark against him.
+const NO_DOOR_YET_REPLY =
+  "Then I'm not going to go looking for one. Nothing has pulled you away from who you are — that's worth saying " +
+  'plainly rather than digging until we find something. It also means we start in a different place than most ' +
+  "people do: not with what went missing, but with what you want next.\n\n" +
+  "So tell me that. What do you want more of — the things you'd take back or take on, if the year went your way?";
 
 // §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
 // A warm BRIDGE from the gap into reclaim (Phase 2.3 / Cowork #5) — the gap beat is heavy, so we don't cold-pivot
@@ -2306,16 +2313,41 @@ const gapStage: StageDef = {
     // is missing, I just want more" is out of scope on the first turn, as they should be.
     const gapWords = gapCorpus.trim().split(/\s+/).filter(Boolean).length;
     const enoughToJudge = gapWords >= NO_FADE_MIN_WORDS;
-    const thrivingDecline =
+    const noDoorYet =
       !hardFadeSignal &&
       !hasGenuineLoss(gapCorpus) &&
       (declaresThriving(gapCorpus) || (s.noFade && (s.gapTurns ?? 0) >= 2 && enoughToJudge));
-    if (thrivingDecline) {
-      // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
-      b.stage = 'declined';
+    if (noDoorYet) {
+      // HE COMES IN WITH NO DOOR. (Jay's ruling, 2026-08-29: "Let him in with no Door.")
+      //
+      // This used to be a terminal DECLINE — "you're not carrying the kind of distance this program is built for"
+      // — and before that, in practice, it was neither: the branch needed him to declare himself thriving in so
+      // many words, and a man who simply had no story to tell fell between admission and refusal. The gap stage
+      // kept asking for an event he did not have. He wrote "four times!" and never got an account. Nobody chose
+      // that outcome; it is what the code did when it could not find what it was looking for.
+      //
+      // So he is admitted at baseline with the absence RECORDED rather than argued with. We still never fabricate
+      // a fade to admit him — nothing writes a gap or a Door here, and that is the whole point: the record says we
+      // have not found one YET. If a Door surfaces later, at Excavation or in his own time, it is an ordinary
+      // update rather than a correction to a story we invented for him.
+      //
+      // NOTE FOR THE SPEC: this supersedes CLAUDE.md's "a member with no Fade stalling at intake is the system
+      // correctly declining a non-member". Stalling was never declining — it was the absence of a decision.
+      b.collected.noDoorYet = true;
+      // AND NOTHING THE MODEL TAGGED ALONG THE WAY BECOMES HIS FADE STORY.
+      //
+      // While the decline was terminal this did not matter — the record was never used. Now that he is admitted it
+      // matters completely: the model had tagged "career, marriage, kids all genuinely great" as his `gap`, and
+      // admitting him would have filed that on his profile as the story of what he lost. A fabricated fade in
+      // everything but name, and the exact harm the branch above exists to prevent. He is admitted BECAUSE there is
+      // no Fade story, so there must not be one on his record. (Caught by re-pointing the old decline tests rather
+      // than deleting them — the assertion was stale, the invariant underneath it was not.)
+      b.collected.gap = undefined;
+      b.collected.doors = [];
+      b.stage = 'reclaim';
       b.awaitingConfirm = false;
-      b.declined = true;
-      return { reply: DECLINE_REPLY, state: { ...beatState(b), declined: true }, complete: false, declined: true };
+      s.gapTurns = 0;
+      return { reply: NO_DOOR_YET_REPLY, state: beatState(b), complete: false };
     }
     if (b.collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus, and RECEIVE the whole story before reflecting.
@@ -3190,11 +3222,23 @@ export function applyStagedTurn(
   memberMessage: string,
   model: ModelTurn,
 ): Turn {
-  // 'declined' is a TERMINAL off-ramp (out of scope, Decision E). On resume it isn't a real stage in the arc, so
-  // without this it fell through to the 'complete' card branch and force-committed an empty member. Re-assert the
-  // decline instead — never drag a declined session into a broken completion. (CAT-26)
+  // ANYONE ALREADY SITTING IN THE OLD TERMINAL DECLINE IS LET IN TOO.
+  //
+  // 'declined' was an off-ramp for a no-Fade member, and resuming one used to re-assert the refusal (it is not a
+  // real stage in the arc, so without a branch here it fell through to the completion card and force-committed an
+  // empty member — CAT-26). Nothing produces the state any more, but real sessions may be parked in it, and a man
+  // we turned away last week should not be turned away again this week because his row is old. The ruling that
+  // admits him admits him whenever he comes back.
+  //
+  // So he is moved onto the ordinary path with the absence recorded, exactly as if he had arrived today.
   if (state.stage === 'declined') {
-    return { reply: DECLINE_REPLY, state, complete: false, declined: true };
+    const migrated: ConvState = {
+      ...state,
+      stage: 'reclaim',
+      collected: { ...state.collected, noDoorYet: true },
+      declined: false,
+    } as ConvState;
+    return { reply: NO_DOOR_YET_REPLY, state: migrated, complete: false };
   }
   return runArcTurn(ONBOARDING_ARC, state, history, memberMessage, model);
 }
