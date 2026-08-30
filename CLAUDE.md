@@ -284,9 +284,18 @@ Drive.** The routine:
    folder to Drive" step is RETIRED.** The connector accepts inline content only, so anything past a few KB
    never arrived — and it failed *silently*: twice (2026-08-08, 2026-08-10) it dropped the member transcript,
    the one file marketing and the book quote from, while the folder still listed and the MANIFEST still
-   promised it. Git has no partial state that looks complete. Drive gets a short **pointer** doc so the trail
-   stays continuous — and after ANY Drive write, **read the file back**: the create response's `fileSize` is
-   not evidence (a Docs conversion reports `1` for a fully-populated document).
+   promised it. Git has no partial state that looks complete. **Then `npm run canon:sync`** — it fast-forwards
+   the PRIMARY checkout Cowork mounts and asserts the version named in `LATEST` has a present, non-empty
+   MANIFEST *there*, exiting non-zero if not. Publishing happens from a worktree, so a bundle can be built,
+   verified, committed, tagged and pushed and still not exist as a file where she reads. Her framing, adopted:
+   the check is not "did it land" but **"did it land where the reader looks"** — which is better than
+   read-the-file-back, because reading back the *wrong* file still passes.
+   **NO DRIVE POINTER DOC.** Retired 2026-08-16 and agreed with Cowork: *"bundles live only in `docs/canon/`,
+   and `LATEST` is how you know what's current."* The pointers were invisible to her, so pure overhead — and
+   worse than overhead once a mis-filed one cost a morning while the real fault was that the bundle wasn't in
+   the repo path at all. One authoritative location beats two, one of which she cannot read. (If a Drive write
+   is ever needed for something else, **read the file back**: the create response's `fileSize` is not evidence
+   — a Docs conversion reports `1` for a fully-populated document.)
 
 **The INBOUND half — `npm run handoffs`, at the START of a session, unasked.** Cowork hands work back through
 `~/g4l-handoffs/` (a **sibling** of the repo, not a directory inside it — I have searched the repo exhaustively and
