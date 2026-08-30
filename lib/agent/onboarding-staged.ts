@@ -520,8 +520,12 @@ function reclaimOpen(c: Collected, parked: readonly string[] = []): string {
   // a dangling article.
   const handle = identityLabel(c.identityNoun) || "the person you're reclaiming";
   beats.push(
-    `You've painted a vivid picture of who you were, and what pulled you from it. Now the next move — what would `
-      + `start bringing that person back?`,
+    // HER QUESTION, VERBATIM (Donna, 2026-08-30: "USE THIS"). We had shipped "what would start bringing that
+    // person back?" and put "concrete goals" in the NEXT beat instead of in the ask — an adaptation of her words
+    // we never told her we had made. She asked for hers back and this is it, unaltered, including her connective
+    // ("Thinking through all of that"), which is what turns the lead-in and the ask into one thought.
+    `You've painted a vivid picture of who you were, and what pulled you from it. Thinking through all of that — `
+      + `what is an early goal you could set that would give you direction on how to come back to who you want to be?`,
   );
   beats.push(
     `Your Reclaim List is exactly that — who you're reclaiming, turned into concrete goals. A mix is perfect: `
