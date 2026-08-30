@@ -1099,36 +1099,71 @@ function idqOpen(): string {
  * opening → rating → closure and we shipped the rating; the frame existed, but a member met it on the way to the
  * chips, which is not the same as being told something before they start.
  *
- * The two contracts Greg makes load-bearing both sit here, before any rating is collected: rate from your CURRENT
- * PERSPECTIVE, not what you want to be true (R1-05), and the IDQ is a MEASURING STICK, not a one-time grade
- * (R1-41). The discomfort line is his approved relationship-building line (R1-27), kept close to verbatim. The
- * old copy's "what comes out is your Identity Distance Score" is dropped from the open — naming the number on the
+ * Greg's three load-bearing contracts all still land before any rating is collected, but they are split across two
+ * surfaces as of 2026-08-30: R1-05 (rate from your CURRENT perspective, not what you want to be true) and R1-27
+ * (his approved discomfort line) sit in MIRROR_FRAME below; R1-41 (the IDQ is a MEASURING STICK, not a one-time
+ * grade) sits in the "Why this matters" card that renders above it. See MIRROR_FRAME for why it moved. The old
+ * copy's "what comes out is your Identity Distance Score" stays dropped from the open — naming the number on the
  * way in is what makes it read as a grade.
  *
  * WHAT THE QUESTION IS FOR. Not more capture — onboarding just took the identity, the Doors and the list, and
- * asking again is the repetition Jay has flagged twice. It asks what they EXPECT the mirror to say, which is the
- * one thing the instrument cannot tell us and the close needs: a member who expected the body to be the low one
- * and finds it is not has learned something, and the Companion can only say so if it asked first. That is what
- * R1's checklist means by capturing hopes and fears as prior module context (R1.md:517, item 5).
+ * asking again is the repetition Jay has flagged twice. It asks what they EXPECT to be hardest before the
+ * instrument has told them anything, which is what R1's checklist means by capturing hopes and fears as prior
+ * module context (R1.md:517, item 5). See mirrorEngageQuestion for the 8/30 rewrite and why the old phrasing
+ * could not be answered.
  */
+// DONNA'S TRIM, 2026-08-30 — three lines, down from four. Her note: "remove unnecessary phrases that are
+// repetitive or don't further explain," naming "that is the whole contract" and "thanks for being willing to take
+// a look at it" as the offenders. Both are gone; neither carried information.
+//
+// THE MEASURING-STICK LINE MOVED RATHER THAN DIED. Greg's R1-41 (this is a measuring stick, not a one-time grade)
+// is load-bearing and still said — in the "Why this matters" card that renders directly ABOVE this frame
+// (lib/content/summaries.ts r1.full, via TeachingFrame). Saying it twice on one screen is exactly the repetition
+// she flagged, and the card is the better home: it is the surface that explains, and it survives a member who
+// scrolls back. NO SCHEDULE IS PROMISED in either place (Jay, 2026-08-29) — the retake is real in the frozen data
+// contract but has no mechanism yet, so Session 1 never names a date.
+//
+// Greg's other two contracts stay here, where the stance is set: R1-05 (rate from your CURRENT perspective, not
+// what you want to be true) and R1-27 (his approved discomfort line, close to verbatim).
 const MIRROR_FRAME =
   'Before the mirror, one thing about how to read it.\n\n' +
-  // NO SCHEDULE PROMISED (Jay, 2026-08-29: "we'll make it a copy change"). This read "You take it again in a few
-  // months, and again after that" — a commitment to a retake that has no mechanism behind it. The retake is real
-  // in the frozen data contract and is post-Charter work; Session 1 must not promise a date we cannot keep.
-  // Greg's R1-41 survives intact: it is still a measuring stick, still the first of a series.
-  'This is a measuring stick — what it is for is the distance between readings, and today is the first one.\n\n' +
-  'So answer from where you actually are right now, rather than where you mean to be. That is the whole ' +
-  'contract.\n\n' +
-  'Some of it will be uncomfortable work — thanks for being willing to look at it.';
+  'Answer from where you are right now, rather than where you mean to be.\n\n' +
+  'Some of it will be uncomfortable.';
 
-const MIRROR_ENGAGE_Q = 'Before we start: which part of this do you expect to read hardest?';
+/**
+ * THE DOORWAY QUESTION — Donna's, and it is the Companion's own words.
+ *
+ * The old question ("which part of this do you expect to read hardest?") failed for a reason worth keeping: it
+ * asked her to forecast an instrument she had not seen yet, in a phrase — "read hardest" — that is not ordinary
+ * English. She asked the Companion what it meant, and the Companion answered by re-asking it against her Reclaim
+ * List, by name. That version she could answer immediately. So the fix is not a rewrite; it is promoting the
+ * clarification the model already produced into the authored copy, which is where it should have been.
+ *
+ * The shape now matches the other four doorways (B1, B2, Checkpoint, C2): every one of them asks about the
+ * member's own past or present, never about what is behind the door. That is the invariant — a doorway question
+ * must be answerable by someone who has not yet seen what it opens onto. `tests/engagement-questions.test.ts`
+ * holds it for all five.
+ *
+ * It still does the job the beat exists for: it captures what she EXPECTS to be hard before the instrument tells
+ * her anything, which is the one thing the IDQ cannot supply and the close wants (R1.md:517, item 5).
+ */
+export function mirrorEngageQuestion(c: Collected): string {
+  const items = (c.reclaimList ?? []).map((s) => s.trim()).filter(Boolean);
+  // Name up to three, so the question stays a sentence rather than a recital. "Everything on your Reclaim List"
+  // still scopes it to the whole list when there are more.
+  const named = items.slice(0, 3).join(', ');
+  return named
+    ? `Of everything on your Reclaim List — ${named} — which one do you expect to be the hardest?`
+    : // No list to name: the same question, minus the examples. Reachable only if onboarding's list did not carry
+      // over, which the completion contract prevents — but a doorway must never open onto a blank question.
+      'Of everything on your Reclaim List, which one do you expect to be the hardest?';
+}
 
 const mirrorEngageConfig: EngagementConfig = {
   id: 'mirror-open',
   next: 'measurement',
   frame: () => MIRROR_FRAME,
-  question: () => MIRROR_ENGAGE_Q,
+  question: (c) => mirrorEngageQuestion(c),
   handIn: () => idqOpen(),
 };
 const mirrorEngageStage: StageDef = engagementStage(mirrorEngageConfig);

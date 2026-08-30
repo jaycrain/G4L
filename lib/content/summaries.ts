@@ -28,7 +28,13 @@ export type PhaseKey = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   r1: {
     short: 'Measure the distance between who you are and who you want to be.',
-    full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
+    // DONNA'S ORDER, 2026-08-30. Two changes, both hers, and both about a member knowing what is about to happen.
+    // (1) The research line LEADS — why before what, so the first sentence earns the ask instead of issuing it.
+    // (2) The format is NAMED: "answer a set of questions". Her note was "needs to explain that this is an
+    // assessment"; Jay's ruling was to say ANSWERING QUESTIONS rather than "assessment" — same clarity without the
+    // clinical register we avoid everywhere else. What she cut ("a clear starting line — an honest look at the
+    // distance, in your own hand") was decoration that told her nothing she could act on.
+    full: 'Research suggests that measuring your present self against a self that matters to you can sharpen motivation. Here you answer a set of questions, rating yourself across the areas of your life — where you are now, compared with the fuller version of you that you remember. Retake this later, and the space between the two readings becomes your own measuring stick.',
   },
   r2: {
     short: 'Identify the Doors you walked through that caused you to Fade.',

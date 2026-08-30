@@ -19,6 +19,7 @@ import {
   RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC, RECONNECT_CHECKPOINT_ARC,
 } from '../lib/agent/reconnect.ts';
 import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
+import { ASSET_SUMMARIES } from '../lib/content/summaries.ts';
 import type { ConvState, Collected } from '../lib/agent/onboarding.ts';
 
 const COMMITTED: Collected = { identityNoun: 'Racer', gap: 'The years took it.', doors: ['grind'] };
@@ -34,13 +35,18 @@ test('R1 opens on the mirror — and is the FIRST Session, per Greg', () => {
   assert.match(t.reply, /mirror/i, "Greg's own image, kept");
   assert.match(t.reply, /uncomfortable/i, 'and his discomfort line, which is the best sentence in his intro');
 
-  // GREG'S TWO LOAD-BEARING CONTRACTS, both required BEFORE any rating is collected.
-  assert.match(t.reply, /measuring stick/i, 'R1-41 — a measuring stick, framed by the revisit');
-  assert.match(t.reply, /where you actually are right now/i, 'R1-05 — current perspective, not what you want true');
+  // GREG'S LOAD-BEARING CONTRACTS, all required BEFORE any rating is collected — but as of 2026-08-30 they are
+  // split across the two surfaces a member reads as one screen. R1-05 stays in the Companion frame, where the
+  // stance is set. R1-41 moved UP into the "Why this matters" card, because saying it in both places is the
+  // repetition Donna flagged; it is still said, and still before any rating. Asserted at its NEW home so this
+  // test goes on protecting the CONTRACT rather than the address the contract used to live at.
+  assert.match(t.reply, /where you are right now/i, 'R1-05 — current perspective, not what you want true');
+  assert.match(ASSET_SUMMARIES.r1.full, /measuring stick/i, 'R1-41 — still said, now in the card above the frame');
 
   // AND IT ENDS ON A QUESTION THEY ANSWER IN WORDS. The whole point of the beat is that they speak first; an
-  // opening that merely *contains* a frame and then asks for a number is the thing being fixed.
-  assert.match(t.reply, /expect to read hardest\?$/, 'the doorway closes on one open question');
+  // opening that merely *contains* a frame and then asks for a number is the thing being fixed. The question is
+  // Donna's (8/30) — see mirrorEngageQuestion for why the old "read hardest" phrasing could not be answered.
+  assert.match(t.reply, /which one do you expect to be the hardest\?$/, 'the doorway closes on one open question');
   assert.equal(t.expects, undefined, 'and no 1–5 chips under it — those belong to the instrument');
 
   // OUR RULE BEATS HIS DRAFT HERE. Greg's V4 intro reads "This is a mirror, not a test. There are no right

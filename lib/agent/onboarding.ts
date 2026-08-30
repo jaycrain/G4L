@@ -762,7 +762,9 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // engine (lib/agent/reconnect.ts) supplies its own openers. A neutral fallback keeps the safety net honest.
   entry: 'Where would you like to pick things up?',
   doors: 'What feels like it opened the distance — take me into it.',
-  'mirror-open': 'Before we start: which part of this do you expect to read hardest?',
+  // Kept in step with mirrorEngageQuestion() in reconnect.ts — this is the no-list branch of the same question.
+  // It cannot import that one: this table is a static Record with no Collected to read from.
+  'mirror-open': 'Of everything on your Reclaim List, which one do you expect to be the hardest?',
   'checkpoint-open': "Before the numbers — what's different now that wasn't when you started?",
   // B1's five stages (Greg B1.md:257). Fallback prompts only — the arc supplies its own openers; these exist so a
   // tool-only model turn never renders a blank reply.
