@@ -502,7 +502,7 @@ const atGapWithStory = (): ConvState => ({
 // reached the parked-wants branch, so every front-loader got the cold version for weeks — invisibly, because the
 // branch nobody walks is the branch nobody reads. One fact, two call sites, one of them wrong. This asserts the
 // warmth on BOTH, so the next person to touch one cannot silently leave the other behind.
-test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone from both', () => {
+test('the gap→reclaim bridge and the full introduction reach BOTH paths — parked or not', () => {
   const blank = replayStaged(
     [
       { member: "No, that's it — that's the whole of it.", model: { text: 'Understood.', replyIntent: 'done' } },
@@ -529,10 +529,19 @@ test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone fr
     assert.match(reply, /none of it is gone/i, `${label} opener lost the turn toward hope`);
     assert.doesNotMatch(reply, /now, the good part/i, `${label} opener cold-pivots`);
   }
-  // The parked branch must still prove nothing was dropped, and point at the builder rather than ending on a
-  // bare "What else?" with nowhere visible to answer.
-  assert.match(parked, /earlier you said you want/i);
-  assert.match(parked, /add anything else below/i);
+  // THE FORK IS GONE (v3.5.67). These two paths used to return DIFFERENT openers: with nothing parked she got the
+  // full introduction, and with a want parked she got a short read-back that never said "Reclaim List" or "goals".
+  // Donna walked the parked path and met "a cold field with my first entry placed". So both paths are now asserted
+  // to carry her three must-includes, not just the bridge.
+  for (const [label, reply] of [['blank', blank], ['parked', parked]] as const) {
+    assert.match(reply, /Reclaim List/, `${label}: the list must be named`);
+    assert.match(reply, /goals/i, `${label}: described as goals — her word`);
+  }
+  // And the parked path must still prove nothing was dropped, then invite more — never a bare "What else?" with
+  // nowhere visible to answer. The phrasing may change; ending on an invitation to add may not.
+  assert.match(parked, /earlier you said you want/i, 'the read-back survives');
+  assert.match(parked, /add as many as you want|add anything else/i, 'and it still points at the builder');
+  assert.doesNotMatch(parked, /what else\?\s*$/i, 'never ends on a bare "What else?"');
 });
 
 // DIVERGENCE IS STICKY, OR IT ONLY CATCHES THE FIRST WANT.
