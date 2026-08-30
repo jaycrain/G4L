@@ -100,8 +100,13 @@ test('every --onbwel- variable override is accounted for', () => {
      // These are not overrides of anything — they are three new base tokens declared once on .onbwel, which is
      // the point: five screens used to carry their own margins. Read and accepted rather than count-bumped, per
      // this test's own instruction.
+     // --onbwel-cta-lift: how much higher the CTA sits than the old bottom anchor (Donna, 2026-08-30: "these need
+     // to be higher across all screens"). It has a PHONE OVERRIDE for the same reason --onbwel-icon-h does: at
+     // 375px the copy is tallest, and the desktop lift put the button 25px ON TOP of the last bubble. Measured
+     // after: +23px clearance on a phone, +20px at 1280, buttons still at an identical y on all five screens.
+     'cta-lift=40px',
      'gap-copy=14px', 'gap-inner=10px', 'gap-cta=15px',
-     'icon-h=45px'],
+     'icon-h=45px', 'cta-lift=16px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
 });

@@ -46,3 +46,22 @@ test("screen one's sunrise is halved, and only screen one", () => {
   // on its own fix. The shared box is the rule that STARTS the line.
   assert.ok(!/^\.onbwel-art \{[^}]*height: calc\(/m.test(css), 'the shared icon box is untouched for the other four');
 });
+
+test('the CTA lift is a token, and it is smaller where the copy is tallest', () => {
+  // Donna, an hour after the alignment fix: "These need to be higher across all screens. Here is the example
+  // where it needs the most room." She marked the target on the FULLEST screen deliberately — a y that clears the
+  // content there clears it everywhere, so "higher" and "aligned" are the same change, not competing ones.
+  //
+  // The phone override is not a style preference. At 375x812 the desktop lift put the button 25px ON TOP of the
+  // last bubble — measured, not guessed — because a narrow column wraps the copy to more lines. Same shape as
+  // --onbwel-icon-h: the decision is unchanged at every width, only the number moves.
+  assert.match(css, /--onbwel-cta-lift: 40px/, 'a base lift');
+  assert.match(css, /--onbwel-cta-lift: 16px/, 'and a smaller one on phones');
+  assert.match(css, /calc\(40px \+ var\(--onbwel-cta-lift\) \+ var\(--onbwel-foot-clear\)\)/, 'the wrap spends it as bottom padding');
+
+  // THE CASCADE TRAP, pinned. The base must live at :root, NOT on .onbwel — a closer ancestor beats a :root
+  // media override, so the phone value would silently never apply. That is the exact shape of the v3.5.2 bug
+  // the override enumeration exists to catch, and I reintroduced it for ten minutes writing this.
+  const onbwelRule = css.slice(css.indexOf('.onbwel { --onbwel-gap-copy'), css.indexOf('\n', css.indexOf('.onbwel { --onbwel-gap-copy')));
+  assert.ok(!onbwelRule.includes('--onbwel-cta-lift'), 'the lift is not declared on .onbwel, where it would shadow the phone override');
+});

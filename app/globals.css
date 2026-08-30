@@ -3073,6 +3073,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
      padding happened to add the inset separately; the log-in line, keyed to this variable alone, did not.
      One reserve, and it knows about the notch. */
   --onbwel-foot-clear: calc(52px + env(safe-area-inset-bottom, 0px));
+  /* How much higher the CTA sits than the old bottom anchor (Donna, 2026-08-30). At :root, NOT on
+     .onbwel — a closer ancestor would beat the phone override below and it would silently never apply. */
+  --onbwel-cta-lift: 40px;
 }
 .onbwel {
   min-height: 100dvh; max-height: 100dvh; overflow-y: auto;
@@ -3089,8 +3092,12 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
      sat above them (Jay, 2026-08-28: "plenty of white space across screens to borrow pixels against"). The
      copy zone below flexes, so raising this moves the button UP and the blank absorbs it — no screen loses a
      word of copy for it. */
+  /* THE LIFT IS A TOKEN NOW (Donna, 2026-08-30: "These need to be higher across all screens"). She marked the
+     target on the FULLEST screen on purpose — "the example where it needs the most room" — so a y that clears the
+     content there clears it everywhere, and the shared alignment holds. Raising this one value moves all five
+     buttons up together on every viewport; the blank below the copy absorbs it, exactly as the note above says. */
   padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px
-           calc(40px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
+           calc(40px + var(--onbwel-cta-lift) + var(--onbwel-foot-clear)) var(--onbwel-gutter);
   /* A COLUMN OF EXACTLY ONE SCREEN — this is what stops the button moving between slides.
      The block used to be centred and sized by its content, so any slide whose copy ran a line long made the
      whole block taller and the centring pushed EVERYTHING: on slide 4 the art and headline rose 5px while the
@@ -3350,6 +3357,11 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
        dominates this one. Donna's icon-box rule is untouched — one fixed height, variable width, equal visual
        weight — only the number changes. */
     --onbwel-icon-h: 45px;
+    /* AND THE CTA LIFT IS SMALLER HERE, because a phone does not have 64px to give. Measured at 375x812 on the
+       fullest slide, the desktop lift put the button 25px ON TOP of the last bubble — the collision this whole
+       column architecture exists to prevent. Same rule as the icon above: the decision is unchanged (the button
+       sits higher), only the number changes at the width where the copy is tallest. */
+    --onbwel-cta-lift: 16px;
   }
 }
 
