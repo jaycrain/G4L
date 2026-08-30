@@ -64,3 +64,47 @@ test('the builder asks BEFORE storing, and neither answer discards', () => {
   assert.ok(/addAll\(pendingSplit\.parts\)/.test(src), 'accepting adds every part');
   assert.ok(/addAll\(\[pendingSplit\.raw\]\)/.test(src), 'declining keeps her line verbatim');
 });
+
+// ── THE OTHER HALF: "Keep as one" must be a DECISION, and nothing may ever discard ──────────────────────────────
+// Catching it in the builder closed the common path but not the loop: if she tapped "Keep as one", her line stayed
+// multi-want, the engine's gate did not know she had already ruled, and it re-opened the very line she chose to
+// keep — the "didn't we just do that" complaint — with the deletion waiting behind it.
+import { applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
+import { proposeMultiWantParts } from '../lib/agent/reclaim-shape.ts';
+import type { ConvState } from '../lib/agent/onboarding.ts';
+
+const reclaimState = (): ConvState =>
+  ({
+    stage: 'reclaim',
+    collected: { athleticPast: 'directed and produced', identityNoun: 'Maker', gap: 'I lost the job two years ago and my father nearly died six months later.' },
+    doorAsked: true,
+  }) as never;
+
+test('tapping "Keep as one" is respected — the engine does not re-open her line', () => {
+  const submission = [`• ${DONNA}`, '• lose the 20 lbs and rebuild my strength and fitness', '• less conflict day to day'].join('\n');
+  const turn = applyStagedTurn(reclaimState(), [], submission, { text: '' } as never);
+  const resolved = (turn.state as { reclaimShapesResolved?: string[] }).reclaimShapesResolved ?? [];
+  assert.ok(resolved.includes(`multiwant:${DONNA}`), 'the shape she already ruled on is marked resolved');
+  assert.ok(!/which one/i.test(turn.reply), 'she is never asked to pick one');
+  assert.ok((turn.state.collected.reclaimList ?? []).includes(DONNA), 'her line survives verbatim');
+});
+
+test('a multi-want the BUILDER could not offer is still raised by the engine', () => {
+  // Silence from a surface that never asked is not consent. The sentence dump has no commas, so the builder never
+  // put it to her — the engine must still get to offer the split.
+  const dump = 'I want to get back to lifting three times a week. My marriage needs real work. I would like to sleep through the night again.';
+  assert.equal(proposeProseSplit(dump), null, 'the builder could not have offered this one');
+  assert.equal(proposeMultiWantParts(dump)?.length, 3, 'but the engine can still separate it');
+});
+
+test('NOTHING in the shape gate discards a want any more', () => {
+  // The structural half. The deleted proposal asked her to choose and then deleted the rest; this fails if any
+  // future edit reintroduces a resolution that drops the member's own words.
+  const src = readFileSync(new URL('../lib/agent/onboarding-staged.ts', import.meta.url), 'utf8');
+  assert.ok(!/Which one do you most want back/i.test(src.replace(/^\s*\/\/.*$/gm, '')), 'the "pick one" copy is gone');
+  const resolve = src.slice(src.indexOf('function resolvePendingShape'));
+  const multiwantTail = resolve.slice(resolve.indexOf("pending.parts?.length"));
+  const body = multiwantTail.slice(0, multiwantTail.indexOf('\n}'));
+  const drops = [...body.matchAll(/removeReclaimItem\(/g)];
+  assert.equal(drops.length, 1, 'the ONLY removal left is the split, which re-adds every part');
+});

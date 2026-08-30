@@ -56,7 +56,7 @@ import {
   type Stage,
   type Turn,
 } from './onboarding.ts';
-import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
+import { proposeMultiWantParts, proposeProseSplit, reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
 import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice, parseGapConfirmDoors, gapConfirmIntent } from './gap-confirm-choice.ts';
 import { doorsBoardExpectation } from './doors-board-expectation.ts';
@@ -867,8 +867,14 @@ const SHAPE_PROPOSAL = {
     `“${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?`,
   identity: (item: string) =>
     `“${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?`,
-  multiwant: (item: string) =>
-    `You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.`,
+  // DELETED, 2026-08-29 — the "pick one" proposal:
+  //   "You named a few things in X. Which one do you most want back? We'll start there — the rest aren't going
+  //    anywhere."
+  // The rest went somewhere: answering it removed them from her list, under a sentence promising the opposite.
+  // It is gone rather than deprecated, because a lossy line left in the file is one an edit reaches for later.
+  // Every multi-want is now an offer to separate (see gateNextShape), and where we cannot propose parts we say
+  // nothing at all.
+  //
   // When the member enumerated the wants themselves, asking them to pick ONE would throw away the ones they didn't
   // pick. They already did the separating; all we need is permission to store it that way.
   multiwantSplit: (parts: string[]) =>
@@ -896,16 +902,20 @@ function gateNextShape(b: Beat): string | null {
     b.pendingReclaimShape = { kind: 'identity', item: issue.item };
     return SHAPE_PROPOSAL.identity(issue.item);
   }
-  // If the member numbered the wants inside the item, offer the SPLIT rather than the draw-out. The draw-out asks
-  // "which one do you most want back?" and keeps only that answer — correct when a want is tangled up in prose, but
-  // lossy when the member has already told us there are three separate things.
-  const parts = splitInlineEnumeration(issue.item);
-  if (parts && parts.length >= 2) {
-    b.pendingReclaimShape = { kind: 'multiwant', item: issue.item, parts };
-    return SHAPE_PROPOSAL.multiwantSplit(parts);
-  }
-  b.pendingReclaimShape = { kind: 'multiwant', item: issue.item };
-  return SHAPE_PROPOSAL.multiwant(issue.item);
+  // A MULTI-WANT IS ALWAYS AN OFFER TO SEPARATE — never a demand to choose. (Donna, 2026-08-29)
+  //
+  // There used to be two answers here. Numbered wants got "want me to list them separately?" — lossless. Everything
+  // else got "which one do you most want back? the rest aren't going anywhere" — and answering that DELETED the
+  // rest, under a sentence promising it wouldn't. Two answers to one question, and the fallback was the
+  // destructive one, on the Reclaim List. Verified before the fix: her three-part line came back as one part.
+  //
+  // Whatever evidence made us call it multi also says where to separate it, so the parts are always available and
+  // "pick one" has nothing left to do. Where no parts can be produced we say NOTHING and her line stands — a
+  // slightly verbose entry on a card she can edit beats interrogating her, and beats deleting what she typed.
+  const parts = proposeMultiWantParts(issue.item);
+  if (!parts) return null; // nothing safe to offer — leave what she wrote exactly as she wrote it
+  b.pendingReclaimShape = { kind: 'multiwant', item: issue.item, parts };
+  return SHAPE_PROPOSAL.multiwantSplit(parts);
 }
 
 // When two overlapping wants merge (member said "keep as one"), keep the CLEANER phrasing — not whichever was
@@ -975,16 +985,14 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
     }
     return 'Okay — I’ll leave it as you wrote it.';
   }
-  const distilled = stripReclaimPreamble(b.memberMessage);
-  // Contract 3: a meta reply to the multi-want (a protest / "you're glitching" / "not an item") is NOT their distilled
-  // want — never echo it as "Perfect — X it is" and re-pose (Donna's #17 loop). The shape is already markResolved above,
-  // so it won't re-propose; we just decline to capture the meta.
-  if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage) && !isProcessMetaOrAssent(distilled)) {
-    removeReclaimItem(b.collected, pending.item);
-    appendReclaim(b.collected, distilled);
-    return `Perfect — “${distilled}” it is.`;
-  }
-  return 'No rush — we can shape that one together anytime.';
+  // A PENDING MULTI-WANT WITH NO PARTS IS NOW ONLY REACHABLE FROM A CONVERSATION THAT WAS MID-FLIGHT.
+  //
+  // Nothing proposes one any more — gateNextShape always attaches parts, or stays silent. The only way to arrive
+  // here is a member who was sitting on the old "which one do you most want back?" question at the moment it was
+  // deleted. She must not receive the old resolution: it removed her paragraph and kept only whatever she typed
+  // next, which is the deletion this whole change exists to end. Her line stays exactly as she wrote it, the shape
+  // is already marked resolved above so nothing re-opens, and the card and the rail remain hers to edit.
+  return 'Okay — I’ll leave it as you wrote it.';
 }
 
 // W-42 — the reclaim SHAPE GATE. Scott's cold walk committed his exit line "that's the end can i continue later?" as a
@@ -2552,6 +2560,19 @@ function reclaimRecap(c: Collected): string {
 
 function commitStructuredReclaim(b: Beat): Turn {
   setStructuredReclaim(b.collected, parseReclaimListSubmission(b.memberMessage));
+  // SHE ALREADY RULED ON THIS ONE. The builder offers the prose split where she types it, and "Keep as one" is a
+  // decision — not an oversight for the engine to correct a moment later. Without this the gate re-opens the very
+  // line she just chose to keep, which is exactly the "didn't we just do that" the eval caught, and it would hand
+  // her a second chance to lose the words she deliberately kept together.
+  //
+  // Scoped to the shapes the BUILDER can actually offer (proposeProseSplit). A multi-want it cannot propose — the
+  // sentence dump — was never put to her, so the engine still gets to raise that one. Silence from a surface that
+  // never asked is not consent. [[coach-gate-propose-confirm]]
+  for (const item of b.collected.reclaimList ?? []) {
+    if (!proposeProseSplit(item)) continue;
+    const key = shapeKey({ kind: 'multiwant', index: 0, item });
+    if (!b.reclaimShapesResolved.includes(key)) b.reclaimShapesResolved.push(key);
+  }
   if ((b.collected.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) {
     return {
       reply: noRepeat(b, RECLAIM_NUDGE),

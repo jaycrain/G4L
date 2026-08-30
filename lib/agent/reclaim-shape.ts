@@ -178,6 +178,31 @@ export function proposeProseSplit(text: string): string[] | null {
   return parts;
 }
 
+// ── 1d) ONE BEHAVIOUR FOR A MULTI-WANT: OFFER TO SEPARATE, NEVER ASK HER TO PICK ────────────────────────────────
+// The engine used to have two answers for a multi-want. If it could auto-split an enumeration it offered "want me
+// to list them separately?" — lossless. If it could NOT, it asked "which one do you most want back? the rest
+// aren't going anywhere" — and answering that DELETED the rest. Two answers to one question, and the fallback was
+// the destructive one.
+//
+// Every multi-want is separable by whatever evidence made us call it multi: numbered (1b), comma-listed (1c), or
+// three-plus substantive sentences. So the parts are always available, and the "pick one" question has no reason
+// to exist. Where NO parts can be produced we now say nothing at all and her line stands — leaving a slightly
+// verbose entry on a card she can edit beats interrogating her, and it certainly beats deleting what she typed.
+export function proposeMultiWantParts(text: string): string[] | null {
+  const t = (text ?? '').trim();
+  const enumerated = splitInlineEnumeration(t);
+  if (enumerated && enumerated.length >= 2) return enumerated;
+  const prose = proposeProseSplit(t);
+  if (prose) return prose;
+  // The sentence dump — the branch that used to land on "which one do you most want back?". Same segmentation that
+  // classified it as multi-want, so we are separating it exactly where we decided it was several things.
+  const segments = t
+    .split(/(?<=[.;!?])\s+|\n+/)
+    .map((s) => s.trim().replace(/[.;]+$/, ''))
+    .filter((s) => s.split(/\s+/).filter(Boolean).length >= 4 && !CADENCE_ONLY_RE.test(s));
+  return segments.length >= 3 && segments.length <= 6 ? segments : null;
+}
+
 /** A whole-life vision — not a concrete want. Belongs to the Window/Legacy work, preserved, never a Reclaim item. */
 export function isLifeVision(text: string): boolean {
   const t = (text ?? '').trim();
