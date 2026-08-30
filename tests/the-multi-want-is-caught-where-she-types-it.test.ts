@@ -128,3 +128,13 @@ test('a line she never ruled on survives her carrying on typing, and survives su
   // And the old shape must not come back: nothing may drop the parked line on the floor.
   assert.ok(!/onSubmit\(items\)/.test(src), 'submit never sends items alone while a proposal can be pending');
 });
+
+test('the submit floor counts the unanswered line, because submit sends it', () => {
+  // Seen in a render of the real component: two chips plus a pending proposal is THREE wants, but the floor was
+  // measured on `items` alone, so "This is my list" sat greyed out over a list that was in fact complete. A button
+  // that looks broken at the last beat of the hardest conversation is not a small thing.
+  const src = readFileSync(new URL('../app/onboarding/reclaim-list-builder.tsx', import.meta.url), 'utf8');
+  assert.ok(/const effective = merged\(items, carried\(\)\)/.test(src), 'the floor is measured on what would be sent');
+  assert.ok(/canSubmit = effective\.length >= expects\.min/.test(src), 'and canSubmit uses it');
+  assert.ok(!/canSubmit = items\.length >= expects\.min/.test(src), 'not on items alone');
+});

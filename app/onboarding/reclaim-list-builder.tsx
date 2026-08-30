@@ -76,8 +76,13 @@ export default function ReclaimListBuilder({
   };
   const remove = (i: number) => setItems(items.filter((_, x) => x !== i));
 
-  const canSubmit = items.length >= expects.min && !disabled; // the frozen ≥min floor is enforced here (and server-side)
-  const belowAim = items.length < expects.min;
+  // COUNT THE UNANSWERED LINE. Submitting carries it (see `carried`), so the floor must be measured on what would
+  // actually be sent — otherwise she types her third want, the split card appears, and "This is my list" stays
+  // greyed out while the list underneath it is in fact complete. A button that looks broken at the last beat of
+  // the hardest conversation is not a small thing.
+  const effective = merged(items, carried());
+  const canSubmit = effective.length >= expects.min && !disabled; // the frozen ≥min floor (also enforced server-side)
+  const belowAim = effective.length < expects.min;
 
   return (
     <div className="rlb">
