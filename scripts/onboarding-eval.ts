@@ -336,7 +336,7 @@ async function runPersona(p: Persona): Promise<boolean> {
   const agentTurns = history.filter((h) => h.role === 'agent').map((h) => h.text ?? '');
   const memberTurns = history.filter((h) => h.role === 'member').map((h) => h.text ?? '');
   for (const t of TRIPWIRES) {
-    const hit = t.check(agentTurns, memberTurns, c);
+    const hit = t.check(agentTurns, memberTurns, c, turn.complete);
     if (hit) issues.push(hit);
   }
   const agentReplies = history.filter((h) => h.role === 'agent').map((h) => h.text);

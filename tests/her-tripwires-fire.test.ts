@@ -11,8 +11,8 @@ import assert from 'node:assert/strict';
 import { TRIPWIRES } from '../scripts/walk-tripwires.ts';
 import type { Collected } from '../lib/agent/onboarding.ts';
 
-const fire = (id: string, agent: string[], member: string[] = [], c: Collected = {} as Collected) =>
-  TRIPWIRES.find((t) => t.id === id)!.check(agent, member, c);
+const fire = (id: string, agent: string[], member: string[] = [], c: Collected = {} as Collected, complete = false) =>
+  TRIPWIRES.find((t) => t.id === id)!.check(agent, member, c, complete);
 
 test('RUSHED — naming the Reclaim List without saying what it is', () => {
   // Her rule, verbatim from her persona: naming it AND saying what it is for in the same message — "even in the
@@ -52,6 +52,12 @@ test('LEFT-HANGING — the conversation ends with nothing to answer', () => {
   // Her Rewire walk: "it left me hanging on my first true line."
   assert.ok(fire('LEFT-HANGING', ['That lands.']), 'fires when the last turn asks nothing');
   assert.equal(fire('LEFT-HANGING', ['That lands. What happened next?']), null, 'silent when it asks something');
+  // A COMPLETED onboarding ends on a handoff, which has no question by design. Missing this fired the tripwire on
+  // all six personas on its first live run — every one a false alarm, which is how a report stops being read.
+  assert.equal(
+    fire('LEFT-HANGING', ['You are now officially into the first Phase of G4L — Reconnect. Well done!'], [], {} as Collected, true),
+    null, 'silent on the completion handoff',
+  );
 });
 
 test('every tripwire records HER words, so nobody edits one without meeting the complaint', () => {

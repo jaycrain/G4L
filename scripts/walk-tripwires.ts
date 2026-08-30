@@ -18,7 +18,7 @@ import type { Collected } from '../lib/agent/onboarding.ts';
  * Each one is deliberately CONSERVATIVE. A tripwire that cries wolf gets skimmed, and a report you skim is worth
  * less than no report — which is the lesson the harness itself taught this week.
  */
-export type Tripwire = { id: string; hers: string; check: (agent: string[], member: string[], c: Collected) => string | null };
+export type Tripwire = { id: string; hers: string; check: (agent: string[], member: string[], c: Collected, complete?: boolean) => string | null };
 
 const words = (s: string) => (s.toLowerCase().match(/[a-z']+/g) ?? []);
 const overlap = (a: string, b: string) => {
@@ -76,7 +76,12 @@ export const TRIPWIRES: Tripwire[] = [
     hers: 'it left me hanging on my first true line',
     // Her Rewire walk. The Companion says something and gives her nothing to answer — no question, no widget.
     // Checked on the LAST turn only, because mid-conversation a receipt with no question is often correct.
-    check: (agent) => {
+    check: (agent, _m, _c, complete) => {
+      // A COMPLETED onboarding ends on a HANDOFF — "you are now officially into the first Phase of G4L" — and a
+      // handoff has no question by design. Without this the tripwire fired on all six personas at once, which is
+      // the exact failure mode it was written to catch in the product: a report that cries wolf gets skimmed, and
+      // a skimmed report is worth less than none. Caught on its first live run.
+      if (complete) return null;
       const last = agent.at(-1) ?? '';
       if (!last || /\?/.test(last)) return null;
       return `LEFT-HANGING — the conversation ended on a turn with nothing to answer: "${last.slice(-70)}"`;
