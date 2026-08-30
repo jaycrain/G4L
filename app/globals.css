@@ -570,6 +570,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Reclaim List builder — the structured capture (the member's exact entries ARE the list). On-brand, calm. */
 .rlb { margin-top: 0.5rem; }
+/* The builder's own framing — see the note in reclaim-list-builder.tsx. Quiet: it orients, it does not shout. */
+.rlb-head { margin: 0 0 0.7rem; }
+.rlb-head-title { font-size: 16px; font-weight: 700; color: var(--navy, #374F63); }
+.rlb-head-sub { font-size: 13px; color: var(--muted-grey); line-height: 1.45; margin-top: 3px; }
 .rlb-list { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .rlb-item { display: flex; align-items: center; gap: 9px; background: #f5f4f1; border: 1px solid #e3e2df; border-radius: 8px; padding: 8px 10px 8px 12px; font-size: 15px; color: var(--navy, #374f63); font-weight: 600; }
 .rlb-check { color: var(--teal, #3b9495); font-weight: 800; flex: 0 0 auto; }

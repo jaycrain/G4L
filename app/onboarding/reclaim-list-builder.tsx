@@ -86,6 +86,20 @@ export default function ReclaimListBuilder({
 
   return (
     <div className="rlb">
+      {/* THE FRAMING LIVES ON THE WIDGET, because in the thread it scrolls away.
+          Donna, 2026-08-27: "This isn't explaining your reclaim list now. If I was brand new to this app, I
+          wouldn't know how to answer this." And again on 08-30, looking at this very field: "a cold field with my
+          first entry placed."
+          The Companion DOES explain it — a beat earlier, in chat, above the fold by the time she is typing. That
+          made it look like a copy problem for three days when it was a placement problem: the words were right and
+          they were not where the answer is given. Two lines here cannot scroll. */}
+      <div className="rlb-head">
+        <div className="rlb-head-title">Your Reclaim List</div>
+        <div className="rlb-head-sub">
+          The goals you’re working toward — things you want back, or have always meant to do. Start with three;
+          you can add more and change them any time.
+        </div>
+      </div>
       {items.length > 0 && (
         <ul className="rlb-list">
           {items.map((item, i) => (
@@ -147,7 +161,10 @@ export default function ReclaimListBuilder({
             legible to us and not to them. */}
         <span className="rlb-hint">
           {belowAim
-            ? `One at a time — ${expects.min} to start is plenty. You can always add more later.`
+            ? 'One at a time.' /* The header now carries "start with three" and "add more any time" — this said both
+                 again, three inches below. Jay, 2026-08-30: "let's not over-explain. Find the right place and say
+                 it ONCE." What survives is the only thing the header does NOT say, and the thing Jennifer and Jay
+                 each asked for independently: the affordance. */
             : 'Add another if you like — or you’re set.'}
         </span>
         {/* Submitting with a proposal still on screen keeps that line too — see `carried`. */}

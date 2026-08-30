@@ -138,3 +138,17 @@ test('the submit floor counts the unanswered line, because submit sends it', () 
   assert.ok(/canSubmit = effective\.length >= expects\.min/.test(src), 'and canSubmit uses it');
   assert.ok(!/canSubmit = items\.length >= expects\.min/.test(src), 'not on items alone');
 });
+
+test('the builder carries its own framing, and says each thing once', () => {
+  // Donna, 08-27 and again 08-30 looking at this field: "This isn't explaining your reclaim list now… a cold field
+  // with my first entry placed." The Companion DOES explain it — a beat earlier, in the thread, above the fold by
+  // the time she is typing. That read as a copy problem for three days; it was a placement problem.
+  const src = readFileSync(new URL('../app/onboarding/reclaim-list-builder.tsx', import.meta.url), 'utf8');
+  assert.match(src, /Your Reclaim List/, 'the widget names itself');
+  assert.match(src, /goals you’re working toward/, 'and says what the list is for, where she answers');
+
+  // And says it ONCE. The footer used to repeat "three to start" and "add more later" three inches below the
+  // header that now carries both. What it keeps is the only thing the header does not say.
+  assert.match(src, /'One at a time\.'/, 'the footer keeps the affordance');
+  assert.ok(!/to start is plenty/.test(src), 'and no longer repeats the header');
+});
