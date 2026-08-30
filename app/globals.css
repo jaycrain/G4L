@@ -3113,6 +3113,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    49 / 53px tall across the five slides, which is precisely the jump Jay kept seeing and I kept "fixing"
    somewhere else. Only .onbwel-copy is allowed to give up height; everything else in the column is fixed. */
 .onbwel-cta, .onbwel-d-cta { align-self: flex-start; flex: none; }
+/* THE RING SHE KEEPS ASKING US TO REMOVE — and the third way out. (Donna 2026-08-22 item 6, again 2026-08-30.)
+   She advances by keyboard, so `button:focus-visible` fires and draws the app-wide 2px TEAL ring. On a filled
+   TEAL button that is teal-on-teal: it does not read as "you are here", it reads as a stray outline somebody
+   forgot to delete. We declined it in August on accessibility grounds and never told her why, so she reported it
+   twice.
+   Removing it outright is still wrong — a control you cannot tell you are on is an accessibility failure. The
+   answer is CONTRAST, not deletion: a white ring inside the button's own edge. Visible to a keyboard user,
+   invisible as an artifact, and it costs nothing. */
+.onbwel-cta:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
 /* Slides 2–5 nest their art/headline/copy/button inside .onbwel-heart, so the column has to pass THROUGH it or
    the slack lands in the wrong box and only slide 1 anchors. min-height:0 lets it shrink below its content on a
    screen too short to hold it, which is what hands the overflow to .onbwel's scroll instead of clipping it. */
@@ -3170,7 +3179,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    There is no two-way split of this sentence that fits at 52px -- the size is the constraint, not the break.
    46px puts both authored lines inside the column with room to spare. The other three screens are unchanged;
    this variant already carried its own clamp, so this is a smaller number, not a new exception. */
-.onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
+.onbwel-cta { margin-top: var(--onbwel-gap-cta); display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; transition: 0.15s; }
 .onbwel-reassure { margin-top: 18px; color: var(--muted-grey); font-size: 14px; }
 
 /* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
@@ -3225,6 +3234,11 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-art { flex: none; display: block; width: auto; max-width: min(100%, 420px);
   height: var(--onbwel-icon-h); object-fit: contain; object-position: left center;
   margin: 0 auto 24px 0; }
+/* SCREEN ONE'S SUNRISE, HALVED (Donna, 2026-08-30: "Reduce sunrise image 50%"). It is the only art that is a
+   scene rather than an icon, so it was reading twice the weight of the marks on the other four screens and
+   pushing the copy down with it. Halving it here rather than in the shared box keeps the icon standard intact
+   for the other screens — this is the exception, and it says so. */
+.onbwel-first .onbwel-art { height: calc(var(--onbwel-icon-h) / 2); }
 /* SUPERSEDED by the shared icon box (Donna's item 5, 2026-08-27). The rings and progress used to carry their own
    heights — 90px each against the default's 75px — which is exactly the "icons vary wildly in size" she flagged.
    One container height now, art fitted inside it, so a wide mark and a square one read as the same element. */
@@ -3237,7 +3251,16 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* SLIDE 2 — the exchange, as REAL CHAT BUBBLES (Donna, 2026-08-27): Companion left, member right. Two indented
    block quotes sharing a left rule read as one person quoting themselves; bubbles say "two turns" with no words.
    Values mirror .bubble / .bubble.agent / .bubble.member so the intro previews the actual product. */
-.onbwel-quotes { display: flex; flex-direction: column; gap: 10px; margin: 22px 0 0; }
+/* THE OPENING SEQUENCE HAS ONE SPACING STANDARD (Donna, 2026-08-30; Jay: "establish the standard formatting
+   across viewports and lock it in"). Five screens were each carrying their own margins, so "align the buttons on
+   ALL screens" meant editing five places and hoping — which is how they drifted in the first place.
+   These four tokens ARE the standard. Every screen reads them; none sets its own.
+     --onbwel-gap-copy   copy block -> the element under it (bubbles / phase row)
+     --onbwel-gap-inner  between bubbles (Donna: "keep space between grey and blue as is")
+     --onbwel-gap-cta    last element -> the button (halved, per her note)
+   Change a value here and all five screens and both viewport tracks move together. */
+.onbwel { --onbwel-gap-copy: 14px; --onbwel-gap-inner: 10px; --onbwel-gap-cta: 15px; }
+.onbwel-quotes { display: flex; flex-direction: column; gap: var(--onbwel-gap-inner); margin: var(--onbwel-gap-copy) 0 0; }
 .onbwel-qb {
   margin: 0; align-self: flex-start; max-width: 85%;
   padding: 12px 16px; border-radius: 14px; border-bottom-left-radius: 4px;
@@ -3257,7 +3280,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    four clear AA only as LARGE text (3:1 at >=18.66px bold), so 19px bold is the floor this treatment can legally
    use — at Donna's more natural-looking 15px, three quarters of the row would be inaccessible. Do not shrink it;
    the alternative is going off-palette, which is worse. */
-.onbwel-rs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 22px 0 0; }
+.onbwel-rs { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: var(--onbwel-gap-copy) 0 0; }
 .onbwel-r { font-weight: 700; font-size: 19px; letter-spacing: 0.8px; text-transform: uppercase; }
 .onbwel-r.r-reconnect { color: #374F63; }
 .onbwel-r.r-rewire { color: #3B9495; }

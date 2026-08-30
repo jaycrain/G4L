@@ -96,6 +96,11 @@ test('every --onbwel- variable override is accounted for', () => {
     overrides,
     ['gutter=8vw', 'measure=640px', 'icon-h=90px',
      'foot-clear=calc(52px + env(safe-area-inset-bottom, 0px))',
+     // THE OPENING-SEQUENCE SPACING STANDARD, added 2026-08-30 for Donna's "align buttons on ALL screens".
+     // These are not overrides of anything — they are three new base tokens declared once on .onbwel, which is
+     // the point: five screens used to carry their own margins. Read and accepted rather than count-bumped, per
+     // this test's own instruction.
+     'gap-copy=14px', 'gap-inner=10px', 'gap-cta=15px',
      'icon-h=45px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
