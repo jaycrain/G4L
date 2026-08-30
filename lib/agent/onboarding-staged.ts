@@ -2200,9 +2200,44 @@ const gapStage: StageDef = {
     // and is NEVER declined (fixes the Doors-accumulation member wrongly turned away — the Doors ARE the fade
     // taxonomy, so a committed Door outranks any vocabulary check). A genuine loss verb also admits + captures. (CAT-01/05/06)
     const gapCorpusNow = gapStageCorpus(b.history, b.memberMessage);
+    // A DOOR INFERRED FROM TOPIC WORDS MUST NOT OUTRANK THE MEMBER'S OWN DECLARATION. (Theo, live eval 2026-08-29)
+    //
+    // `matchDoors` reads TOPIC, not loss. "a body that's actually well-trained" returns The Body; "my marriage is
+    // genuinely strong" returns The Marriage. Describing a STRENGTH earns you the Door for it. For a member with a
+    // real Fade that is harmless — the Door is right even when the sentence is upbeat. For a member who has no Fade
+    // it is three separate harms at once: a false claim about his life written onto his profile, a thriving decline
+    // made permanently unreachable (the Door clears `noFade` for good, one line below), and a loop he cannot leave.
+    // Theo said "there's no gap, nothing pulled me away" and then wrote "four times!" because we kept fishing.
+    //
+    // This is the codebase's oldest shape in a new place — the engine acting on a judgement that contradicts what
+    // the member plainly said — except here it is not even the model's judgement. It is a regex's, and a regex is a
+    // weaker authority than the model, let alone than the member. His own words outrank the inference.
+    //
+    // NOT FIXED BY DETECTING VALENCE. No predicate here separates "body as strength" from "body as loss", and
+    // writing one is the better-classifier-is-a-better-guess road that has already cost this repo five patches on
+    // one gate. The discrimination we CAN make without guessing is whose claim it is: his, or ours about him.
+    //
+    // SCOPED SO TIGHT THAT ONLY A THEO REACHES IT — all three must hold: he affirmatively declares no Fade
+    // (THRIVING_RE is explicit — "nothing is missing", "no drift", "I just want more"), AND the whole gap corpus
+    // carries no genuine loss, AND no reduction language, AND no Acceptance. If ANY real fade evidence exists
+    // anywhere, the Door keeps its full force and nothing about admission changes. That asymmetry is deliberate:
+    // it protects the case that was expensive to get right (CAT-01/05 — "never turn away a real one"), and it
+    // leaves the terse member untouched, because Sam never declares himself fine. He just answers in fragments.
+    const declaredNoFade =
+      declaresThriving(gapCorpusNow) &&
+      !hasGenuineLoss(gapCorpusNow) &&
+      !hasReductionLanguage(gapCorpusNow) &&
+      !isAcceptanceFade(gapCorpusNow);
     const hardFadeSignal =
-      doorsKnown(b.collected).length > 0 || hasReductionLanguage(gapCorpusNow) || isAcceptanceFade(gapCorpusNow);
+      (doorsKnown(b.collected).length > 0 && !declaredNoFade) ||
+      hasReductionLanguage(gapCorpusNow) ||
+      isAcceptanceFade(gapCorpusNow);
     const anyFadeSignal = hardFadeSignal || hasGenuineLoss(gapCorpusNow);
+    // And drop the inferred Doors themselves — the same principle applied to the DATA, not just the gate. Leaving
+    // them on the profile would keep the false claim about his life even after we stop acting on it, and it is the
+    // thing the eval actually flagged: "forced a Door onto a no-Fade member (invented a fade)". A Door he confirms
+    // for himself is untouched by this; only ones we inferred while he was telling us there was nothing to infer.
+    if (declaredNoFade && doorsKnown(b.collected).length > 0) b.collected.doors = [];
     // note_no_fade is a HINT, not authority: honored ONLY while NO fade signal is present, and RECONCILED every turn —
     // the moment a Door / reduction / loss surfaces, a stale no-fade flag clears for good. This kills the sticky-flag
     // strand where one model misfire silently dropped a genuine-loss member's whole story. (CAT-02/04)
