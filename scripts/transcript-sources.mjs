@@ -14,7 +14,13 @@ export const SECTIONS = [
   // gap-confirm.tsx carries the three answers a member taps to close her own story, plus the line that shows her
   // the Doors we inferred and tells her she can take one off. That is authored copy at the heaviest beat in
   // onboarding, so it is quotable and it belongs in the bundle.
-  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx', 'app/onboarding/gap-confirm.tsx', 'lib/agent/gap-confirm-choice.ts'] },
+  // reclaim-list-builder.tsx JOINED 2026-08-30. It is where the Reclaim List is actually written — the artifact the
+  // whole program points at — and it carries authored copy a member reads at that beat: the one-at-a-time hint, the
+  // "This is my list" button, and the multi-want offer ("That sounds like more than one thing. Add them
+  // separately?" / "Add as N separate" / "Keep as one"). It sat on the coverage BACKLOG, so the guard passed while
+  // the transcript marketing and the book quote from was missing the copy for that surface entirely. Found when a
+  // sync note told Cowork to quote a line from the transcript that was not in it.
+  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx', 'app/onboarding/gap-confirm.tsx', 'lib/agent/gap-confirm-choice.ts', 'app/onboarding/reclaim-list-builder.tsx'] },
   // The keeper OFFER — "Keep this in your Playbook?" and its receipt. Small, but it is the moment a member decides
   // what the program is allowed to remember about her, so marketing and the book will want the exact words.
   // keeper-actions.ts carries the failure copy. It is not rendered TODAY — the component only reads res.ok — but

@@ -1,7 +1,10 @@
-# Strings EXCLUDED from the member transcript (app @ 9acd0e2 · 2026-08-29)
+# Strings EXCLUDED from the member transcript (app @ a367661 · 2026-08-30)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
+[lib/agent/onboarding-staged.ts] ${leads[b.history.length % leads.length]} ${text}
+[lib/agent/onboarding-staged.ts] ?m|i
+[lib/agent/onboarding-staged.ts] ?d|i
 [lib/agent/onboarding-staged.ts] ${Label} it is.  ${gapBridge(c, history)}
 [lib/agent/onboarding-staged.ts] Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?
 [lib/agent/onboarding-staged.ts] Even one small moment is enough — a specific morning, a feeling in your body — when you were most ${label}. What did being ${label} give you that you don't feel now? Even a little thing; there's no wrong answer.
@@ -30,11 +33,9 @@
 [lib/agent/onboarding-staged.ts] “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
 [lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 [lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
-[lib/agent/onboarding-staged.ts] You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.
 [lib/agent/onboarding-staged.ts] That came through as one entry, but you named ${numberWord(parts.length)} things in it: ${parts.map((p) =>
 [lib/agent/onboarding-staged.ts] ).join(', ')}. Want me to list them separately?
 [lib/agent/onboarding-staged.ts] Done — they’re ${pending.parts.length} separate items now.
-[lib/agent/onboarding-staged.ts] Perfect — “${distilled}” it is.
 [lib/agent/onboarding-staged.ts] ?t know|nothing( else)?|that
 [lib/agent/onboarding-staged.ts] ?s (the end|it for now|all for now|enough( for now)?)|i
 [lib/agent/onboarding-staged.ts] ?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n[
@@ -67,7 +68,6 @@
 [lib/agent/onboarding-staged.ts] “${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”
 [lib/agent/onboarding-staged.ts] Your starting Grinta Index is ${composite} out of 5. This is just where you stand today. You will build it in
 [lib/agent/onboarding-staged.ts] of G4L — Reconnect. Well done!
-[lib/agent/onboarding-staged.ts] ${leads[history.length % leads.length]} ${b.reply}
 [lib/agent/onboarding-staged.ts] Record who the member was at their best, in their own words (the past self).
 [lib/agent/onboarding-staged.ts] Offer 2–4 candidate handle words for who the member was at their best, drawn FROM THEIR OWN LANGUAGE in this conversation (e.g. after they describe racing bikes and chasing summits: ["Athlete", "Cyclist", "Competitor"]). Call this ONCE you've genuinely drawn out the past self — it hands the member a tap-to-pick chooser (chips + a write-your-own field) so THEY choose or coin the word; their pick is captured verbatim and is definitive. Natural case, no leading article ("Athlete", never "the Athlete"). Your prose this turn should warmly invite them to tap one or write their own. Do NOT also call name_identity — the member's tap is what names it.
 [lib/agent/onboarding-staged.ts] Record the reclaimed-identity word directly, natural case (e.g. "Athlete") — ONLY when the member flatly names it themselves before you offer candidates. For the normal choose-a-word beat use offer_identity_words instead.
@@ -123,6 +123,8 @@
 [lib/agent/gap-confirm-choice.ts] keep:
 [lib/agent/gap-confirm-choice.ts] keep:
 [lib/agent/gap-confirm-choice.ts] keep:
+[app/onboarding/reclaim-list-builder.tsx] Enter
+[app/onboarding/reclaim-list-builder.tsx] One at a time — ${expects.min} to start is plenty. You can always add more later.
 [app/components/keeper-offer.tsx] Keeping…
 [app/components/keeper-actions.ts] [keeper] keep failed for member=${memberId} (${proposal.label}):
 [app/rewire/rewire-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
@@ -445,6 +447,7 @@
 [lib/agent/rebuild.ts] THE GAP, IN THEIR WORDS: "${c.gap}"
 [lib/agent/rebuild.ts] THEIR RECLAIM LIST: ${c.reclaimList.join(' · ')}
 [lib/agent/rebuild.ts] WHAT YOU ALREADY KNOW ABOUT THEM: ${parts.join(' ')}
+[lib/agent/rebuild.ts] There are twelve of them. You'll rate each one twice — once for movement, once for eating — from ${SKILLS_SCALE_ANCHORS}.
 [lib/agent/rebuild.ts] Right now it looks like ${strongest.toLowerCase()} is a strength of yours. The skill with the most room to grow
 [lib/agent/rebuild.ts] is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice and improve. This week
 [lib/agent/rebuild.ts] you don't have to change anything — just notice these showing up: when a strong skill carries you, and when a
@@ -452,7 +455,7 @@
 [lib/agent/rebuild.ts] days you catch one.
 [lib/agent/rebuild.ts] ${skillLabel(item.skillNo, item.skill)}: ${item.stem}
 [lib/agent/rebuild.ts] Movement first.  ${line}
-[lib/agent/rebuild.ts] A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.  ${skillsDeliver(n)}
+[lib/agent/rebuild.ts] A number from ${SKILLS_SCALE_REPROMPT}.  ${skillsDeliver(n)}
 [lib/agent/rebuild.ts] — ${n} ${n === 1 ? 'day' : 'days'}
 [lib/agent/rebuild.ts] Here's your week, then — small and yours:  Movement: ${activity}${aim(activityDays)} Eating: ${diet}${aim(dietDays)}
 [lib/agent/rebuild.ts] Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down

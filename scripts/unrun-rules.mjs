@@ -18,6 +18,12 @@
 //               CI, and it does nothing for a member. "propose and resolve both existed, both unit-tested, never
 //               wired" — an infinite loop shipped from dead code that had passing tests.
 //
+// A TEST-ONLY FINDING IS A QUESTION, NOT A VERDICT — always ask "is there another way in?" before concluding a
+// feature is dark. `applyReclaimC1PassesTurn` lands in this bucket and the feature it fronts is fully LIVE: it is
+// an alternate entry point wrapping RECLAIM_C1_ARC, which runs by another route. On 2026-08-30 that finding, plus
+// a stale note, had me tell Jay that C1's six passes were never switched on. They shipped in v3.5.46. One grep
+// would have settled it. The DEAD bucket does not have this failure mode; TEST-ONLY does.
+//
 // Usage:  node scripts/unrun-rules.mjs [--json]
 // Exit 1 when anything is found, so it can gate CI once the list is at zero.
 

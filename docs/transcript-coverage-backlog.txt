@@ -55,7 +55,6 @@ app/movement/sync-now.tsx
 app/offline/page.tsx
 app/onboarding/actions.ts
 app/onboarding/chat.tsx
-app/onboarding/reclaim-list-builder.tsx
 app/password-field.tsx
 app/playbook/[memberId]/outcome-cards.tsx
 app/playbook/[memberId]/playbook-view.tsx
