@@ -1,8 +1,12 @@
-> # ⚠️ SUPERSEDED — NEVER SENT. Do not act on this document.
+> # ✅ CLOSED — NEVER SENT, and nothing here is outstanding. Do not act on this document.
 >
-> **Retired 2026-08-30 by Jay: "let's drop the idea of the email to Greg now, I think it would be a distraction
-> before he walks."** Greg has not seen any of this and should not be sent it. The plan is now that he **walks the
-> product first**.
+> **Jay, 2026-08-30: "I handled those directly with him. Retire them both."** Whatever of this needed to reach
+> Greg reached him in conversation. No send is pending and no reply is owed — this banner is the closure.
+>
+> Earlier the same day it was retired as a SEND: **"let's drop the idea of the email to Greg now, I think it would
+> be a distraction before he walks"** — the plan being that he **walks the product first**. That still holds; the
+> update is that it is no longer merely deferred, it is done with. Greg has not seen this document and should not
+> be sent it.
 >
 > **§2 is also factually wrong as written.** It reports his two "Why" domain prompts as cut and offers them back as
 > a question for him. They were **restored in v3.5.60** on Jay's ruling — *"Donna shouldn't be cutting in Greg's

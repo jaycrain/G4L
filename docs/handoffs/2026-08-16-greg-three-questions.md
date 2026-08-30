@@ -1,7 +1,19 @@
+> # ✅ CLOSED — 2026-08-30. Jay handled these directly with Greg. Nothing here is pending.
+>
+> **Jay, 2026-08-30: "I handled those directly with him. Retire them both."** They were answered in conversation,
+> not on paper, so there is no reply document to point at — this banner IS the closure. Do not draft, re-send, or
+> re-raise them, and do not treat the stated defaults below as live assumptions still awaiting his ruling.
+>
+> Kept rather than deleted for the same reason as its sibling
+> ([2026-08-29](2026-08-29-greg-what-runs-and-what-doesnt.md)): the READ behind it is sound and worth having —
+> these were the only three places where his 36-document library and our shipped product disagreed in a way that
+> was his call, not ours. **What is dead is the framing: a message awaiting a send.** A document that describes an
+> intent nobody is acting on is a lie with a delay on it.
+
 # Three questions for Greg — from a full read of the per-asset library
 
-**Drafted 2026-08-16 for Jay to send.** Greg is on vacation; **none of these blocks the build.** Each has a
-stated default we will proceed on if he doesn't reply. Each is answerable in a sentence.
+**Drafted 2026-08-16. CLOSED 2026-08-30 — see the banner above.** Greg was on vacation; **none of these blocked
+the build.** Each had a stated default we proceeded on. Each was answerable in a sentence.
 
 **Why now:** we read all 36 documents of the per-asset trilogy directly — 12 Science Checks, 12 Companion
 Guidance memos, 12 AI Engineering Memos. These three are the only places where his documents and our shipped
