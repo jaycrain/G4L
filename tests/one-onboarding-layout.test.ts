@@ -59,27 +59,30 @@ test('the icon sits in one fixed-height box on every slide', () => {
   assert.doesNotMatch(CSS, /\.onbwel-art-(rings|progress)\s*\{/, 'per-slide icon sizes are what "vary wildly" meant');
 });
 
-test('the CTA lands at the same y — anchored to the bottom, not floated on a measured zone', () => {
-  // THE MECHANISM CHANGED AND THIS TEST HAD TO CHANGE WITH IT. It used to assert a declared --onbwel-copy-h,
-  // because a fixed zone above the button was how the button was held still. That zone had to equal the tallest
-  // slide's height at every breakpoint, it never did, and the slide that exceeded it moved the whole centred
-  // block: art and headline up, button down.
+test('the CTA lands at the same y — floated on a MEASURED zone, with three guards on the measurement', () => {
+  // REVERSED AGAIN, 2026-08-30, and the history matters because this test recorded exactly why the measured zone
+  // failed the first time: "that zone had to equal the tallest slide's height at every breakpoint, it never did,
+  // and the slide that exceeded it moved the whole centred block."
   //
-  // Anchoring needs no measurement. The proof is a render, not a rule — five slides, one button position, at
-  // every viewport swept on 2026-08-28.
+  // Every clause of that is now addressed:
+  //   1. IT NEVER DID EQUAL THE TALLEST SLIDE — because nobody checked. scripts/check-welcome-fit.mjs renders all
+  //      five slides at the worst width in each band and fails on overflow. It caught a wrong band edge on its
+  //      first run (286px of content in a 262px box at 561), before that edge ever shipped.
+  //   2. THE SLIDE THAT EXCEEDED IT MOVED THE BLOCK — it cannot now: the zone scrolls internally.
+  //   3. THE CENTRED BLOCK — is gone. The column is top-anchored, so nothing above the button moves.
+  //
+  // And what sent us back: anchoring needs no measurement, but it ties the button to the WINDOW rather than the
+  // content — 20px of gap at 1280x800 and 220px at 600x900 on identical CSS. Donna reported that three times.
   const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(copy, /flex:\s*1 1 auto/, 'the zone takes up the slack instead of declaring a height');
-  // `min-height: 0` is the OPPOSITE of a declared height — it is what permits a flex item to shrink below its
-  // own content, which is the whole mechanism. What must never come back is a height MEASURED from the copy.
-  // A character class, not a lookahead: `\s*(?!0)` backtracks to the empty match and then reads the SPACE as
-  // "not a zero", so it fires on the very declaration it means to allow.
-  assert.doesNotMatch(copy, /min-height:\s*[^0\s]/, 'a measured minimum is the drift; only `min-height: 0` belongs here');
-  assert.doesNotMatch(copy, /[^-]height:\s*var\(/, 'and never a height read from a tuned variable');
+  assert.match(copy, /height:\s*var\(--onbwel-copy-h\)/, 'one shared, measured height');
+  assert.match(copy, /flex:\s*0 0 auto/, 'it must not absorb slack, or the button returns to the bottom');
+  assert.match(copy, /overflow-y:\s*auto/, 'guard 2 — an over-long slide scrolls instead of moving the button');
+  assert.match(CSS, /check-welcome-fit\.mjs/, 'guard 1 — the CSS names the check that keeps the number honest');
 
-  // Centring is what turned a taller block into movement at BOTH ends. Anchored, a taller block grows downward
-  // into the slack and nothing above it moves.
   const shell = CSS.match(/\.onbwel \{([^}]*)\}/)?.[1] ?? '';
   assert.match(shell, /overflow-y:\s*auto/, 'a screen too short must scroll rather than clip');
+  const wrap = CSS.match(/\.onbwel-wrap \{([\s\S]*?)\n\}/)?.[1] ?? '';
+  assert.doesNotMatch(wrap, /justify-content:\s*center/, 'guard 3 — centring is what turned overflow into movement');
 });
 
 test('slide 1 shows no dots but reserves their space', () => {

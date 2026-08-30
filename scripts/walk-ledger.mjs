@@ -57,7 +57,11 @@ for (const it of items) {
   }
   // DECLINED: her phrase appears in the SOURCE next to a decline marker. Searched with -n so the ledger can say
   // exactly where the reason is written, which is the thing she was never shown.
-  const hits = sh(`git grep -n -i -F ${JSON.stringify(it.key)} -- '*.ts' '*.tsx' '*.css' | head -6`).trim();
+  // EXCLUDE THE LEDGER'S OWN FILES. Its test defines probe phrases like "zzz-no-such-phrase" precisely because
+  // nothing should match them — and the ledger then matched the test, reporting the probe as SHIPPED. Exactly the
+  // shape of the unrun-rules parking lot that made its own parked symbols look referenced: a tool that reads a
+  // corpus containing itself will find itself. [[unrun-rules-the-defect-class]]
+  const hits = sh(`git grep -n -i -F ${JSON.stringify(it.key)} -- '*.ts' '*.tsx' '*.css' ':!scripts/walk-ledger.mjs' ':!tests/the-walk-ledger-answers-her.test.ts' | head -6`).trim();
   const declined = hits.split('\n').filter(Boolean).find((line) => {
     const [f, n] = line.split(':');
     const src = sh(`sed -n '${Math.max(1, Number(n) - 12)},${Number(n) + 4}p' ${JSON.stringify(f)}`);

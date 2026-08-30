@@ -96,17 +96,13 @@ test('every --onbwel- variable override is accounted for', () => {
     overrides,
     ['gutter=8vw', 'measure=640px', 'icon-h=90px',
      'foot-clear=calc(52px + env(safe-area-inset-bottom, 0px))',
-     // THE OPENING-SEQUENCE SPACING STANDARD, added 2026-08-30 for Donna's "align buttons on ALL screens".
-     // These are not overrides of anything — they are three new base tokens declared once on .onbwel, which is
-     // the point: five screens used to carry their own margins. Read and accepted rather than count-bumped, per
-     // this test's own instruction.
-     // --onbwel-cta-lift: how much higher the CTA sits than the old bottom anchor (Donna, 2026-08-30: "these need
-     // to be higher across all screens"). It has a PHONE OVERRIDE for the same reason --onbwel-icon-h does: at
-     // 375px the copy is tallest, and the desktop lift put the button 25px ON TOP of the last bubble. Measured
-     // after: +23px clearance on a phone, +20px at 1280, buttons still at an identical y on all five screens.
-     'cta-lift=40px',
+     // --onbwel-copy-h is BACK, 2026-08-30, deliberately — see the test below for why the mechanism that replaced
+     // it could not do what Donna asked three times for. Three bands, each measured at the worst width inside it,
+     // and scripts/check-welcome-fit.mjs fails the moment the copy outgrows one. That check is the difference
+     // between this and the version that was retired for going stale.
+     'copy-h=262px',
      'gap-copy=14px', 'gap-inner=10px', 'gap-cta=15px',
-     'icon-h=45px', 'cta-lift=16px'],
+     'icon-h=45px', 'copy-h=292px', 'copy-h=372px'],
     'an unexpected --onbwel- override — check whether the value it shadows was just changed without it',
   );
 });
@@ -135,38 +131,31 @@ test('the art is half height on a phone', () => {
 // the copy zone is whatever is left. Measured across all five slides after the change: 507 at 375x667, 630 at
 // 393x852, 710 at 430x932, 802 at 768x1024, 958 at 820x1180, 1144 at 1024x1366, 530 at 1280x720, 610 at
 // 1440x820, 690 at 1440x900 — one value per viewport, five slides each.
-test('the copy zone flexes and the wrap anchors — nothing measures the tallest slide any more', () => {
-  // COMMENTS STRIPPED. The rule that replaced it explains what it replaced BY NAME, and the first version of
-   // this assertion failed on that explanation — the second time in this file a guard has punished writing the
-   // reason down. Assert against declarations, never against prose.
-  assert.doesNotMatch(CSS.replace(/\/\*[\s\S]*?\*\//g, ''), /--onbwel-copy-h/,
-    'a fixed copy height is the mechanism that moved the button; it does not come back');
-
+test('the copy zone is a MEASURED shared height again — and a check keeps it honest', () => {
+  // REVERSED 2026-08-30, on evidence. The flex/bottom-anchor mechanism this test used to assert does keep the five
+  // buttons level, but it ties the button's y to the WINDOW instead of the content: measured on identical CSS, the
+  // gap under the copy was 20px at 1280x800 and 220px at 600x900. Donna asked three times for the button to sit
+  // under the content and no lift value could deliver it, because the number needed changes with window height.
+  //
+  // So the fixed shared zone is back — which is DONNA'S OWN DESIGN ("sized to the tallest slide", her ruling on
+  // the space under the short ones: "White space is ok"). The reason it was retired was real: a measured number
+  // goes stale when the copy changes. What makes it safe now is that nothing has to remember —
+  // scripts/check-welcome-fit.mjs renders all five slides at the worst width in each band and FAILS on overflow.
   const copy = CSS.match(/\.onbwel-copy \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(copy, /flex:\s*1 1 auto/, 'the copy zone is the one box allowed to give up height');
-  assert.match(copy, /min-height:\s*0/, 'without this a flex item will not shrink below its content');
-  assert.match(copy, /overflow-y:\s*auto/, 'so long copy scrolls INSIDE the zone instead of moving the button');
+  assert.match(copy, /height:\s*var\(--onbwel-copy-h\)/, 'one shared height, so the CTA lands at the same y');
+  assert.match(copy, /flex:\s*0 0 auto/, 'it must NOT absorb slack — that is what pushed the button to the bottom');
+  assert.match(copy, /overflow-y:\s*auto/, 'copy longer than the box scrolls inside it rather than moving the button');
+
+  // THE GUARD IS THE POINT. Without it this is exactly the number that rotted last time.
+  assert.match(CSS, /check-welcome-fit\.mjs/, 'the CSS names the check that keeps the measurement honest');
 
   const wrap = CSS.match(/\.onbwel-wrap \{([\s\S]*?)\n\}/)?.[1] ?? '';
-  assert.match(wrap, /flex-direction:\s*column/, 'the wrap is the column the anchoring depends on');
-  // HEIGHT, NOT MIN-HEIGHT. A minimum lets the column grow past the screen when the copy is long — which is
-  // what it did, so the page scrolled and the button moved anyway. Fixed, the slack has nowhere to go but the
-  // copy zone.
-  assert.match(wrap, /height:\s*100dvh/, 'a fixed height is what forces the copy to shrink instead of the column growing');
-  assert.doesNotMatch(wrap, /min-height:\s*100dvh/, 'a minimum height lets the column grow and the button move');
+  assert.match(wrap, /flex-direction:\s*column/, 'the wrap is still the column');
+  assert.match(wrap, /height:\s*100dvh/, 'and still exactly one screen tall, so long copy scrolls in the zone');
 
-  // ONLY the copy zone may shrink. A flex item shrinks by default, so the BUTTON was absorbing the overflow
-  // itself — measured 57/53/59/49/53px tall across the five slides at 375x667, which is the jump Jay kept
-  // reporting while I kept looking at padding.
+  // Unchanged and still load-bearing: the button itself may never shrink or stretch.
   assert.match(CSS, /\.onbwel-cta, \.onbwel-d-cta \{[^}]*flex:\s*none/, 'the button never shrinks');
-  assert.match(CSS, /\.onbwel-cta, \.onbwel-d-cta \{[^}]*align-self:\s*flex-start/,
-    'nor stretches to the column width — a flex child stretches unless told not to');
-
-  // Slides 2–5 nest everything inside .onbwel-heart, so the column has to pass through it or only slide 1
-  // anchors — which would be the same bug, visible on four screens out of five.
-  const heart = CSS.match(/\.onbwel-heart \{([^}]*)\}/)?.[1] ?? '';
-  assert.match(heart, /flex:\s*1 1 auto/, '.onbwel-heart must carry the column into slides 2-5');
-  assert.match(heart, /min-height:\s*0/, 'so a screen too short hands its overflow to the shell scroll');
+  assert.match(CSS, /\.onbwel-cta, \.onbwel-d-cta \{[^}]*align-self:\s*flex-start/, 'nor stretches to the column width');
 });
 
 // THE LOG-IN LINE IS NOT DECORATION — "/" lands on this screen, so it is the only way through for someone who

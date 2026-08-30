@@ -40,28 +40,26 @@ test('the line Donna asked us to cut is gone', () => {
   assert.ok(!/building towards 100/.test(welcome), '"building towards 100" removed from the progress screen');
 });
 
-test("screen one's sunrise is halved, and only screen one", () => {
-  assert.match(css, /\.onbwel-first \.onbwel-art \{ height: calc\(var\(--onbwel-icon-h\) \/ 2\)/);
-  // Anchored: an unanchored `\.onbwel-art \{` also matches the `.onbwel-first .onbwel-art` rule above and fails
-  // on its own fix. The shared box is the rule that STARTS the line.
+test("screen one's sunrise is halved VISUALLY, without moving its button", () => {
+  // Both of her asks at once. Shrinking the box halved the reserved space too, so slide 1's button rose 45px above
+  // the other four — exactly half the icon height, and exactly what she reported: "the opening Wake Up one where
+  // button appears to be in a different placement than on subsequent ones." A transform does not affect layout, so
+  // the image is half size and the space it holds is unchanged.
+  assert.match(css, /\.onbwel-first \.onbwel-art \{[\s\S]*?transform: scale\(0\.5\)/, 'scaled, not resized');
+  assert.ok(!/\.onbwel-first \.onbwel-art \{[^}]*height: calc\(/.test(css), 'the box height is NOT reduced');
   assert.ok(!/^\.onbwel-art \{[^}]*height: calc\(/m.test(css), 'the shared icon box is untouched for the other four');
 });
 
-test('the CTA lift is a token, and it is smaller where the copy is tallest', () => {
-  // Donna, an hour after the alignment fix: "These need to be higher across all screens. Here is the example
-  // where it needs the most room." She marked the target on the FULLEST screen deliberately — a y that clears the
-  // content there clears it everywhere, so "higher" and "aligned" are the same change, not competing ones.
-  //
-  // The phone override is not a style preference. At 375x812 the desktop lift put the button 25px ON TOP of the
-  // last bubble — measured, not guessed — because a narrow column wraps the copy to more lines. Same shape as
-  // --onbwel-icon-h: the decision is unchanged at every width, only the number moves.
-  assert.match(css, /--onbwel-cta-lift: 40px/, 'a base lift');
-  assert.match(css, /--onbwel-cta-lift: 16px/, 'and a smaller one on phones');
-  assert.match(css, /calc\(40px \+ var\(--onbwel-cta-lift\) \+ var\(--onbwel-foot-clear\)\)/, 'the wrap spends it as bottom padding');
-
-  // THE CASCADE TRAP, pinned. The base must live at :root, NOT on .onbwel — a closer ancestor beats a :root
-  // media override, so the phone value would silently never apply. That is the exact shape of the v3.5.2 bug
-  // the override enumeration exists to catch, and I reintroduced it for ten minutes writing this.
-  const onbwelRule = css.slice(css.indexOf('.onbwel { --onbwel-gap-copy'), css.indexOf('\n', css.indexOf('.onbwel { --onbwel-gap-copy')));
-  assert.ok(!onbwelRule.includes('--onbwel-cta-lift'), 'the lift is not declared on .onbwel, where it would shadow the phone override');
+test('the CTA position comes from the measured zone, not a lift', () => {
+  // The lift was the wrong mechanism and is deleted. It moved the button by a fixed number of pixels while the
+  // problem scaled with WINDOW HEIGHT — 20px of gap at 1280x800, 220px at 600x900, same CSS. Two rounds of tuning
+  // it were two rounds of answering the wrong question, which is worth leaving written down.
+  assert.ok(!/--onbwel-cta-lift/.test(css), 'the lift is gone, not merely set to zero');
+  assert.match(css, /--onbwel-copy-h: 262px/, 'the wide band');
+  assert.match(css, /--onbwel-copy-h: 292px/, 'the middle band');
+  assert.match(css, /--onbwel-copy-h: 372px/, 'the phone band');
+  // Each band edge is where the CHECK says the copy stops wrapping longer, not where it seemed reasonable: the
+  // first attempt guessed 560 and the fit check caught 286px of content in a 262px box at 561.
+  assert.match(css, /max-width: 575px\) \{ :root \{ --onbwel-copy-h: 292px/, 'middle band edge');
+  assert.match(css, /max-width: 480px\) \{ :root \{ --onbwel-copy-h: 372px/, 'phone band edge');
 });

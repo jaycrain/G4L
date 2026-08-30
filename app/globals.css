@@ -3080,7 +3080,22 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   --onbwel-foot-clear: calc(52px + env(safe-area-inset-bottom, 0px));
   /* How much higher the CTA sits than the old bottom anchor (Donna, 2026-08-30). At :root, NOT on
      .onbwel — a closer ancestor would beat the phone override below and it would silently never apply. */
-  --onbwel-cta-lift: 40px;
+  /* ┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
+     │ CHANGE THE OPENING COPY AND YOU MUST REMEASURE THIS. (Jay's instruction, 2026-08-30.)                │
+     │ Run: node scripts/check-welcome-fit.mjs — it reports the tallest slide's content at each band and    │
+     │ FAILS if it no longer fits. The value below is that measurement plus a few px of headroom.           │
+     └─────────────────────────────────────────────────────────────────────────────────────────────────────┘
+     THE COPY ZONE IS A FIXED, SHARED HEIGHT — restored 2026-08-30, and it is DONNA'S OWN DESIGN: "fixed-height
+     copy zone so the CTA sits at the same y on every slide (her item 3), sized to the tallest slide", with her
+     ruling on the space it leaves under the short ones — "White space is ok."
+     It was replaced by a bottom-anchored column, which does keep the five buttons level but ties the button's y to
+     the VIEWPORT instead of the content: measured on identical CSS, the gap under the copy was 20px at 1280x800
+     and 220px at 600x900. She asked three times for the button to sit under the content; no lift value could
+     deliver that, because the number needed changes with window height.
+     Measured tallest slide (always "Track your progress"): 366px at 375 · 286px at 490 and 561 · 257px from 576 up,
+     where the wrap stops adding a line. One band per plateau, and the edges are where the CHECK says they are —
+     the first attempt guessed 560 and the fit check caught 286px of content in a 262px box at 561. */
+  --onbwel-copy-h: 262px;
 }
 .onbwel {
   min-height: 100dvh; max-height: 100dvh; overflow-y: auto;
@@ -3102,7 +3117,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
      content there clears it everywhere, and the shared alignment holds. Raising this one value moves all five
      buttons up together on every viewport; the blank below the copy absorbs it, exactly as the note above says. */
   padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px
-           calc(40px + var(--onbwel-cta-lift) + var(--onbwel-foot-clear)) var(--onbwel-gutter);
+           calc(40px + var(--onbwel-foot-clear)) var(--onbwel-gutter);
   /* A COLUMN OF EXACTLY ONE SCREEN — this is what stops the button moving between slides.
      The block used to be centred and sized by its content, so any slide whose copy ran a line long made the
      whole block taller and the centring pushed EVERYTHING: on slide 4 the art and headline rose 5px while the
@@ -3138,13 +3153,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    the slack lands in the wrong box and only slide 1 anchors. min-height:0 lets it shrink below its content on a
    screen too short to hold it, which is what hands the overflow to .onbwel's scroll instead of clipping it. */
 .onbwel-heart { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-/* THE COPY ZONE IS THE SLACK, not a fixed box. It was `min-height: var(--onbwel-copy-h)` — one hand-measured
-   height per breakpoint, meant to hold the tallest slide so the button below it landed in the same place.
-   That number was wrong three times: 232px at desktop (slide 4 needs 243), 316px on the phone (slide 4 needs
-   326), and for a while the phone's number was being handed to every iPad. Each fix was a new measurement,
-   and a measurement goes stale the moment anyone edits a sentence.
-   Flexing, it holds whatever that slide's copy needs and gives the rest of the screen back — and the button is
-   anchored below it either way. Nothing to re-measure when the copy changes. */
+/* (Superseded 2026-08-30. This block used to argue the copy zone should be the SLACK, and it was right that a
+   hand-measured height goes stale — it just could not see that bottom-anchoring ties the button to the window
+   height instead of the content, which is what Donna reported three times. The measured height is back, WITH a
+   check that fails when it goes stale: scripts/check-welcome-fit.mjs.) */
 /* THE COPY SCROLLS. THE BUTTON DOES NOT MOVE. This is the whole standardisation, and it replaced four
    hand-tuned media bands that trimmed icons and padding to make the tallest slide fit — which worked on the
    sizes I could measure and still jumped on Jay's actual phone, because a real handset's safe-area inset ate
@@ -3152,7 +3164,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    Giving this box `min-height: 0` + its own overflow means a slide with more copy scrolls INSIDE the zone
    instead of growing the column and pushing the button down. The button's distance from the bottom is then
    fixed by construction on every slide, at every size, with nothing measured and no band to keep in tune. */
-.onbwel-copy { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.onbwel-copy { flex: 0 0 auto; height: var(--onbwel-copy-h); overflow-y: auto; }
 /* Slide 1 shows no dots but reserves their height, so all five headlines start at the same y. Height mirrors
    .onbwel-dots exactly (8px dot + 30px margin) — if that changes, this follows it. */
 .onbwel-dots-spacer { height: 8px; margin-bottom: 30px; flex: none; }
@@ -3250,7 +3262,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    scene rather than an icon, so it was reading twice the weight of the marks on the other four screens and
    pushing the copy down with it. Halving it here rather than in the shared box keeps the icon standard intact
    for the other screens — this is the exception, and it says so. */
-.onbwel-first .onbwel-art { height: calc(var(--onbwel-icon-h) / 2); }
+.onbwel-first .onbwel-art {
+  /* HALVED VISUALLY, FULL HEIGHT IN LAYOUT. Shrinking the box moved slide 1's button 45px above the other four —
+     exactly half the icon height — which is what Donna saw: "the opening Wake Up one where button appears to be in
+     a different placement than on subsequent ones." Her two asks (halve the sunrise; keep the placement
+     consistent) only conflict if the box shrinks with the image. A transform does not affect layout, so the space
+     stays reserved and the buttons stay level. */
+  transform: scale(0.5);
+  transform-origin: left center;
+}
 /* SUPERSEDED by the shared icon box (Donna's item 5, 2026-08-27). The rings and progress used to carry their own
    heights — 90px each against the default's 75px — which is exactly the "icons vary wildly in size" she flagged.
    One container height now, art fitted inside it, so a wide mark and a square one read as the same element. */
@@ -3362,13 +3382,15 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
        dominates this one. Donna's icon-box rule is untouched — one fixed height, variable width, equal visual
        weight — only the number changes. */
     --onbwel-icon-h: 45px;
-    /* AND THE CTA LIFT IS SMALLER HERE, because a phone does not have 64px to give. Measured at 375x812 on the
-       fullest slide, the desktop lift put the button 25px ON TOP of the last bubble — the collision this whole
-       column architecture exists to prevent. Same rule as the icon above: the decision is unchanged (the button
-       sits higher), only the number changes at the width where the copy is tallest. */
-    --onbwel-cta-lift: 16px;
+
   }
 }
+
+/* THE TWO NARROW BANDS for the shared copy zone. A narrower column wraps the body to more lines, so the tallest
+   slide needs more room; each number is measured at the worst width inside its band, not interpolated.
+   Ordered after the block above so they win at equal specificity. REMEASURE IF THE COPY CHANGES. */
+@media (max-width: 575px) { :root { --onbwel-copy-h: 292px; } }
+@media (max-width: 480px) { :root { --onbwel-copy-h: 372px; } }
 
 /* ── SHORT WINDOWS — the constraint here is HEIGHT, so the query is height ────────────────────────────────────
    The button holds its position by being anchored to the bottom with the copy zone absorbing the slack. That

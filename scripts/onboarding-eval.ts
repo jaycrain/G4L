@@ -10,6 +10,7 @@
 
 import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage, type Collected } from '../lib/agent/onboarding.ts';
 import { ritaDoorConcerns, ritaRaisedDoors } from './rita-criterion.ts';
+import { TRIPWIRES } from './walk-tripwires.ts';
 import { ONBOARDING_HARD_CEILING } from '../lib/agent/onboarding-staged.ts';
 import { GAP_CONFIRM_CHOICES, serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -294,6 +295,7 @@ function toWire(kind: string, raw: string, expects?: Record<string, unknown>): s
   return raw;
 }
 
+
 const ctx = { name: 'Eval Member', email: 'eval@example.test' };
 
 async function runPersona(p: Persona): Promise<boolean> {
@@ -330,6 +332,13 @@ async function runPersona(p: Persona): Promise<boolean> {
   // GENERAL GUARD (all personas): the agent must never repeat a reply VERBATIM — a canned gather line looping
   // word-for-word is the bug the `follow-on` persona reproduces (live walk, Jun 26). Catch it for everyone so
   // this whole class can't hide from the eval again.
+  // HER TRIPWIRES, for every persona — not just the one scripted to complain.
+  const agentTurns = history.filter((h) => h.role === 'agent').map((h) => h.text ?? '');
+  const memberTurns = history.filter((h) => h.role === 'member').map((h) => h.text ?? '');
+  for (const t of TRIPWIRES) {
+    const hit = t.check(agentTurns, memberTurns, c);
+    if (hit) issues.push(hit);
+  }
   const agentReplies = history.filter((h) => h.role === 'agent').map((h) => h.text);
   for (let i = 1; i < agentReplies.length; i++) {
     if (agentReplies[i] && agentReplies[i] === agentReplies[i - 1]) {
