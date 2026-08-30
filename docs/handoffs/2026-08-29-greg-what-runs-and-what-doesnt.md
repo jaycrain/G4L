@@ -1,6 +1,22 @@
+> # ⚠️ SUPERSEDED — NEVER SENT. Do not act on this document.
+>
+> **Retired 2026-08-30 by Jay: "let's drop the idea of the email to Greg now, I think it would be a distraction
+> before he walks."** Greg has not seen any of this and should not be sent it. The plan is now that he **walks the
+> product first**.
+>
+> **§2 is also factually wrong as written.** It reports his two "Why" domain prompts as cut and offers them back as
+> a question for him. They were **restored in v3.5.60** on Jay's ruling — *"Donna shouldn't be cutting in Greg's
+> domain"* — so there is no question left to ask. Restoring also exposed that the eating half composed its own copy
+> of the item, which meant the first fix reached only the activity half.
+>
+> Kept rather than deleted because the inventory in §1–§5 is an accurate record of what `scripts/unrun-rules.mjs`
+> found in his material on 2026-08-29, and that reasoning is worth having. **The framing — a note to send — is
+> dead.** A document that describes an intent nobody is acting on becomes a lie with a delay on it, which is the
+> failure this whole sweep has been about.
+
 # For Greg — what of yours is running, and what isn't
 
-**2026-08-29 · v3.5.59 · prepared for Jay to send**
+**2026-08-29 · v3.5.59 · SUPERSEDED, never sent — see the banner above**
 
 Short version: **everything you specified for the twelve gated Sessions is built and live.** This note is about a
 narrower thing — a handful of items from your source documents that exist in the code and are **not currently
