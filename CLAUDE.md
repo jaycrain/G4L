@@ -75,6 +75,17 @@ Reclaim List is what the program routes on. (See `docs/onboarding-open-issues.md
   logs, never in test fixtures. Ask if unsure.
 - **Match decisions, don't reinvent them.** If something here or in the Decision Log
   settles a question, follow it. Flag conflicts instead of guessing.
+- **Close the loop with Donna and Greg — every time, unasked (Jay, 2026-08-30).** When either of them
+  answers a question we asked or makes a suggestion, they get a reply: what we did, what we did NOT do
+  and why, and anything their note turned up that they couldn't see from outside. Draft it into Jay's
+  drafts (no auto-send — the Founder Agent review gate applies to any mail in his name) and tell him
+  it's there. **The reply is not a courtesy, it's how the next report stays good.** Both of them are
+  giving us judgement, not bug reports, and an unanswered suggestion is indistinguishable from an
+  ignored one — the next one arrives thinner, or not at all. Two specifics worth repeating: say when
+  their diagnosis was narrower or wider than they thought (Donna flagged R1's opener; four other
+  Sessions with the same shape were fine, and she deserved to know we checked), and say what their
+  note revealed that we'd missed. Silence on a suggestion we adopted is the worst case — it reads as
+  rejection of the thing we just shipped.
 - **Reconcile every feature with the Member Agent — it's part of "done."** The dashboard
   and the MA are one surface, so any feature that surfaces something to the member (a metric,
   panel, signal, asset, event, anything represented about them) must, before it ships:
