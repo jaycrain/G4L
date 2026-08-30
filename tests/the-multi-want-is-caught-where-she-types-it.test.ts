@@ -108,3 +108,23 @@ test('NOTHING in the shape gate discards a want any more', () => {
   const drops = [...body.matchAll(/removeReclaimItem\(/g)];
   assert.equal(drops.length, 1, 'the ONLY removal left is the split, which re-adds every part');
 });
+
+// ── AN UNANSWERED PROPOSAL IS STILL HER LINE ────────────────────────────────────────────────────────────────────
+// The fix above parks a proposal and stores NOTHING until she taps — correct, she has not ruled yet. But it means
+// the line exists only in `pendingSplit`, and she can walk away from the card two ways: keep typing and add
+// something else, or tap "This is my list". Both discarded it silently. That is the loss v3.5.57 shipped to END,
+// reintroduced by the fix for it, in the same component. Found reading the code before handing the build to Donna.
+test('a line she never ruled on survives her carrying on typing, and survives submit', () => {
+  const src = readFileSync(new URL('../app/onboarding/reclaim-list-builder.tsx', import.meta.url), 'utf8');
+
+  // Adding another item carries the unanswered line with it, resolved the non-destructive way ("Keep as one").
+  assert.ok(/const keep = carried\(\);/.test(src), 'add() picks up the parked line');
+  assert.ok(/addAll\(\[\.\.\.keep, \.\.\./.test(src), 'and banks it alongside the new entry');
+  // Parking a SECOND proposal banks the first rather than overwriting it.
+  assert.ok(/if \(keep\.length\) setItems\(merged\(items, keep\)\)/.test(src), 'a second proposal does not evict the first');
+  // Submitting with the card still on screen keeps it.
+  assert.ok(/onSubmit\(merged\(items, carried\(\)\)\)/.test(src), 'submit carries the unanswered line');
+
+  // And the old shape must not come back: nothing may drop the parked line on the floor.
+  assert.ok(!/onSubmit\(items\)/.test(src), 'submit never sends items alone while a proposal can be pending');
+});

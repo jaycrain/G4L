@@ -25,15 +25,29 @@ export default function ReclaimListBuilder({
   // tick one off, and re-typing one later reads as a new want rather than a duplicate. They already numbered them,
   // so we take them at their word and add each as its own chip — visible immediately, each with its own ✕, so the
   // split is obvious and undoable while they're still holding the intent. (Jennifer, 2026-08-05.)
-  const addAll = (parts: string[]) => {
-    const next = [...items];
+  const merged = (base: string[], parts: string[]) => {
+    const next = [...base];
     for (const part of parts) {
       if (!next.some((x) => x.toLowerCase() === part.toLowerCase())) next.push(part); // no exact dup
     }
-    setItems(next);
+    return next;
+  };
+  const addAll = (parts: string[]) => {
+    setItems(merged(items, parts));
     setDraft('');
     setPendingSplit(null);
   };
+
+  // AN UNANSWERED PROPOSAL IS STILL HER LINE, AND MUST SURVIVE HER IGNORING IT.
+  //
+  // Nothing is stored while a proposal is parked — which is right, she has not ruled yet — but it means the line
+  // exists ONLY in `pendingSplit`. She can walk away from the card two ways: keep typing and add something else, or
+  // tap "This is my list". Both used to discard it silently. That is the exact loss v3.5.57 shipped to end, put
+  // back by the fix for it, in the same component.
+  //
+  // So an unanswered proposal always resolves the non-destructive way — as "Keep as one", her words verbatim. The
+  // default on ambiguity is to keep what she typed, never to drop it for not having answered us.
+  const carried = () => (pendingSplit ? [pendingSplit.raw] : []);
 
   // THE PROSE MULTI-WANT, CAUGHT WHERE SHE TYPES IT. The enumeration splitter above rescues a member who NUMBERS
   // her wants (Jennifer). A member who types them as prose — "a creative role that covers the bills, rebuilds
@@ -46,17 +60,19 @@ export default function ReclaimListBuilder({
   const add = () => {
     const v = draft.trim();
     if (!v) return;
+    const keep = carried(); // whatever she left unanswered comes with her
     const enumerated = splitInlineEnumeration(v);
     if (!enumerated) {
       const proposed = proposeProseSplit(v);
       if (proposed) {
-        setPendingSplit({ raw: v, parts: proposed }); // nothing is stored until she taps
+        if (keep.length) setItems(merged(items, keep)); // bank the previous line before parking the new one
+        setPendingSplit({ raw: v, parts: proposed }); // the NEW line is not stored until she taps
         setDraft('');
         return;
       }
     }
     const parts = enumerated ?? v.split(/\r?\n+/).map((s) => s.trim()).filter(Boolean);
-    addAll(parts.length ? parts : [v]);
+    addAll([...keep, ...(parts.length ? parts : [v])]);
   };
   const remove = (i: number) => setItems(items.filter((_, x) => x !== i));
 
@@ -129,7 +145,8 @@ export default function ReclaimListBuilder({
             ? `One at a time — ${expects.min} to start is plenty. You can always add more later.`
             : 'Add another if you like — or you’re set.'}
         </span>
-        <button type="button" className="rlb-done" onClick={() => canSubmit && onSubmit(items)} disabled={!canSubmit}>
+        {/* Submitting with a proposal still on screen keeps that line too — see `carried`. */}
+        <button type="button" className="rlb-done" onClick={() => canSubmit && onSubmit(merged(items, carried()))} disabled={!canSubmit}>
           This is my list →
         </button>
       </div>
