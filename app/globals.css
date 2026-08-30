@@ -928,9 +928,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* TEAL BULLETS, not orange (Donna, 2026-08-22, item 6). Orange is the needs-input/incomplete colour in this
    product; these are the things she is TAKING BACK, at the highest-visibility moment in onboarding. Teal is the
    palette's interactive/affirmative colour and is what the rest of the ceremony uses.
-   (Her second half of this item — remove the ring around Continue — is deliberately NOT done: that ring is the
-   app-wide button:focus-visible outline, which appears because she advanced the ceremony by keyboard. It is not a
-   one-off style, and this stylesheet's focus block says why it is never removed.) */
+   (Her second half of this item — "remove the ring around Continue" — was declined here in August and is DONE as of
+   2026-08-30, by the third way out. The ring is the app-wide button:focus-visible outline, which fires because she
+   advances by keyboard; on a filled teal button it was teal-on-teal and read as a stray outline. Removing it is
+   still wrong — a control you cannot tell you are on is an accessibility failure — so it CONTRASTS instead: a
+   white ring inside the button's own edge, on .cer-btn below and on .onbwel-cta. She asked twice, eight days
+   apart, because the decline lived in this comment where she could never see it.) */
 .cer-reclaim-list li::before { content: ''; position: absolute; left: 0; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--teal-text); }
 /* §2e Grinta movement reveal — the Grinta Index on its own /5 scale (olive, distinct from the teal ID Score), the
    first movement, and the four strands with grit stepped up. */
@@ -967,6 +970,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-dot.on { background: var(--teal); }
 .cer-btn { font: inherit; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; border-radius: 10px; padding: 11px 28px; background: var(--teal-text); color: #fff; }
 .cer-btn:disabled { opacity: 0.5; cursor: default; }
+/* The same white ring as the onboarding CTA — keyboard users keep the affordance, nobody reads it as an artifact. */
+.cer-btn:focus-visible { outline: 2px solid #fff; outline-offset: -5px; }
 
 /* Confidentiality footer — evaluation build; appears on every screen (root layout) */
 /* The version + build ref, sat with the proprietary notice. Quieter than the notice itself — a member should be
