@@ -68,7 +68,20 @@ export async function markSessionClosed(db: Db, memberId: string, sessionId: str
   await db.query(
     `insert into session_progress (member_id, session_id, status, closed_at)
      values ($1, $2, 'closed', now())
-     on conflict (member_id, session_id) do update set status = 'closed', closed_at = now(), updated_at = now()`,
+     on conflict (member_id, session_id) do update set
+       status = 'closed',
+       -- FIRST CLOSE WINS. This was an unconditional closed_at = now(), which moved a completion time every
+       -- time anything re-closed an already-closed Session — and something does, on every walk: the ceremony
+       -- self-heal in persistReconnectSessionCloses re-closes EVERY Reconnect Session, not just the open ones.
+       -- Found on Donna's walk 2026-08-30: her R1 really closed at 22:09:30 after 6m34s, and the record said
+       -- 23:00:43, because the ceremony re-stamped it 51 minutes later along with R2 and R3.
+       --
+       -- The bug is the SHAPE this file already got right one line down: the alreadyClosed event guard proves
+       -- the author meant "a re-close is not a new completion." Only the timestamp missed the memo.
+       -- closed_at is not bookkeeping — it is the "completed" half of the time-on-asset measure the data
+       -- contract requires, and it is what the resume hero and lastAccomplishment order by.
+       closed_at = coalesce(session_progress.closed_at, now()),
+       updated_at = now()`,
     [memberId, sessionId],
   );
   // Central completion signal (data contract) — covers every phase's close site in one place. Fire-safe.

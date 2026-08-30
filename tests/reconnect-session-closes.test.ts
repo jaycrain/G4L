@@ -71,3 +71,63 @@ test('closing one Session never implies the others — the self-heal only runs a
   await markSessionClosed(d, id, 'RCN-EXC'); // left the Doors stage only
   assert.deepEqual(await closedSessionIds(d, id), ['RCN-EXC']);
 });
+
+// PRODUCTION BUG, 2026-08-30 — found watching Donna's live walk, not from the code.
+//
+// Her R1 closed at 22:09:30 after 6m34s in the mirror. The record said 23:00:43. Every Reconnect Session carried
+// the same timestamp, 51 minutes after she actually finished the first one, because the ceremony self-heal in
+// persistReconnectSessionCloses re-closes EVERY Reconnect Session — its comment says "close any that are still
+// open", its loop closes all of them — and markSessionClosed's upsert set `closed_at = now()` unconditionally.
+//
+// The sibling guard one line below (`alreadyClosed`, which stops session_close double-firing) is proof the author
+// already held the rule this violated: a re-close is not a new completion. Only the timestamp missed it.
+//
+// It matters twice over. closed_at is the "completed" half of time-on-asset, which the data contract lists as
+// required from day one — and it is the column the resume hero and lastAccomplishment ORDER BY to name what a
+// member just finished.
+test('a re-close never moves a completion time — first close wins', async () => {
+  const d = await db();
+  const m = await member(d, 'donna-restamp@example.test');
+
+  await markSessionClosed(d, m, 'RCN-IDQ');
+  const first = (await d.query<{ closed_at: string }>(
+    `select closed_at::text as closed_at from session_progress where member_id=$1 and session_id=$2`, [m, 'RCN-IDQ'],
+  )).rows[0]!.closed_at;
+
+  // Force a measurable gap, then re-close the way the ceremony self-heal does.
+  await d.query(`update session_progress set closed_at = closed_at - interval '51 minutes' where member_id=$1`, [m]);
+  const backdated = (await d.query<{ closed_at: string }>(
+    `select closed_at::text as closed_at from session_progress where member_id=$1`, [m],
+  )).rows[0]!.closed_at;
+
+  await markSessionClosed(d, m, 'RCN-IDQ'); // the ceremony, re-closing an already-closed Session
+  const after = (await d.query<{ closed_at: string }>(
+    `select closed_at::text as closed_at from session_progress where member_id=$1`, [m],
+  )).rows[0]!.closed_at;
+
+  assert.equal(after, backdated, 're-closing must preserve the ORIGINAL completion time, not stamp a new one');
+  assert.notEqual(after, first, 'sanity: the backdate really happened, so the assertion above is not vacuous');
+});
+
+test('the ceremony self-heal still closes what IS open, without disturbing what is not', async () => {
+  const d = await db();
+  const m = await member(d, 'donna-selfheal@example.test');
+
+  await markSessionClosed(d, m, 'RCN-IDQ');
+  await d.query(`update session_progress set closed_at = closed_at - interval '1 hour' where member_id=$1`, [m]);
+  const idqClosedAt = (await d.query<{ closed_at: string }>(
+    `select closed_at::text as closed_at from session_progress where member_id=$1`, [m],
+  )).rows[0]!.closed_at;
+
+  // What the ceremony does: close every Session, open or not.
+  for (const s of ['RCN-IDQ', 'RCN-EXC', 'RCN-FDR', 'RCN-DFT', 'RCN-CHK']) await markSessionClosed(d, m, s);
+
+  const closed = await closedSessionIds(d, m);
+  for (const s of ['RCN-IDQ', 'RCN-EXC', 'RCN-FDR', 'RCN-DFT', 'RCN-CHK']) {
+    assert.ok(closed.includes(s), `${s} must end closed — the self-heal is still doing its job`);
+  }
+  const idqAfter = (await d.query<{ closed_at: string }>(
+    `select closed_at::text as closed_at from session_progress where member_id=$1 and session_id='RCN-IDQ'`, [m],
+  )).rows[0]!.closed_at;
+  assert.equal(idqAfter, idqClosedAt, "the already-closed Session keeps its own completion time");
+});
