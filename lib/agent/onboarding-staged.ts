@@ -483,7 +483,7 @@ function gapToReclaimBridge(c: Collected): string {
  * NO EXAMPLES IN THE FRAME. Naming what someone else might write narrows what she writes. The Door and the
  * Identity are hers, already confirmed, and they are enough to write from.
  */
-function reclaimOpen(c: Collected): string {
+function reclaimOpen(c: Collected, parked: readonly string[] = []): string {
   const beats = [gapToReclaimBridge(c)];
   // SECOND PERSON, AND THE IDENTITY IS NOT NAMED HERE — caught twice by the naming guard within an hour of this
   // being written, and it was right both times. The first draft asked "What did the Maker DO?" (third person, the
@@ -534,6 +534,16 @@ function reclaimOpen(c: Collected): string {
   // intro, before she has written a word) — but the gate cannot see position, and it exists because the Companion
   // once announced a Reclaim List that did not exist. Cheaper to say it the other way than to punch a hole in the
   // gate. Verified against gate-claims before shipping.
+  // THE READ-BACK, when she named wants earlier — the single best trust moment in the flow, because it proves
+  // nothing was dropped. It used to REPLACE everything above instead of joining it (see reclaimOpening), which is
+  // how a member who talks naturally never heard what the Reclaim List was.
+  if (parked.length) {
+    const items = parked.map((x) => `“${x.trim()}”`).join(parked.length === 2 ? ' and ' : ', ');
+    beats.push(
+      `And you've already started — earlier you said you want ${items} back, so `
+        + `${parked.length === 1 ? "that's" : "those are"} already on it.`,
+    );
+  }
   beats.push(
     `We'll start with three — add as many as you want, and change them anytime with your Companion. It's the list `
       + `the whole program works toward, one step at a time, and how you'll watch yourself getting closer.`,
@@ -740,24 +750,20 @@ function gapReceipt(c: Collected): string {
 // The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
 // "earlier you said X — let's start there." True by construction, and the single best trust moment in the
 // flow: it proves nothing was dropped. With nothing parked, it's the clean RECLAIM_OPEN.
-function reclaimOpening(c: Collected): string {
-  const parked = c.reclaimList ?? [];
-  if (parked.length === 0) return reclaimOpen(c);
-  const items = parked.map((x) => `“${x.trim()}”`).join(parked.length === 2 ? ' and ' : ', ');
-  // §5 re-surface — read the parked want(s) back. The single best trust moment: it proves nothing was dropped.
+export function reclaimOpening(c: Collected): string {
+  // ONE OPENER, ALWAYS. This used to fork: with nothing parked she got the full introduction ("Your Reclaim List
+  // is exactly that — who you're reclaiming, turned into concrete goals…"), and with wants already parked she got
+  // a short read-back that never said "Reclaim List", never said "goals", and never explained what the list was
+  // for. So the member most likely to hit the short branch was the one who TALKS — the one who mentioned
+  // something she wanted while telling her story.
   //
-  // THE BRIDGE COMES FIRST. This branch used to open "Now, the good part —", which is the EXACT cold pivot the
-  // bridge above was written to replace ("the gap beat is heavy, so we don't cold-pivot to 'Now, the good part.'").
-  // The member has just finished describing the worst decade of their life; the receipt for their wants is not
-  // the first thing they should hear. Warmth first, then the proof that nothing was dropped.
+  // Donna, 2026-08-30, walking exactly that path: "It does not include any of the three of my must includes:
+  // Reclaim · Reclaim List · Goals … then, under this, was a cold field with my first entry placed." Her copy had
+  // been shipped two days earlier and she never saw it. We told her it was live; it was live on the other branch.
   //
-  // It also now POINTS AT THE BUILDER. The old line ended on a bare "What else?" while the live surface is a
-  // list-builder UI — an invitation with nowhere visible to answer it.
-  return (
-    `${gapToReclaimBridge(c)} And you've already started — earlier you said you want ${items} back, so ` +
-    `${parked.length === 1 ? "that's" : "those are"} on your list. Add anything else below — big or small. ` +
-    `There's no rush, and you can always add more later.`
-  );
+  // The read-back is a good beat and it stays — it proves nothing was dropped. It is now one beat INSIDE the
+  // introduction rather than a replacement for it. [[one-fact-many-sites]]
+  return reclaimOpen(c, c.reclaimList ?? []);
 }
 
 // §5 — reflect the Reclaim List back before the card; the member hears their own list, one confirm question.
