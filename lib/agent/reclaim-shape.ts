@@ -147,6 +147,37 @@ const VISION_CUES: RegExp[] = [
   /\bi(?:'ll| will) be \d{2}\b/i, // a milestone-age framing ("I'll be 60")
   /\bturning \d{2}\b/i,
 ];
+// ── 1c) THE PROSE MULTI-WANT, SPLIT AT THE SOURCE ──────────────────────────────────────────────────────────────
+// Jennifer's splitter (1b) rescues a member who NUMBERS her wants. Donna types them as prose — "a creative role that
+// covers the bills, rebuilds savings and pays off the debt" — and slips straight through it, because there is no
+// enumeration to find. Two members arriving at the same shape from different directions is the signal that this is
+// how people type, not an edge case (Jay, 2026-08-29: "fix it at the source and not carry it forward").
+//
+// WHAT IT COST WHEN WE CAUGHT IT DOWNSTREAM INSTEAD. The engine's shape gate fired on her line AFTER she had
+// finished the builder and asked "which one do you most want back?" — and answering that question deleted the two
+// she didn't name, under a sentence promising "the rest aren't going anywhere". Silent loss on the Reclaim List,
+// which is the one artifact the whole program points at.
+//
+// THE SPLIT IS NOT A NEW GUESS. It is exactly the chunking that made `isMultiWantParagraph` say "several wants" in
+// the first place — the comma/and branch below it. If that evidence is good enough to interrupt her over, it is
+// good enough to show her; if it produces nonsense, she sees the nonsense and taps Keep as one. Nothing is applied
+// without her tap (propose → confirm → commit), and either answer is lossless.
+export function proposeProseSplit(text: string): string[] | null {
+  const t = (text ?? '').trim();
+  if (!t.includes(',')) return null; // the sentence-dump branch is a different shape; don't guess at it
+  if (!isMultiWantParagraph(t)) return null; // only ever offer where we would otherwise have interrogated her
+  if (splitInlineEnumeration(t)) return null; // she numbered them — 1b already has it
+  const parts = t
+    .split(/,\s*(?:and\s+)?|\s+and\s+/i)
+    .map((s) => s.trim().replace(/^(?:and|then)\s+/i, '').replace(/[.,;]+$/, ''))
+    .filter(Boolean);
+  // An orphan fragment ("fitness", "savings") reads as a want nobody would have typed. If any part comes out that
+  // thin the whole proposal is wrong, and we say nothing rather than offer her a bad split.
+  if (parts.length < 2 || parts.length > 5) return null;
+  if (parts.some((p) => p.split(/\s+/).filter(Boolean).length < 2)) return null;
+  return parts;
+}
+
 /** A whole-life vision — not a concrete want. Belongs to the Window/Legacy work, preserved, never a Reclaim item. */
 export function isLifeVision(text: string): boolean {
   const t = (text ?? '').trim();

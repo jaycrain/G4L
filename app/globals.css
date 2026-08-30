@@ -589,6 +589,18 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal-text); color: #fff; border: 1px solid var(--teal-text); border-radius: 8px; font-weight: 700; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
 
+/* The prose multi-want proposal — offered inside the builder, where she typed it, instead of re-opening the list
+   after she has finished it. Quiet: it is an offer, not a correction, so it must not read as a warning. */
+.rlb-split { border: 1px solid var(--light-grey, #e8e6e6); border-left: 3px solid var(--teal-text); border-radius: 8px; padding: 10px 12px; margin: 0 0 0.7rem; background: #fbfbfa; }
+.rlb-split-q { margin: 0 0 6px; font-size: 13.5px; color: var(--navy, #374f63); font-weight: 600; }
+.rlb-split-parts { list-style: none; margin: 0 0 9px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rlb-split-parts li { font-size: 14px; color: var(--navy, #374f63); padding-left: 14px; position: relative; }
+.rlb-split-parts li::before { content: '•'; position: absolute; left: 0; color: var(--teal-text); }
+.rlb-split-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.rlb-split-yes, .rlb-split-no { margin: 0; border-radius: 8px; font-weight: 700; font-size: 13.5px; padding: 6px 12px; }
+.rlb-split-yes { background: var(--teal-text); color: #fff; border: 1px solid var(--teal-text); }
+.rlb-split-no { background: #fff; color: var(--navy, #374f63); border: 1px solid #d8d6d2; }
+
 /* The keeper OFFER — the Companion showing a line and asking whether to keep it. Reads as a card in the thread,
    never as a receipt: nothing is in the Playbook until she taps. Deliberately quieter than a bubble (dashed edge,
    no fill) so it reads as an aside about the conversation rather than as another thing the Companion said. */
