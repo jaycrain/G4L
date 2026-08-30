@@ -146,7 +146,7 @@ const GAP_MAX_DEPTH = 5;
 // idle counter resets to 0 the moment they contribute again, so engagement is never punished; the card still
 // lets them keep talking. (Replaces the blunt fixed turn-cap, which cut off exactly the members we want.)
 const ONBOARDING_IDLE_LIMIT = 3; // consecutive no-progress turns = a genuine stall (not a pause — they gave nothing usable)
-const ONBOARDING_HARD_CEILING = 30; // absolute backstop against a true runaway/abuse loop, regardless of progress
+export const ONBOARDING_HARD_CEILING = 30; // absolute backstop against a true runaway/abuse loop, regardless of progress
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
 // v2.0 FINAL copy — docs/handoffs/2026-06-26-v2.0-final-copy-and-floor.md §3–§6. Voice: warm, direct,

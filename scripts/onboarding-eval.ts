@@ -10,6 +10,11 @@
 
 import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage, type Collected } from '../lib/agent/onboarding.ts';
 import { ritaDoorConcerns, ritaRaisedDoors } from './rita-criterion.ts';
+import { ONBOARDING_HARD_CEILING } from '../lib/agent/onboarding-staged.ts';
+import { GAP_CONFIRM_CHOICES, serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
+
+/** Far enough past the engine's backstop to SEE it fire, so "did not complete" means the product, not the cap. */
+const MEMBER_TURN_CAP = ONBOARDING_HARD_CEILING + 4;
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('Set ANTHROPIC_API_KEY (e.g. add it to .env.local) — this eval drives the real model.');
@@ -229,6 +234,53 @@ async function member(system: string, history: ConvMessage[]): Promise<string> {
   return (res.content as Array<{ type: string; text?: string }>).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ').trim();
 }
 
+/* THE HARNESS HAS TO PLAY THE WIDGET, or it grades a path no member can walk.
+   At a structured beat the real UI does not give the member a text box at all: the Reclaim builder, the identity
+   picker and the scale chips REPLACE the composer (app/onboarding/chat.tsx), and each submits a FIXED wire format.
+   A harness that answers those beats with prose is testing an unreachable state — the engine says so itself at the
+   fall-through ("SHE IS NOT SUPPOSED TO BE ABLE TO GET HERE"). It cost a whole run to learn: every persona whose
+   script did not happen to contain literal "• " lines failed the reclaim gate for THAT reason alone, so 5 of 6 came
+   back red on a harness defect. False failures are worse than no eval — they teach us to skim the report. */
+const FORM_BRIEF: Record<string, (e: Record<string, unknown>) => string> = {
+  reclaim_list: (e) =>
+    `You are no longer talking — you are FILLING IN A FORM, one row per thing you want back in your life (at least ${(e.min as number) ?? 3}).\nReply with ONLY the items, ONE PER LINE. No bullets, no numbering, no preamble, no commentary. Each is a short phrase in your own words.`,
+  identity_pick: (e) => {
+    const c = (e.candidates as string[] | undefined) ?? [];
+    return `You are no longer talking — you are TAPPING ONE WORD on a picker${c.length ? `. The offered words are: ${c.join(', ')}` : ''}. Tap one of those or type your own.\nReply with ONLY that single word. No sentence, no quotes, no punctuation.`;
+  },
+  scale: () => `You are no longer talking — you are TAPPING A NUMBER from 1 to 5. Reply with ONLY the digit.`,
+  /* gap_confirm keeps the text box, so BOTH paths are real here — and the harness has to be able to take either,
+     because they run different engine code. A tap is parsed as a fact (parseGapConfirmChoice); typed prose goes to
+     the classifier this codebase has already patched five times. Answering only in prose meant the eval never once
+     exercised the path most members actually take. So the persona decides, the way a member does. */
+  gap_confirm: () =>
+    `Beneath the guide's message are three buttons:\n${GAP_CONFIRM_CHOICES.map((c, i) => `  ${i + 1}. ${c.label}`).join('\n')}\n` +
+    `You may TAP one or type a reply instead.\nTo tap, respond with ONLY its number (1, 2 or 3). To type instead, respond with your sentence as usual.`,
+};
+
+/** A gap-confirm answer of "1"/"2"/"3" is a TAP — serialize it exactly as the chip would. Anything else is prose. */
+function gapConfirmWire(raw: string): string {
+  const m = raw.trim().match(/^([123])\b[.)]?$/);
+  if (!m) return raw; // typed → must reach the classifier untouched
+  return serializeGapConfirmChoice(GAP_CONFIRM_CHOICES[Number(m[1]) - 1].value);
+}
+
+/** Turn the persona's answer into exactly what the widget would have submitted. */
+function toWire(kind: string, raw: string): string {
+  if (kind === 'reclaim_list') {
+    return raw
+      .split('\n')
+      .map((l) => l.replace(/^\s*(?:[-•*]|\d+[.)])\s*/, '').trim())
+      .filter(Boolean)
+      .map((x) => `• ${x}`) // the builder's own format — chat.tsx: items.map((x) => `• ${x}`).join('\n')
+      .join('\n');
+  }
+  if (kind === 'identity_pick') return (raw.split(/\s+/)[0] ?? '').replace(/[^A-Za-z'-]/g, '');
+  if (kind === 'scale') return (raw.match(/[1-5]/) ?? ['3'])[0];
+  if (kind === 'gap_confirm') return gapConfirmWire(raw);
+  return raw;
+}
+
 const ctx = { name: 'Eval Member', email: 'eval@example.test' };
 
 async function runPersona(p: Persona): Promise<boolean> {
@@ -239,10 +291,18 @@ async function runPersona(p: Persona): Promise<boolean> {
   history.push({ role: 'agent', text: turn.reply });
   state = turn.state;
   if (trace) console.log(`\n[A|${(state as { stage?: string }).stage ?? '-'}] ${turn.reply}`);
-  for (let i = 0; i < 24 && !turn.complete; i++) {
-    const m = await member(p.system, history);
+  /* The cap must sit ABOVE the engine's own never-strand backstop (ONBOARDING_HARD_CEILING = 30 member turns),
+     or the harness stops the conversation five turns before the thing designed to rescue it — and every persona
+     who relies on that backstop reports as "stranded" when the product would in fact have carried them through.
+     A cap below the ceiling can only ever measure the harness. Keep this in step if the ceiling moves. */
+  for (let i = 0; i < MEMBER_TURN_CAP && !turn.complete; i++) {
+    // Answer the beat the way the member's surface would: prose into the box, or the widget's wire format.
+    const ex = (turn as { expects?: { kind: string } }).expects as (Record<string, unknown> & { kind: string }) | undefined;
+    const brief = ex ? FORM_BRIEF[ex.kind] : undefined;
+    const raw = await member(brief ? `${p.system}\n\n${brief(ex!)}` : p.system, history);
+    const m = brief ? toWire(ex!.kind, raw) : raw;
     history.push({ role: 'member', text: m });
-    if (trace) console.log(`[M] ${m}`);
+    if (trace) console.log(`[M${brief ? `|${ex!.kind}` : ''}] ${m.replace(/\n/g, ' / ')}`);
     turn = await onboardingNextTurn({ ctx, state, history, memberMessage: m });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
