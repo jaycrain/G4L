@@ -14,15 +14,23 @@ export type SdtFacet = 'autonomous' | 'controlled' | 'amotivation';
 
 export type WhyItem = { code: string; domain: WhyDomain; facet: SdtFacet; stem: string };
 
-// REMOVED, and the constant with it. Greg's two domain prompts — "Why do you want to be physically active
-// regularly?" and "Why do you want to eat healthier?" — were cut on Donna's walk: the member answers the
-// statements as they see fit, and the eating half keeps only its light transition (B1_DIET_TURN, see whyDeliver).
+// GREG'S TWO DOMAIN PROMPTS — the question the twelve statements answer.
 //
-// The constant outlived the decision by weeks, still exported, still describing itself as "shown once as the
-// header before each domain's six items" — which had stopped being true. A stale declaration that reads as live
-// is worse than no declaration: the next person to touch this file would have believed it. The prompts survive
-// verbatim in Greg's source and in this comment, so nothing of his is lost.
-// (Found by scripts/unrun-rules.mjs, 2026-08-29.)
+// RESTORED 2026-08-30 (Jay: "Donna shouldn't be cutting in Greg's domain"). They were dropped on 2026-07-27 in a
+// walk-feedback batch — both of them, though the code comment left behind named only the activity one — and the
+// constant then sat unused for a month still describing itself as "shown once as the header before each domain's
+// six items", which had stopped being true.
+//
+// They are not redundant with B1_OPEN. The opener frames the exercise and states the scale; these ask the actual
+// question, and every stem is an answer to it — "I want to be physically active BECAUSE it is personally important
+// to me." Without them a member rates twelve "because" statements with the question taken away.
+//
+// Whose call it is: the instrument is the professor's. A framing prompt is part of its design, not copy for us to
+// trim on a walk note. [[dont-relax-the-experts-instrument]]
+export const WHY_PROMPTS: Record<WhyDomain, string> = {
+  activity: 'Why do you want to be physically active regularly?',
+  diet: 'Why do you want to eat healthier?',
+};
 
 export const WHY_SCALE_MAX = 7; // 1 = Not at all true for me → 7 = Very true for me
 

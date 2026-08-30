@@ -29,14 +29,17 @@ const rateOne = (t: Turn): Turn => {
     : next;
 };
 
-test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items → forward-looking close', () => {
+test('B1 arc · warm frame → Greg\u2019s question → item 0, then walks 12 items → forward-looking close', () => {
   assert.match(rebuildB1Opening().reply, /Rewire was your head/i, 'the doorway names the shift into Rebuild');
 
   let t = pastDoorway();
   assert.equal(t.state.stage, 'why-activity', 'the activity half of the instrument');
   assert.match(t.reply, /a simple place to start/i, 'the warm frame is in');
   assert.match(t.reply, /1 \(not at all true for you\) to 7/i, 'the 1–7 scale is set, not 1–5');
-  assert.doesNotMatch(t.reply, /Why do you want to be physically active/i, 'the activity framing prompt is removed (Donna)');
+  // RESTORED 2026-08-30 (Jay: "Donna shouldn't be cutting in Greg's domain"). This asserted the prompt's ABSENCE
+  // after a 7/27 walk batch dropped it. The framing question is part of the professor's instrument design, and
+  // every stem is an answer to it — so the members were rating twelve "because" statements with the question gone.
+  assert.match(t.reply, /Why do you want to be physically active regularly\?/i, "Greg's activity question leads the domain");
   assert.ok(t.reply.includes(WHY_ITEMS[0]!.stem), 'item 0 verbatim');
 
   // Answer all 12 with valid 1–7 values, crossing the eating elicitation at the halfway seam.
@@ -67,7 +70,9 @@ test('B1 arc · the domain transition frame fires when the diet items begin (ind
   t = applyRebuildB1Turn(t.state, [], 'Eating is about not feeling sluggish.', { text: 'Mm.' });
   assert.match(t.reply, /different reasons for eating than for moving/i, "Greg's dual-domain point, at the crossing");
   assert.match(t.reply, /Now the other half of it — eating/i, 'the domain transition frame');
-  assert.doesNotMatch(t.reply, /Why do you want to eat/i, 'the diet framing prompt is removed too (symmetry with activity)');
+  // Restored with the activity one — and this half is why the restore needed a test: the eating hand-in composed
+  // its own copy of "transition + stem", so fixing whyDeliver alone left the question missing here only.
+  assert.match(t.reply, /Why do you want to eat healthier\?/i, "Greg's eating question, beside the transition");
   assert.ok(t.reply.includes(WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem), 'the first diet item, verbatim');
 });
 

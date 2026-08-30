@@ -11,7 +11,7 @@ import { runArcTurn, administeredStage, engagementStage, engagementOpening, elic
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
-import { WHY_ITEMS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
+import { WHY_ITEMS, WHY_PROMPTS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
   SKILL_ITEMS,
   SKILLS_ITEM_COUNT,
@@ -53,9 +53,9 @@ const B1_CLOSE =
 // bare stem otherwise (the item IS the ask — the administered wall, no draw-out).
 function whyDeliver(index: number): string {
   const item = WHY_ITEMS[index]!;
-  // The "Why do you want to be physically active regularly?" framing prompt is removed (Donna) — the member answers
-  // the statements as they see fit. The eating half keeps its light transition (B1_DIET_TURN).
-  if (index === WHY_DOMAIN_SPLIT) return `${B1_DIET_TURN}\n\n${item.stem}`;
+  // Greg's framing prompt leads each domain — restored 2026-08-30, exactly as it stood before the 7/27 walk batch.
+  if (index === 0) return `${WHY_PROMPTS.activity}\n\n${item.stem}`;
+  if (index === WHY_DOMAIN_SPLIT) return `${B1_DIET_TURN}\n\n${WHY_PROMPTS.diet}\n\n${item.stem}`;
   return item.stem;
 }
 function whyOpener(): string {
@@ -137,8 +137,12 @@ const B1_DUAL_DOMAIN =
   "It's common to have different reasons for eating than for moving. They're connected, but they pull on " +
   'different things for different people. We look at both because they each matter.';
 
+// The hand-in to the eating half. It DELEGATES the item itself to whyDeliver rather than composing a second copy:
+// it used to build `B1_DIET_TURN + stem` on its own, which is the same thing whyDeliver already does for this
+// index — and when Greg's domain prompt was restored to whyDeliver on 2026-08-30, the activity half got it (its
+// opener delegates) and the eating half silently did not. One fact, two sites, and only one of them fixed.
 function b1EatingHandIn(): string {
-  return `${B1_DUAL_DOMAIN}${BEAT_SEP}${B1_DIET_TURN}\n\n${WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem}`;
+  return `${B1_DUAL_DOMAIN}${BEAT_SEP}${whyDeliver(WHY_DOMAIN_SPLIT)}`;
 }
 
 const whyActivityStage: StageDef = administeredStage({
