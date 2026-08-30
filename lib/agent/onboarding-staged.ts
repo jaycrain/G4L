@@ -2210,7 +2210,7 @@ const gapStage: StageDef = {
       b.stage = 'reclaim';
       b.awaitingConfirm = false;
       b.idleTurns = 0;
-      return { reply: reclaimOpen(b.collected), state: beatState(b), complete: false };
+      return { reply: noRepeat(b, reclaimOpen(b.collected)), state: beatState(b), complete: false };
     }
     // no real gap yet → nothing to force; fall through to normal gather
   },
@@ -2353,7 +2353,7 @@ const gapStage: StageDef = {
       b.stage = 'reclaim';
       b.awaitingConfirm = false;
       s.gapTurns = 0;
-      return { reply: NO_DOOR_YET_REPLY, state: beatState(b), complete: false };
+      return { reply: noRepeat(b, NO_DOOR_YET_REPLY), state: beatState(b), complete: false };
     }
     if (b.collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus, and RECEIVE the whole story before reflecting.
