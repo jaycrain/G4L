@@ -91,14 +91,10 @@ What you want back, if asked, one at a time:
 - You put on 20 lbs and lost strength and fitness over the stress of the last two years.
 - A real drop in conflict day to day - peace and optimism.
 
-HOW YOU ANSWER THE LIST. The real product hands you a list-BUILDER at this point, not a chat box - the guide
-says "add each thing below". A persona typing prose there would exercise a retired code path no member touches
-and report failures that are not real. So when the guide invites you to write down what you want back, reply
-with ALL THREE as a bulleted block, one per line, each line starting with a bullet character, like:
-• a creative role that covers the bills, rebuilds savings and pays off the debt
-• lose the 20 lbs and rebuild my strength and fitness
-• less conflict day to day - peace and optimism
-Do that ONCE, when the list is opened. Everywhere else, answer normally in 1-3 sentences.
+HOW YOU ANSWER THE LIST — nothing special. The harness now plays the builder for every persona (it fills the
+rows and submits the whole list, seeded rows included), so you just answer naturally. This block used to carry
+bespoke bullet instructions for you alone, which is exactly why you were the ONE persona that passed while the
+harness was typing prose at a form for everybody else: a patch on one persona hid a defect in the harness.
 
 TWO THINGS YOU MUST DO, because you are a real person and you say when something is off:
 1. If the guide names a "Reclaim List" or starts collecting one and does NOT say what it is ANYWHERE in that same
@@ -244,8 +240,16 @@ async function member(system: string, history: ConvMessage[]): Promise<string> {
    script did not happen to contain literal "• " lines failed the reclaim gate for THAT reason alone, so 5 of 6 came
    back red on a harness defect. False failures are worse than no eval — they teach us to skim the report. */
 const FORM_BRIEF: Record<string, (e: Record<string, unknown>) => string> = {
-  reclaim_list: (e) =>
-    `You are no longer talking — you are FILLING IN A FORM, one row per thing you want back in your life (at least ${(e.min as number) ?? 3}).\nReply with ONLY the items, ONE PER LINE. No bullets, no numbering, no preamble, no commentary. Each is a short phrase in your own words.`,
+  reclaim_list: (e) => {
+    const seeded = (e.seeded as string[] | undefined) ?? [];
+    return (
+      `You are no longer talking — you are FILLING IN A FORM with a row per thing you want back in your life.\n` +
+      `Give ALL of them in THIS ONE reply, at least ${(e.min as number) ?? 3} rows. This is the only chance to fill the form; ` +
+      `one row per line, and do not hold any back for a later turn.\n` +
+      (seeded.length ? `Rows already on the form (keep them, they stay):\n${seeded.map((x) => `- ${x}`).join('\n')}\n` : '') +
+      `Reply with ONLY the NEW rows, ONE PER LINE. No bullets, no numbering, no preamble, no commentary.`
+    );
+  },
   identity_pick: (e) => {
     const c = (e.candidates as string[] | undefined) ?? [];
     return `You are no longer talking — you are TAPPING ONE WORD on a picker${c.length ? `. The offered words are: ${c.join(', ')}` : ''}. Tap one of those or type your own.\nReply with ONLY that single word. No sentence, no quotes, no punctuation.`;
@@ -268,14 +272,21 @@ function gapConfirmWire(raw: string): string {
 }
 
 /** Turn the persona's answer into exactly what the widget would have submitted. */
-function toWire(kind: string, raw: string): string {
+function toWire(kind: string, raw: string, expects?: Record<string, unknown>): string {
   if (kind === 'reclaim_list') {
-    return raw
+    // THE BUILDER SUBMITS THE WHOLE LIST, EVERY TIME — it is seeded with what she already has and sends all of it.
+    // Sending only the new line made each submission REPLACE the list with one item, so Donna ended with 1 want of
+    // the 3 she named, "did not complete", and her protests ("didn't we just do that") arrived as bulleted list
+    // entries. Seven concerns, none of them the product's. Same lesson as the widget fix itself: the harness has to
+    // do what the surface does, not something a member could never do.
+    const seeded = (expects?.seeded as string[] | undefined) ?? [];
+    const fresh = raw
       .split('\n')
       .map((l) => l.replace(/^\s*(?:[-•*]|\d+[.)])\s*/, '').trim())
-      .filter(Boolean)
-      .map((x) => `• ${x}`) // the builder's own format — chat.tsx: items.map((x) => `• ${x}`).join('\n')
-      .join('\n');
+      .filter(Boolean);
+    const all = [...seeded];
+    for (const f of fresh) if (!all.some((x) => x.toLowerCase() === f.toLowerCase())) all.push(f);
+    return all.map((x) => `• ${x}`).join('\n'); // chat.tsx: items.map((x) => `• ${x}`).join('\n')
   }
   if (kind === 'identity_pick') return (raw.split(/\s+/)[0] ?? '').replace(/[^A-Za-z'-]/g, '');
   if (kind === 'scale') return (raw.match(/[1-5]/) ?? ['3'])[0];
@@ -302,7 +313,7 @@ async function runPersona(p: Persona): Promise<boolean> {
     const ex = (turn as { expects?: { kind: string } }).expects as (Record<string, unknown> & { kind: string }) | undefined;
     const brief = ex ? FORM_BRIEF[ex.kind] : undefined;
     const raw = await member(brief ? `${p.system}\n\n${brief(ex!)}` : p.system, history);
-    const m = brief ? toWire(ex!.kind, raw) : raw;
+    const m = brief ? toWire(ex!.kind, raw, ex) : raw;
     history.push({ role: 'member', text: m });
     if (trace) console.log(`[M${brief ? `|${ex!.kind}` : ''}] ${m.replace(/\n/g, ' / ')}`);
     turn = await onboardingNextTurn({ ctx, state, history, memberMessage: m });
@@ -331,7 +342,11 @@ async function runPersona(p: Persona): Promise<boolean> {
   // Five live runs were read as summaries alone before anyone looked at what the Companion actually SAID, and
   // two of those summaries turned out to be harness artifacts rather than product bugs. A concern count is a
   // pointer, never a diagnosis: the only thing that says WHY is the turn the member was reacting to.
-  const lines = history.map((h) => `${h.role === 'agent' ? 'COMPANION' : 'MEMBER   '} | ${(h.text ?? '').replace(/\n+/g, ' ⏎ ')}`);
+  // BEAT_SEP (char 30) splits a turn into separate CHAT BUBBLES. Rendered as nothing it makes two sentences look
+  // jammed together — "That's the heart of it.Have I got that right" — which reads as a missing-space bug in
+  // authored copy and is not one. A transcript that invents defects is as bad as one that hides them.
+  const lines = history.map((h) =>
+    `${h.role === 'agent' ? 'COMPANION' : 'MEMBER   '} | ${(h.text ?? '').replace(/\u001e/g, '  ⟦beat⟧  ').replace(/\n+/g, ' ⏎ ')}`);
   if (process.argv.includes('--transcript')) {
     console.log(`\n----- transcript: ${p.name} -----`);
     for (const l of lines) console.log(l);
