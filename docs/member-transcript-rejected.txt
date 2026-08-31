@@ -1,7 +1,8 @@
-# Strings EXCLUDED from the member transcript (app @ 7afc9ebf · 2026-08-31)
+# Strings EXCLUDED from the member transcript (app @ afe01728 · 2026-08-31)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
+[lib/agent/onboarding-staged.ts] p.trim() || i
 [lib/agent/onboarding-staged.ts] ${leads[b.history.length % leads.length]} ${text}
 [lib/agent/onboarding-staged.ts] ?m|i
 [lib/agent/onboarding-staged.ts] ?d|i
@@ -47,6 +48,7 @@
 [lib/agent/onboarding-staged.ts] pendingListChange
 [lib/agent/onboarding-staged.ts] = 1 && n
 [lib/agent/onboarding-staged.ts] ${base}${BEAT_SEP}${administeredStuckHelp(cfg.scaleMax ?? 5)}
+[lib/agent/onboarding-staged.ts] ?t|do not) (understand|get|follow)|not sure what you(
 [lib/agent/onboarding-staged.ts] ${cfg.frame(c)}${BEAT_SEP}${cfg.question(c)}
 [lib/agent/onboarding-staged.ts] ${next.text}${BEAT_SEP}${next.then}
 [lib/agent/onboarding-staged.ts] Tap any number from 1 to ${max} above — whichever is closest is the right one; there's no wrong answer here.
@@ -387,11 +389,13 @@
 [lib/agent/rewire.ts] Now **Reframe —** the true line for a bad day. You've written lines that answer your lies before; here's one for a
 [lib/agent/rewire.ts] slip: "A false start is the cost of changing, not proof I can't." Say it your way.
 [lib/agent/rewire.ts] in the goal you named. The campaign can't compete with a picture that real.
+[lib/agent/rewire.ts] Here's your work this week: use it. When a false start happens, run the three steps. You're not building a
+[lib/agent/rewire.ts] plan yet — that comes later. Just catch them, and write down what you notice. Open This week in your Playbook
 [lib/agent/rewire.ts] every day and log your good calls, your false starts and the on-track days where not much happened.
 [lib/agent/rewire.ts] Before you start — three things, so the week is what it's meant to be.${BEAT_SEP}
 [lib/agent/rewire.ts] collecting information about your own week, not grading it. And forgetting a day is normal. It isn't a broken
 [lib/agent/rewire.ts] streak, because there's no streak to break.
-[lib/agent/rewire.ts] Good — that's your cue.${BEAT_SEP}You're tracking Smart Choices and False Starts. Both are data. Neither is a
+[lib/agent/rewire.ts] Good — that's your cue.${BEAT_SEP}You're tracking Good Calls and False Starts. Both are data. Neither is a
 [lib/agent/rewire.ts] verdict. And if you miss the cue, you pick it up at the next one — you don't start the week again.
 [lib/agent/rewire.ts] that turns a slip into a comeback. That's Rewire. Next, we put it into the body.
 [lib/agent/rewire.ts] ?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i
@@ -409,7 +413,7 @@
 [lib/agent/rewire.ts] ${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?
 [lib/agent/rewire.ts] ${ack ?
 [lib/agent/rewire.ts] the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: "[their exact
-[lib/agent/rewire.ts] line]"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a
+[lib/agent/rewire.ts] line]"'. Hearing their OWN words at the moment of a slip is the whole point.  If a
 [lib/agent/rewire.ts] The true lines they wrote to answer their lies (reach for these at the Reframe): ${lines.map((x) =>
 [lib/agent/rewire.ts] ).join(' · ')}
 [lib/agent/rewire.ts] The picture they built of where they're headed (point them here at the Restart): ${image}
@@ -504,6 +508,8 @@
 [lib/agent/reclaim.ts] Change “${c.target}” to “${c.text}”?
 [lib/agent/reclaim.ts] Add “${c.text}” to your list?
 [lib/agent/reclaim.ts] Put them in this order?  ${c.order.map((t, i) =>
+[lib/agent/reclaim.ts] ).join(' ')}
+[lib/agent/reclaim.ts] ${C1_OPEN_LEAD}${BEAT_SEP}${items.map((i) =>
 [lib/agent/reclaim.ts] ).join(' ')}
 [lib/agent/reclaim.ts] YOU ARE RUNNING C1 — "Looking Forward", the first Session of Reclaim.
 [lib/agent/reclaim.ts] YOU ARE RUNNING C1 — "Looking Forward", the first Session of Reclaim.  WHAT THIS IS. The member wrote a Reclaim List in Reconnect — the things they wanted back. They have since come through three phases. They are re-reading that list as the person they are now.  GREG'S FRAME, AND IT IS THE WHOLE POSTURE: this is REFINEMENT, NOT CORRECTION. The earlier list was not wrong; it reflected a different stage of understanding. Never imply they failed to stick to it, never praise them for consistency, and never treat a dropped goal as a loss. Some items get stronger, some fade, some turn out to have belonged to pressure or an earlier self. All of that is ordinary and useful.  THE ENGINE OWNS THE STRUCTURE. It walks six passes — what still matters, what has faded, what was borrowed or vague, what has become concrete, what is newly important, and what belongs at the top. You do not announce them, count them, or move between them. Answer what is in front of you and draw them out.  ONE CHANGE AT A TIME. When the member clearly asks for a change to their list, call record_list_change ONCE with that single change. Never a rewritten list. `target` must be an item's exact current wording — if you cannot quote it exactly, do not call the tool. The app shows them the change and applies it only if they confirm; you are not the one saving it, so do not say it is saved.  DO NOT PROPOSE CHANGES THEY HAVE NOT ASKED FOR. A pass where nothing changes is a complete pass. "They all still matter" is an answer, and treating it as a failure to answer teaches them to invent edits to their own list.  NEVER LEAD THEM TO A PREFERRED ANSWER. Not "so clearly health should be at the top now?" — ask what feels most central and let them say it. Do not overinterpret: a goal that faded does not mean it was never authentic.  SPEAK PROBABILISTICALLY. This exercise CAN help clarify what feels meaningful; it does not reveal their true self, prove what really matters, or show who they are. Use: can help · may be showing you · often supports · it would make sense if.  ONE QUESTION PER TURN. Reflect what they actually said before you ask.
