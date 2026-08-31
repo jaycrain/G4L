@@ -49,7 +49,13 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const awaitingContinue = !!pendingCeremony && !ceremony;
   const [error, setError] = useState<string | null>(null);
   const sessionKey: SessionKey = session === 'checkpoint' ? 'b4' : session;
-  const { teaches, taught, acknowledge, flushKeep } = useTeaching(memberId, sessionKey);
+  const { teaches, taught, acknowledge, flushKeep, deferBadge, releasedBadge } = useTeaching(memberId, sessionKey);
+
+  // THE HELD BADGE, APPENDED WHEN THE HOOK RELEASES IT — after the science card, or immediately when the
+  // Session teaches nothing. Keyed on the value so it lands exactly once.
+  useEffect(() => {
+    if (releasedBadge) setMessages((m) => [...m, { role: 'agent' as const, text: releasedBadge }]);
+  }, [releasedBadge]);
   // The parting line, hoisted: submit() needs it when the Session teaches nothing, the render needs it when
   // the member acknowledges. Two copies of this conditional is how the two paths drift apart.
   const handHome = session === 'b3' ? REBUILD_B3_HAND_HOME : null;
@@ -106,10 +112,14 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     notifyArtifactCommitted(); // push the workspace canvas to re-read now
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (B3 → the pilot week; else → home).
-      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
+      // MEANING BEFORE REWARD (Jay, 2026-08-31). This appended the badge to the close, so it landed BEFORE
+      // "Why it works" — not by anyone's decision, but because a message and a card happened to render in
+      // that order. The hook holds it until she acknowledges the card, and releases it immediately when the
+      // Session teaches nothing and there is no card to wait behind. One rule, one copy of the words.
+      deferBadge(r.earnedBadge?.name);
       // The parting line now lands AFTER the science (Jay, 2026-08-17). A Session with nothing to teach has no
       // acknowledgment to wait for, so it keeps the line here — otherwise the goodbye never arrives.
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat]);
+      setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
       setDone(true); // an administered/coach session done — its artifact is stored
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the

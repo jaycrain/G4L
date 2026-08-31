@@ -52,7 +52,13 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   // NOTE the initial value: a session with nothing to teach starts ALREADY taught. Defaulting to false would gate
   // the hand-home behind a card that never renders — the checkpoint has no Understand beat, so onAcknowledge would
   // never fire and the member would sit at a finished session with no way out. A gate whose key is not issued.
-  const { teaches, taught, acknowledge, flushKeep } = useTeaching(memberId, sessionKey);
+  const { teaches, taught, acknowledge, flushKeep, deferBadge, releasedBadge } = useTeaching(memberId, sessionKey);
+
+  // THE HELD BADGE, APPENDED WHEN THE HOOK RELEASES IT — after the science card, or immediately when the
+  // Session teaches nothing. Keyed on the value so it lands exactly once.
+  useEffect(() => {
+    if (releasedBadge) setMessages((m) => [...m, { role: 'agent' as const, text: releasedBadge }]);
+  }, [releasedBadge]);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -109,14 +115,18 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the Continue → CTA (no more dead-end).
       // Badge acknowledgment (Jay's call): if this session just earned a milestone, the Companion names it at the close.
-      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
+      // MEANING BEFORE REWARD (Jay, 2026-08-31). This appended the badge to the close, so it landed BEFORE
+      // "Why it works" — not by anyone's decision, but because a message and a card happened to render in
+      // that order. The hook holds it until she acknowledges the card, and releases it immediately when the
+      // Session teaches nothing and there is no card to wait behind. One rule, one copy of the words.
+      deferBadge(r.earnedBadge?.name);
       // THE GOODBYE NOW LANDS AFTER THE SCIENCE, not before it (Jay, 2026-08-17 — option 1, a pure reorder; no
       // copy changed). The walk's first screenshot showed the Companion saying "head back whenever you're ready"
       // and THEN the Why-it-works card appearing, which read as an afterthought bolted on after the farewell. The
       // spec has the Companion turning TOWARD the science at the close, so the parting line is now appended when
       // the member acknowledges. A session with nothing to teach has no acknowledgment to wait for, so it keeps
       // the line here — otherwise the goodbye would never arrive on a checkpoint.
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat]);
+      setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
       setDone(true); // session done — any keeper is OFFERED below, and lands only if she keeps it
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
