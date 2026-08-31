@@ -9,6 +9,9 @@ import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import { SESSION_REGISTRY } from '../../../lib/workspace/session-registry.ts';
+import { sessionSummary } from '../../../lib/content/summaries.ts';
+import type { SessionKey } from '../../../lib/workspace/session-key.ts';
 
 // The Program — the whole four-Phase route. All four Phases are LIVE (v3.2 — the four Rs shipped), so none render as
 // "coming"; the "you're here" marker wires to the member's active Phase from the forecast. Copy is Donna's 7/28
@@ -17,53 +20,59 @@ import type { Db } from '../../../lib/db/schema.ts';
 // derived because the bullet form drops the sentence caps/periods the canvas threshold needs.
 const RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 
-type PhaseRow = { key: string; num: number; name: string; blurb: string; sessions: string[]; reveal?: string; coming: boolean };
+type PhaseRow = { key: string; num: number; name: string; blurb: string; tail: string; reveal?: string; coming: boolean };
+
+/**
+ * THE SESSION LINES COME FROM THE REGISTRY, NOT FROM LITERALS HERE.
+ *
+ * This page is the member's map of the whole program, and it carried its own hardcoded copy of every Session
+ * name. Predictably, that copy drifted: on 2026-08-31 it listed "Doors" (the registry says Excavation),
+ * "Visioning" (a FOURTH name for R3 — not the old Drift Quiz, not the new The Fade), and it had the order wrong,
+ * putting Doors before the IDQ when the IDQ is R1.
+ *
+ * Rewire, Rebuild and Reclaim matched their registries exactly. Reconnect was the only phase whose names
+ * disagreed with themselves — which is what Jay independently said before seeing this page, and the reason he
+ * renamed R1 and R3 the same day.
+ *
+ * Deriving is the fix, not correcting the four strings. A duplicated name is a name that will drift again the
+ * next time one moves, and this surface is where a member goes to understand the shape of the program.
+ * [[one-fact-many-sites]]
+ *
+ * The TAIL stays a literal per phase on purpose — the four phases end differently ("Checkpoint.", "Transition —
+ * your Success Story"), and that is authored copy nobody asked me to reconcile.
+ */
+function sessionLines(phaseKey: string): string[] {
+  return SESSION_REGISTRY.filter((d) => d.phase === phaseKey && d.kind === 'session').map((d) => {
+    const short = sessionSummary(d.id as SessionKey)?.short;
+    // No summary → the name alone. Never a name with a dangling em-dash after it.
+    return short ? `${d.label} — ${short}` : d.label;
+  });
+}
 
 const PHASES: PhaseRow[] = [
   {
     key: 'reconnect', num: 1, name: 'Reconnect',
     blurb: 'Think about who you were before life got in the way.',
-    sessions: [
-      'Doors — identify the Doors you walked through that caused you to Fade',
-      'IDQ — Measure the distance between who you are and who you want to be',
-      // Kept in step with lib/content/summaries.ts r3 — see the note there for why "drift" became "Fade".
-      'Visioning — See your Fade clearly, then put words to who you’re becoming.',
-      'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
-    ],
+    tail: 'Checkpoint — take stock of how it\u2019s going, see progress in your Grinta Index',
     reveal: 'Ceremony — the earned reveal, move to Rewire',
     coming: false,
   },
   {
     key: 'rewire', num: 2, name: 'Rewire',
     blurb: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and effect change.',
-    sessions: [
-      'Disinformation Audit — Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.',
-      'Visualization Workshop — Build a picture of who you’re becoming vivid enough to pull you forward.',
-      'False Start Protocol — Learn to notice a slip early and clip back in fast.',
-      'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
-    ],
+    tail: 'Checkpoint — take stock of how it\u2019s going, see progress in your Grinta Index',
     coming: false,
   },
   {
     key: 'rebuild', num: 3, name: 'Rebuild',
     blurb: 'A focus on your physical body and eating habits is an important part of increasing healthspan. Explore where you are right now, practice small, real, repeatable exercises that can get you there.',
-    sessions: [
-      'What’s Your Why? — Find your reasons to care for your body.',
-      'Strengths & Weaknesses — Evaluate your skills that can make change stick.',
-      'The Lifestyle Pilot — Watch your everyday choices for a week and learn how your lifestyle actually works.',
-      'Checkpoint.',
-    ],
+    tail: 'Checkpoint.',
     coming: false,
   },
   {
     key: 'reclaim', num: 4, name: 'Reclaim',
     blurb: 'Grow into a bigger life as who you want to be.',
-    sessions: [
-      'Looking Forward — Revisit your Reclaim List now that you know yourself better.',
-      'Bigger World Audit — Check in on how your world has expanded from where you started',
-      'Quality Days — Track the days that feel like the life you’re building.',
-      'Transition — your Success Story',
-    ],
+    tail: 'Transition — your Success Story',
     coming: false,
   },
 ];
@@ -176,7 +185,7 @@ export default async function ProgramPage({
                 </div>
                 <p className="route-blurb">{p.blurb}</p>
                 <ul className="route-sessions">
-                  {p.sessions.map((s, i) => <li key={i}>{s}</li>)}
+                  {[...sessionLines(p.key), p.tail].map((s, i) => <li key={i}>{s}</li>)}
                 </ul>
                 {p.reveal && <p className="route-reveal">→ {p.reveal}</p>}
               </section>
