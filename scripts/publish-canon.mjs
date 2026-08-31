@@ -28,9 +28,15 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, wri
 import { join } from 'node:path';
 import { SECTIONS } from './transcript-sources.mjs';
 
-const version = process.argv[2];
+// ACCEPTS EITHER `3.5.75` OR `v3.5.75`. It used to demand the bare form and print a usage line that named
+// neither, so the v-prefixed form — the one CLAUDE.md's own written routine shows, and the one every git tag
+// and canon directory uses — failed with a message that gave no clue why. Following our own documentation was
+// the failure case. The prefix is stripped, not rejected; `--since` still takes a git ref as written (v3.5.59).
+const version = (process.argv[2] ?? '').replace(/^v/i, '');
 if (!version || !/^\d+\.\d+(\.\d+)?$/.test(version)) {
   console.error('Usage: node scripts/publish-canon.mjs <version> [--since <git-ref>]');
+  console.error('  <version>  3.5.75 or v3.5.75');
+  console.error('  --since    a git ref, e.g. v3.5.59 (defaults to the previous canon version)');
   process.exit(2);
 }
 const sinceIdx = process.argv.indexOf('--since');
