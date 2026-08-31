@@ -1884,6 +1884,35 @@ export type ElicitationConfig = {
   handIn: (c: Collected) => string; // the instrument's framing + its first item
 };
 
+/**
+ * A CLOSING BEAT ANSWERS HER QUESTION BEFORE IT ENDS — once, and only once.
+ *
+ * A close stage's job is to finish, so every one of them ended unconditionally: whatever the member said on that
+ * turn, the Session closed. When what she said was "I don't understand what you mean", her question was answered
+ * by the Session ending. Donna named the feeling at the False Start Protocol — "It answers my question then moves
+ * on without allowing me to close out. I feel left hanging."
+ *
+ * BOUNDED AT ONE, DELIBERATELY. A close whose exit depends on the member answering correctly is a trap, and worse
+ * than the thing it fixes — she could be held at a finished Session indefinitely. So: her question is answered,
+ * the ask is re-posed once, and the next turn closes whatever she says.
+ *
+ * SHARED BECAUSE I ALREADY PAID FOR NOT SHARING IT. I fixed exactly this in B2's skills-close and did not sweep
+ * for siblings; the session eval then found c1-close doing the same thing an hour later. Three closes exist
+ * (why-close, skills-close, c1-close) and each keeps its own body — only the rule is hoisted. [[one-fact-many-sites]]
+ *
+ * Returns true when it HELD, so the caller returns early and its own closing work does not run.
+ */
+export function heldOnceIfLost(
+  b: { memberMessage: string; modelText?: string; scratch: unknown; reply?: string },
+  ask: string,
+): boolean {
+  const sc = b.scratch as { heldOnce?: boolean };
+  if (!didNotAnswer(b.memberMessage) || sc.heldOnce) return false;
+  sc.heldOnce = true;
+  b.reply = withQuestion(b.modelText ?? '', ask);
+  return true;
+}
+
 export function elicitationStage(cfg: ElicitationConfig): StageDef {
   const talk: StageHandler = (b) => {
     const sc = b.scratch as { said?: number };

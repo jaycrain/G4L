@@ -27,6 +27,7 @@ import { rewireOpening, rewireW2Opening, rewireW3Opening, liveTurnRewire, liveTu
 import { rebuildB2Opening, liveTurnRebuildB2 } from '../lib/agent/rebuild.ts';
 import { serializeBeatConfirm } from '../lib/agent/beat-confirm.ts';
 import { saysNothingToChange } from '../lib/agent/onboarding-intent.ts';
+import { ONBOARDING_HARD_CEILING } from '../lib/agent/onboarding-staged.ts';
 import { BEAT_SEP, type ConvState, type ConvMessage, type Turn, type Collected } from '../lib/agent/onboarding.ts';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
@@ -184,13 +185,25 @@ async function run(
     // does. A harness that grades engagement as failure teaches us to skim the report — the same defect that put
     // five false reds on the onboarding eval. [[eval-harness-must-tap-not-type]]
     // THE PROBE'S ASSERTION: she said she did not follow, so the Session must not have moved on.
-    if (probing && turn.state.stage !== stageBefore) {
+    // NOT WHEN THE RUNAWAY BACKSTOP OWNS THE ADVANCE. runArcTurn calls the stage's forceProgress once member turns
+    // reach ONBOARDING_HARD_CEILING, which advances regardless of what was said — deliberately, because a member
+    // who keeps saying "I don't understand" must never be trapped in a Session. That safety net outranks the
+    // confusion hold by design.
+    //
+    // The first six-Session run flagged B2 at turn 33 of 35 for exactly that, and the engine was correct. A probe
+    // that cannot tell a safety net from a bug reports the safety net as a bug.
+    const backstopOwnsIt = i + 1 >= ONBOARDING_HARD_CEILING;
+    if (probing && !backstopOwnsIt && turn.state.stage !== stageBefore) {
       concerns.push({
         id: 'ADVANCED-ON-CONFUSION',
         note: `turn ${i + 1}: member said "${wire}" and the Session moved from ${stageBefore} to ${turn.state.stage}`,
       });
     }
-    if (saysNothingToChange(wire) && turn.state.stage === stageBefore) {
+    // SCOPED TO C1, because that is the only Session with revision passes. The first full six-Session run flagged
+    // R3 for it: the member said "That's right." — which saysNothingToChange matches — during the Legacy draw-out,
+    // where there is no pass to advance. A check applied outside the context it was written for reports a
+    // regression that is really a normal turn, and a harness that cries wolf teaches us to skim it.
+    if (label.startsWith('c1') && saysNothingToChange(wire) && turn.state.stage === stageBefore) {
       concerns.push({
         id: 'RE-ASK',
         note: `turn ${i + 1}: member said "${wire.slice(0, 40)}" and the pass did not advance — v3.5.78 regression`,

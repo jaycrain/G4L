@@ -567,6 +567,18 @@ const imageStage: StageDef = {
       b.reply = W2_IMAGE_NUDGE;
       return;
     }
+    // SHE DID NOT ANSWER, SO THIS PIECE IS NOT BUILT — and it must not be STORED either.
+    //
+    // Same shape as W1's domain walk (v3.6.2), and worse here: the only guard was a length check, so "I don't
+    // understand what you mean" both advanced the scene AND was pushed into w2Image — becoming a line of the day
+    // she is meant to picture, and later a keeper she never wrote. Caught by the session eval on 2026-08-31
+    // (W2 turn 5, image → hold).
+    //
+    // The model's reply answers her; the same piece is asked again under it.
+    if (didNotAnswer(b.memberMessage)) {
+      b.reply = withScriptedBeat((b.modelText ?? '').trim(), W2_IMAGE[idx]!);
+      return;
+    }
     (b.collected.w2Image ??= []).push(b.memberMessage.trim());
     const reflected = (b.modelText ?? '').trim();
     const next = idx + 1;

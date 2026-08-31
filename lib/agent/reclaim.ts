@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, withQuestion, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, withQuestion, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, heldOnceIfLost} from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -479,11 +479,16 @@ const c1CloseStage: StageDef = {
   opener: (c) => c1CloseAsk(c),
   offersSubstance: () => true,
   gather: (b) => {
+    // Her question is answered before the Session ends — once, then it closes whatever she says. See
+    // heldOnceIfLost: I fixed this in B2's close and did not sweep for siblings, and the eval found this one an
+    // hour later.
+    if (heldOnceIfLost(b, c1CloseAsk(b.collected))) return;
     b.stage = 'complete';
     b.complete = true;
     b.reply = receiveThen(b.modelText, C1_CLOSE);
   },
   confirm: (b) => {
+    if (heldOnceIfLost(b, c1CloseAsk(b.collected))) return;
     b.stage = 'complete';
     b.complete = true;
     b.reply = receiveThen(b.modelText, C1_CLOSE);
