@@ -1463,7 +1463,20 @@ const legacyStage: StageDef = {
     //
     // Past the cap we KEEP HER NEWEST DRAFT and commit it rather than asking again. Losing the latest revision to
     // enforce a limit would be the wrong trade — she asked for that change, and it is her letter.
-    if (b.model.legacyBody) {
+    //
+    // A RE-EMISSION IS NOT A REDRAFT (2026-08-30). Models habitually call record_legacy_letter again on the
+    // confirm turn, handing back the SAME text. That arrived here as a fresh draft, re-showed the letter, re-asked
+    // the question, and threw away her tap — so "That's mine" saved nothing and she had to tap it twice.
+    //
+    // Donna, on her walk: "There is still a bug where you have to click That's Mine 2x for Legacy letter to take."
+    // STILL — she had reported it before. Reproduced deterministically before this fix: tap one re-asks, tap two
+    // commits, and the only difference between them is whether the model spoke.
+    //
+    // This is member-words-outrank-model-guess on the one artifact that is entirely hers. She said "that's mine";
+    // the model repeating itself must not overrule that. A genuinely CHANGED body still supersedes — she asked for
+    // an edit and it arrived — so the comparison is on the text, not on whether the tool was called.
+    const redrafted = b.model.legacyBody && b.model.legacyBody.trim() !== (b.legacyDraft ?? '').trim();
+    if (redrafted && b.model.legacyBody) {
       b.legacyDraft = b.model.legacyBody;
       b.legacyRevisions = rounds + 1;
       // The redraft they asked for has arrived and is being shown — the debt is paid.
