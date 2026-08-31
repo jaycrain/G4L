@@ -23,6 +23,8 @@
 
 import { liveTurnReconnect, reconnectR3Opening, RECONNECT_R3_ARC } from '../lib/agent/reconnect.ts';
 import { liveTurnReclaimRefine, reclaimC1PassesOpening } from '../lib/agent/reclaim.ts';
+import { rewireOpening, rewireW2Opening, rewireW3Opening, liveTurnRewire, liveTurnRewireW2, liveTurnRewireW3 } from '../lib/agent/rewire.ts';
+import { rebuildB2Opening, liveTurnRebuildB2 } from '../lib/agent/rebuild.ts';
 import { serializeBeatConfirm } from '../lib/agent/beat-confirm.ts';
 import { saysNothingToChange } from '../lib/agent/onboarding-intent.ts';
 import { BEAT_SEP, type ConvState, type ConvMessage, type Turn, type Collected } from '../lib/agent/onboarding.ts';
@@ -36,6 +38,16 @@ if (!process.env.ANTHROPIC_API_KEY) {
 // Six passes, each with the model's own follow-ups, is legitimately long for an engaged member. The cap is a
 // runaway guard, not a quality bar — see the PASS-LOOP note below for why turn COUNT is not the signal.
 const TURN_CAP = 40;
+
+/** Injected on this cadence — often enough to be measured, rare enough that the Session still gets walked. */
+const PROBE_EVERY = 4;
+/** Real phrasings, from the twelve measured against the old detector. Ten of these used to advance the doorway. */
+const PROBES = [
+  "I don't understand what you mean",
+  'Sorry, what?',
+  'That question makes no sense to me',
+  "I'm not sure what you're asking",
+];
 
 /** Donna's actual Reclaim List from her 8/30 walk, so C1 runs on real member text rather than tidy fixtures. */
 const HER_LIST = [
@@ -135,7 +147,19 @@ async function run(
     const stageBefore = state.stage;
     const awaitingConfirm = !!(state as { awaitingConfirm?: boolean }).awaitingConfirm;
     const sys = personaSystem + (awaitingConfirm ? `\n\n${CONFIRM_BRIEF}` : '');
-    const raw = await member(sys, history);
+    // THE CONFUSION PROBE IS INJECTED, NOT ASKED FOR.
+    //
+    // The persona is told to say it does not follow roughly one turn in four. Measured across a first full run it
+    // did so TWICE in seventy-one turns — so every Session came back clean without once exercising the path the
+    // harness exists to test. A probe that depends on a model choosing to play confused is not a probe.
+    //
+    // So on a fixed cadence the member's turn is REPLACED with a scripted non-comprehension line, and the check
+    // below asserts the Session held her rather than advancing. This is the v3.5.76 contract, measured live: ten
+    // of twelve real phrasings used to walk straight past into the instrument.
+    //
+    // Never at a confirm — a tap beat is answered by tapping, and typing confusion there tests a different path.
+    const probing = !awaitingConfirm && i > 0 && i % PROBE_EVERY === 0;
+    const raw = probing ? PROBES[(i / PROBE_EVERY - 1) % PROBES.length]! : await member(sys, history);
     const wire = awaitingConfirm ? beatConfirmWire(raw) : raw;
     if (wire !== raw) taps++;
     history.push({ role: 'member', text: raw });
@@ -159,6 +183,13 @@ async function run(
     // twenty-four turns were the model drawing her out and the persona answering, which is what a real member
     // does. A harness that grades engagement as failure teaches us to skim the report — the same defect that put
     // five false reds on the onboarding eval. [[eval-harness-must-tap-not-type]]
+    // THE PROBE'S ASSERTION: she said she did not follow, so the Session must not have moved on.
+    if (probing && turn.state.stage !== stageBefore) {
+      concerns.push({
+        id: 'ADVANCED-ON-CONFUSION',
+        note: `turn ${i + 1}: member said "${wire}" and the Session moved from ${stageBefore} to ${turn.state.stage}`,
+      });
+    }
     if (saysNothingToChange(wire) && turn.state.stage === stageBefore) {
       concerns.push({
         id: 'RE-ASK',
@@ -224,8 +255,67 @@ async function c1(): Promise<boolean> {
     });
 }
 
+
+// ── W1 · W2 · W3 · B2 — where four of Donna's six "didn't listen" reports came from ────────────────────────────
+//
+// v3.5.76 fixed the DOORWAY class, which covers B2 and the checkpoints. v3.5.77 and v3.5.82 are kernel-wide and
+// should cover W1/W2/W3 too — "should" being the word this exists to remove. Every one of these Sessions is a
+// draw-out with no doorway, so they exercise a different path to the same complaint.
+//
+// THE PERSONA IS COOPERATIVE BUT SLIGHTLY LOST, on purpose. A member who answers every question cleanly never
+// triggers the bug; Donna's reports all came from moments where she did not follow, or answered one of two.
+
+const REWIRE_PERSONA = `You are role-playing a 57-year-old woman in a guided session about the stories she tells
+herself. You lost a job you had built toward for years. You answer briefly and plainly, one or two sentences,
+like a real person typing — never a paragraph.
+
+IMPORTANT: roughly one turn in four, you do not follow the question. When that happens say so in your own words
+and ask what is meant — "I don't understand what you mean", "Sorry, what?", "not sure what you're asking".
+Do NOT guess at an answer you did not understand. Otherwise answer honestly and move on.`;
+
+const B2_PERSONA = `You are role-playing a 57-year-old woman rating her own self-management skills. You answer
+briefly and plainly. When a numeric rating is asked for, reply with ONLY the digit.
+
+IMPORTANT: roughly one turn in four, you do not follow the question — say so plainly and ask what is meant,
+rather than guessing. Otherwise answer honestly.`;
+
+/** The four checks every draw-out Session owes, all of them Donna's. */
+function drawoutChecks(label: string) {
+  return ({ replies, complete, turns }: { replies: string[]; complete: boolean; turns: number }): Check[] => {
+    const c: Check[] = [];
+    if (!complete) c.push({ id: 'DID-NOT-CLOSE', note: `${label} never completed in ${TURN_CAP} turns` });
+    // v3.5.79 — internal filing labels must not reach a member.
+    for (const leak of [/\b(R[1-4]|W[1-3]|B[1-4]|C[1-4])\b/, /Smart Choice/i, /three categories of skills/i]) {
+      const hit = replies.find((r) => leak.test(r));
+      if (hit) c.push({ id: 'REGISTER-LEAK', note: `${leak} reached the member: "${hit.slice(0, 70)}"` });
+    }
+    // v3.5.79 — "That's [thing] done" puts a checkbox where a close should be.
+    const done = replies.find((r) => /that'?s\s+\S+\s+done\b/i.test(r));
+    if (done) c.push({ id: 'UNIT-ANNOUNCED', note: `"that's X done" reached the member: "${done.slice(0, 70)}"` });
+    if (turns >= TURN_CAP) c.push({ id: 'TURN-CAP', note: `${label} ran to the cap — look at the transcript` });
+    return c;
+  };
+}
+
+async function w1(): Promise<boolean> {
+  return run('w1-disinformation', rewireOpening(COMMITTED),
+    (st, h, m) => liveTurnRewire(st, h, m), REWIRE_PERSONA, drawoutChecks('W1'));
+}
+async function w2(): Promise<boolean> {
+  return run('w2-visualization', rewireW2Opening(COMMITTED),
+    (st, h, m) => liveTurnRewireW2(st, h, m), REWIRE_PERSONA, drawoutChecks('W2'));
+}
+async function w3(): Promise<boolean> {
+  return run('w3-false-start', rewireW3Opening({ reclaimList: HER_LIST, identityNoun: 'Maker' }),
+    (st, h, m) => liveTurnRewireW3(st, h, m), REWIRE_PERSONA, drawoutChecks('W3'));
+}
+async function b2(): Promise<boolean> {
+  return run('b2-strengths', rebuildB2Opening(),
+    (st, h, m) => liveTurnRebuildB2(st, h, m), B2_PERSONA, drawoutChecks('B2'));
+}
+
 const only = process.argv[2];
-const suites: Record<string, () => Promise<boolean>> = { r3, c1 };
+const suites: Record<string, () => Promise<boolean>> = { r3, c1, w1, w2, w3, b2 };
 const chosen = only ? [only] : Object.keys(suites);
 let clean = 0;
 for (const name of chosen) {
