@@ -148,7 +148,10 @@ function walkImage(committed: Collected | null = CAPTURES): { state: ConvState; 
   // rules say declare what a thing IS) and, per Donna 2026-08-30, sat at the head of a reveal she could not parse.
   // The recognition's job is to hand the day back and ask how it feels; that is what is checked now.
   assert.match(t.reply, /in your own words/i, 'delivers the recognition reveal');
-  assert.match(t.reply, /how it feels/i, 'and closes on the one question it owes her');
+  // THE BEAT, NOT MY WORDING. This pinned "how it feels" and Donna's own sentence says "how that feels" — so my
+  // assertion from three releases ago broke on adopting the copy she asked for. Exactly the fault I had just
+  // criticised in the assertion above it.
+  assert.match(t.reply, /tell me how (it|that) feels/i, 'and closes on the one question it owes her');
   return { state: t.state, recognitionReply: t.reply };
 }
 

@@ -451,12 +451,21 @@ const W2_IMAGE_NUDGE = `No rush — just picture it and tell me what you see. Ev
 //
 // It also opens by negating ("that's not a wish"), which our own voice rules forbid: declare what a thing IS.
 //
-// Her proposed replacement is adopted almost verbatim, because it is plainer than anything I wrote against it —
-// it names what just happened and asks one answerable question.
+// FIRST ATTEMPT KEPT THE WORST PART AND I TOLD HER IT HAD NOT (2026-08-31). v3.6.4 dropped two of her three
+// objections and KEPT the core of the first — "seen from the far side of the work" — then described the result to
+// her as "nearly verbatim" her suggestion. Her reply: "This still reads as total bullshit AI… What does 'seen from
+// the far side of the work' mean? It is not very close to what I suggested which you said would be nearly
+// verbatim."
+//
+// Both halves of that are fair, and the second is the worse one: overclaiming a fix is how a tester stops
+// trusting the report and starts having to re-check everything herself.
+//
+// This is now HER sentence for the ask, unedited, with one short line saying the picture is saved. Her standard,
+// stated plainly and worth keeping: it "can't have phrases that are unclear and that are not how humans speak
+// and think."
 const W2_RECOGNITION =
-  `That's the day, in your own words — a goal you already named, seen from the far side of the work. We'll keep it ` +
-  `where you can find it.` + BEAT_SEP +
-  `Take a moment with it. When you're ready, tell me how it feels.`;
+  `That's the day, in your own words. We'll keep it where you can find it.` + BEAT_SEP +
+  `Take a moment and reflect on the day we just visualized together. When you're ready, tell me how that feels.`;
 // ── The practice — the week + the W1 connection ──
 const W2_PRACTICE_1 =
   `Here's your work this week, and it's small: five minutes each morning with that image. Close your eyes, make ` +
