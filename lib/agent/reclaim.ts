@@ -20,7 +20,7 @@ import {
 import { scoreAudit, priorityBarsVisual } from '../reclaim/bigger-world-scoring.ts';
 import type { SessionVisual } from './session-visual.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
-import { memberDeflecting, confirmsProposal } from './onboarding-intent.ts';
+import { saysNothingToChange, memberDeflecting, confirmsProposal } from './onboarding-intent.ts';
 import { groundToMemberWords } from './member-words.ts';
 import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
 import { SESSION_LIMITS } from './session-limits.ts';
@@ -351,7 +351,14 @@ function revisionPassStage(cfg: RevisionPass): StageDef {
       return;
     }
     // Nothing to change, and they have said so → move on. "Nothing" is an answer, not a failure to answer.
-    if (memberDeflecting(b.memberMessage) || sc.turns >= PASS_MAX_TURNS) return handOn(b);
+    //
+    // saysNothingToChange IS THE HALF THAT WAS MISSING. This line read `memberDeflecting(...)` alone, and that
+    // signal detects REFUSAL — "stop asking", "we're done" — not the answer these passes invite. So "list holds"
+    // and "nothing to change" were treated as dodges and each pass held the member to PASS_MAX_TURNS. Donna said
+    // it six times in one Session and counted. The comment above already stated the rule; the code did not run it.
+    if (saysNothingToChange(b.memberMessage) || memberDeflecting(b.memberMessage) || sc.turns >= PASS_MAX_TURNS) {
+      return handOn(b);
+    }
     b.reply = withQuestion(b.modelText, cfg.followUps[Math.min(sc.turns - 1, cfg.followUps.length - 1)] ?? null);
   };
   const confirm: StageDef['confirm'] = (b) => {

@@ -46,6 +46,42 @@ export function memberDeflecting(message: string): boolean {
   return memberWantsToWrap(m) || DEFLECT_RE.test(m);
 }
 
+/**
+ * "Nothing needs changing here" — the legitimate NO-CHANGE answer to a question that invites a revision.
+ *
+ * DONNA SAID THIS SIX TIMES IN ONE SESSION AND COUNTED (2026-08-30): *"I ended up saying 'list holds' or 'list is
+ * fine' six times (I counted)."* Then: *"it keeps reverting to its protocol and asking more questions… It moved on
+ * when I explicitly asked it to twice."*
+ *
+ * WHY IT HAPPENED. C1 runs Greg's six revision passes, and each pass advanced on `memberDeflecting`. That signal
+ * was built for REFUSAL — "stop asking", "we're done", "I already said" — not for the answer the passes actually
+ * invite. So "list holds", "list is fine", "nothing to change", "no changes" and "the list stands" all read as
+ * *not an answer*, and each pass held her for up to PASS_MAX_TURNS before giving up. Six passes of that.
+ *
+ * The code one line above the bug already stated the rule: *"'Nothing' is an answer, not a failure to answer."*
+ * The predicate underneath it did not implement that sentence. A rule that exists and does not run.
+ *
+ * NOT A RELAXATION OF GREG'S INSTRUMENT. The six passes stay, in his order, asking his questions. This only lets
+ * an answer count as an answer — the member saying "nothing here" is her ANSWERING the pass, and it was being
+ * treated as her dodging it (dont-relax-the-experts-instrument).
+ *
+ * TWO TIERS, because a bare "fine" is only safe when it is the whole message. Specific phrases match anywhere;
+ * generic affirmatives match only a short reply. That keeps "my marriage holds me back" — which contains "holds"
+ * — from being read as "the list holds".
+ */
+const NO_CHANGE_SPECIFIC_RE =
+  /\b(list (holds|stands|is (fine|good|right)|looks (fine|good|right))|nothing (to change|needs changing|to add|to drop|else to add)|no (changes?|edits?|additions?)|nothing'?s changed|same as (before|it was)|leave (it|them|the list) (as is|alone|be)|keep (it|them|the list) (as is|the same))\b/i;
+const NO_CHANGE_SHORT_RE =
+  /^(it|that|they|the list)?\s*'?s?\s*(all\s+)?(fine|good|right|ok(ay)?|unchanged|as is|holds|stands|no change)[.!]*$/i;
+
+export function saysNothingToChange(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim();
+  if (!m) return false;
+  if (NO_CHANGE_SPECIFIC_RE.test(m)) return true;
+  // Generic affirmatives only when they ARE the message — six words is generous for "that's fine".
+  return m.split(/\s+/).length <= 6 && NO_CHANGE_SHORT_RE.test(m);
+}
+
 // LEAVING IS NOT THE SAME AS BEING DONE WITH A BEAT, and we had no signal for it.
 //
 // Donna, 2026-08-27: "It did an amazing job of having an understanding conversation with me. But it did follow on
