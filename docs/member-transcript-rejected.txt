@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ f6d253fa · 2026-08-31)
+# Strings EXCLUDED from the member transcript (app @ 31d65e5f · 2026-08-31)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -358,7 +358,6 @@
 [lib/agent/rewire.ts] wearing, that's felt out of reach. Pick one.  Your brain rehearses a real destination far better than a vague
 [lib/agent/rewire.ts] Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and
 [lib/agent/rewire.ts] we'll find it together.
-[lib/agent/rewire.ts] where you can find it.
 [lib/agent/rewire.ts] it vivid — the light, the effort, the feeling. Don't rush it.
 [lib/agent/rewire.ts] you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the
 [lib/agent/rewire.ts] whole move: the true line answers the lie, the image outlasts it.
