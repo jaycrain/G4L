@@ -1215,7 +1215,7 @@ function idqOpen(): string {
 // Greg's other two contracts stay here, where the stance is set: R1-05 (rate from your CURRENT perspective, not
 // what you want to be true) and R1-27 (his approved discomfort line, close to verbatim).
 const MIRROR_FRAME =
-  'Before the mirror, one thing about how to read it.\n\n' +
+  'Before the IDQ, one thing about how to read it.\n\n' +
   'Answer from where you are right now, rather than where you mean to be.\n\n' +
   'Some of it will be uncomfortable.';
 

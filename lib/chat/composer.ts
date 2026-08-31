@@ -37,13 +37,36 @@
  */
 const SHORTCUT_KINDS = new Set(['beat_confirm']);
 
+/**
+ * THE LEGACY LETTER IS THE ONE CONFIRM THAT DEFERS ITS BOX (Jay's ruling, 2026-08-31).
+ *
+ * Two testers hit this beat and disagreed. Jay, 2026-08-28, wanted to change a line of his own letter and had two
+ * buttons and nowhere to type — which is why the rule above exists at all. Donna, 2026-08-30, on the same screen:
+ * "a straggler field for entering content that isn't necessary."
+ *
+ * Both are right, and the difference is what they arrived wanting: he came to TYPE, she came to ACCEPT.
+ *
+ * So the box is not removed, it is DEFERRED. "Change a line" already brings the composer up — the confirm handler
+ * clears `expects` on that path precisely so she can type ("a tap asking for a change must never be answered by
+ * re-offering the same tap"). Jay's case costs one tap and gains a prompt that says what to write; hers loses an
+ * empty field she had no use for.
+ *
+ * THE COST, NAMED: accepting becomes the only zero-friction path, and on a letter someone wrote to themselves
+ * that is a nudge worth watching. Scoped to THIS set for exactly that reason — every other confirm keeps its box,
+ * and the asymmetry argument above still governs them.
+ */
+function defersItsComposer(e: { kind?: string; set?: string }): boolean {
+  return e.kind === 'beat_confirm' && e.set === 'legacy';
+}
+
 export function showComposer(
-  expectation: boolean | { kind?: string } | null | undefined,
+  expectation: boolean | { kind?: string; set?: string } | null | undefined,
   awaitingContinue: boolean,
 ): boolean {
   if (awaitingContinue) return false;
   // Back-compat: callers that pass a bare boolean get the old all-or-nothing rule.
   if (typeof expectation === 'boolean') return !expectation;
   if (!expectation) return true;
+  if (defersItsComposer(expectation)) return false;
   return SHORTCUT_KINDS.has(expectation.kind ?? '');
 }

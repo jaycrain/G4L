@@ -32,7 +32,11 @@ test('R1 opens on the mirror — and is the FIRST Session, per Greg', () => {
   // member's first act in the first Session of the program was tapping a number. It is now the engagement beat.
   assert.equal(t.state.stage, 'mirror-open', 'R1 opens on the doorway in front of the IDQ');
   assert.equal(RECONNECT_R1_ARC.stageOrder[1], 'measurement', 'and the instrument is what it opens onto');
-  assert.match(t.reply, /mirror/i, "Greg's own image, kept");
+  // NO METAPHOR (Jay, 2026-08-31): "cut it and say what it is." The opener named "the mirror" — an image from a
+  // Session name we retired the same day. With R1 called IDQ, the copy says what the IDQ is instead of reaching
+  // for a picture of it. Greg's image survives in his own documents; it is no longer what we say to a member.
+  assert.match(t.reply, /IDQ/, 'the instrument, named plainly');
+  assert.doesNotMatch(t.reply, /mirror/i, 'and the retired metaphor stays gone');
   assert.match(t.reply, /uncomfortable/i, 'and his discomfort line, which is the best sentence in his intro');
 
   // GREG'S LOAD-BEARING CONTRACTS, all required BEFORE any rating is collected — but as of 2026-08-30 they are

@@ -765,7 +765,8 @@ export const W3_RESTART =
   `in the goal you named. The campaign can't compete with a picture that real.`;
 // ── Step 3 — The week of noticing (the week is logged in the Playbook's "This week" tab, moved there 2026-08-08) ──
 const W3_STEP3_1 =
-  `Here's your work this week: don't try to change anything yet. Just notice. Open This week in your Playbook ` +
+  `Here's your work this week: use it. When a false start happens, run the three steps. You're not building a `
+  + `plan yet — that comes later. Just catch them, and write down what you notice. Open This week in your Playbook ` +
   `every day and log your good calls, your false starts and the on-track days where not much happened.`;
 const W3_STEP3_2 =
   `And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.`;
@@ -789,7 +790,7 @@ const W3_CUE_NUDGE =
   `Anything that already happens daily works — the kettle, the drive home, lights out. What's yours?`;
 // Stage 4's closing frame + the missed-day backup (W3-30), stated rather than asked: she has answered enough.
 const W3_BOTH_DATA =
-  `Good — that's your cue.${BEAT_SEP}You're tracking Smart Choices and False Starts. Both are data. Neither is a ` +
+  `Good — that's your cue.${BEAT_SEP}You're tracking Good Calls and False Starts. Both are data. Neither is a ` +
   `verdict. And if you miss the cue, you pick it up at the next one — you don't start the week again.`;
 // ── Close — harvest + hand-off ──
 const W3_CLOSE_1 =

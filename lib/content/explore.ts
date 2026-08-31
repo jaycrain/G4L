@@ -311,8 +311,8 @@ export function exploreForReconnectStage(stage?: string | null): Explore | undef
 const RECONNECT_STAGE_TITLE: Record<string, string> = {
   entry: 'The Doors',
   doors: 'The Doors',
-  drift: 'The Drift Quiz',
-  measurement: 'The Drift Quiz',
+  drift: 'The Fade',
+  measurement: 'The Fade',
   window: 'The Window',
   checkpoint: 'Your Checkpoint',
   ceremony: 'Your Threshold',

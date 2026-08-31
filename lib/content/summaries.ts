@@ -41,18 +41,17 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
     full: 'The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.',
   },
   r3: {
-    // "the Fade" is the protected noun for the identity distance; "your drift" was the same idea under a second
-    // name. This is Greg's authored summary, which is why it survived the earlier drift→Fade sweep — I left it as
-    // his to change. Jay settled it as brand owner and has told Greg directly (via Cowork, 2026-08-15). "drift"
-    // stays reserved for the instrument (the Drift Quiz, named in `full` just below) and for verb uses.
+    // ONE NOUN NOW, AND IT IS THE FADE (Jay, 2026-08-31, as brand owner). "drift" was reserved for the instrument
+    // under the 2026-08-15 ruling; that carve-out is retired. His reasoning is a marketing one and it is the
+    // right frame: we will never lead with "Drift" or with "the Mirror", so neither should hold a Session title.
+    // Reconnect now reads IDQ - Excavation - The Fade: three proprietary terms and one plain one.
+    //
+    // GREG'S DOCUMENTS DO NOT CHANGE. The Drift Quiz is still his instrument name in the Science Check and both
+    // memos - the same two-layer split we already run for R1, where his IDQ is now the member's Session name too.
     short: 'See your Fade clearly, then put words to who you’re becoming.',
-    // THE ONE PLACE THE TWO NAMES MEET, so it is the one place the relationship gets said (Jay, 2026-08-15):
-    // "It's how far the Fade made you drift." The Fade is the force and the main character; drifting is what it
-    // does to you, which is why a Session can be called the Drift Quiz without ever letting "the drift" become a
-    // second noun competing with the Fade. Not a new position — the asset's own summary in
-    // lib/curriculum/content/reconnect.ts already reads "what the Fade cost, and how far you've drifted"; this
-    // line just never carried it. Aligning two of Greg's own lines rather than overriding him.
-    full: 'Two moves in one. The Drift Quiz holds up a mirror to how far the Fade has made you drift — the small daily choices where the distance shows. A place to see the pattern plainly. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.',
+    // The two names no longer meet, because there is only one. What this summary describes is unchanged -
+    // seeing the distance plainly, then writing forward - it just says it in the Fade's own words.
+    full: 'Two moves in one. First you look at how far the Fade has carried you — the small daily choices where the distance shows. A place to see the pattern plainly. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.',
   },
   w1: {
     short: 'Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.',
@@ -92,10 +91,42 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
 };
 
+/**
+ * WHAT A PHASE SUMMARY SAYS AT THE **CLOSE**, which is a different job from what it says at the open.
+ *
+ * Donna, 2026-08-30, at the end of the Reconnect Checkpoint: "This Why this Matters at the end of the Reconnect
+ * Checkpoint is forecasting. Is it needed? If so, it needs to wrap up and speak in past tense of what just was
+ * completed." She had already done all four things the opener promises her she will do.
+ *
+ * One asset was serving two moments with opposite needs. The opener keeps its job; this is the other half.
+ *
+ * PAST TENSE, AND ONLY WHAT SHE ACTUALLY DID. No forecast of the next phase — the Checkpoint's own reveal does
+ * that — and no appraisal of how she did it.
+ */
+export const PHASE_CLOSES: Record<PhaseKey, string> = {
+  reconnect:
+    'You found the Doors that opened the distance, put words to what you want back, and measured how far it runs. ' +
+    "That's your starting line.",
+  rewire:
+    'You caught the stories that run underneath, built a picture of who you are heading toward, and made three ' +
+    'moves for when it slips. Those are yours now.',
+  rebuild:
+    'You named why this matters to you, took stock of the skills you have and the ones you are building, and ran ' +
+    'a week on your own terms.',
+  reclaim:
+    'You read your list again as the person you are now, looked at how far your world has widened, and said what ' +
+    'a good day is made of.',
+};
+
+/** The close for a phase — the past-tense counterpart to `phaseSummary`. */
+export function phaseClose(phase: PhaseKey): string {
+  return PHASE_CLOSES[phase];
+}
+
 export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   reconnect: {
     short: 'Think about who you were before life got in the way.',
-    full: 'Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace, there are no right or wrong answers, only clarity.',
+    full: 'Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace — clarity is the whole point.',
   },
   rewire: {
     short: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and effect change.',
@@ -136,7 +167,18 @@ export function sessionSummary(key: SessionKey): Summary | null {
   const asset = SESSION_ASSET[key];
   if (asset) return ASSET_SUMMARIES[asset];
   const phase = SESSION_PHASE[key];
-  if (phase) return PHASE_SUMMARIES[phase];
+  // A CHECKPOINT LOOKS BACK, SO ITS CARD DOES TOO (Jay's ruling, 2026-08-31).
+  //
+  // This returned the phase summary, which is written to OPEN a phase: "you'll explore... you'll recognize...
+  // you'll put words... you'll answer questions". Rendered on the Checkpoint, it forecast four things she had
+  // just spent an evening doing.
+  //
+  // Donna, 2026-08-30: "This Why this Matters at the end of the Reconnect Checkpoint is forecasting. Is it
+  // needed? If so, it needs to wrap up and speak in past tense of what just was completed."
+  //
+  // One asset was serving two moments with opposite needs. `short` keeps the threshold line; `full` becomes the
+  // past-tense close. The phase summary itself is untouched and still opens the phase.
+  if (phase) return { short: PHASE_SUMMARIES[phase].short, full: PHASE_CLOSES[phase] };
   return null;
 }
 

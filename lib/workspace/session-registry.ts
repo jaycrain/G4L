@@ -60,14 +60,14 @@ export const SESSION_REGISTRY: SessionDef[] = [
   // It was ONE entry with five segments and a note saying "the ring advances by internal beat" — which is the
   // line that made Reconnect the only phase without Session boundaries. The ring now fills per Session, and the
   // member returns to the dashboard between them. R1 is the mirror and comes FIRST, per Greg's spec.
-  { id: 'r1', phase: 'reconnect', label: 'The Mirror', kind: 'session', segments: ['B'] },
+  { id: 'r1', phase: 'reconnect', label: 'IDQ', kind: 'session', segments: ['B'] },
   // EXCAVATION (Jay, 2026-08-29: "I love the word Excavation relative to what we're doing"). R2 carries TWO of
   // Greg's assets — Identity Excavation (RCN-EXC) and The Doors (RCN-FDR) — under one Session, and it was
   // titled after the second of them. Jay asked mid-walk "is this the excavation?", which is what a member
   // asks when the name covers half the work. The Doors are untouched as a term: they are still the eleven
   // doors, the board and the Playbook chapter. This is the name of the SESSION that opens them.
   { id: 'r2', phase: 'reconnect', label: 'Excavation', detail: 'Identity Excavation + Doors', kind: 'session', segments: ['D'] },
-  { id: 'r3', phase: 'reconnect', label: 'The Drift Quiz', kind: 'session', segments: ['A'] },
+  { id: 'r3', phase: 'reconnect', label: 'The Fade', kind: 'session', segments: ['A'] },
   { id: 'r4', phase: 'reconnect', label: 'Reconnect Checkpoint', kind: 'checkpoint', segments: ['B', 'E'] },
 
   // ── Rewire — 3 sessions + checkpoint ──

@@ -128,13 +128,13 @@ export const CURRICULUM: Asset[] = [
   // RCN-WIN-LIST stop being catalogue rows and become what they always were — parts of a Session.
   ...(reconnectStaged
     ? [
-        meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1,
+        meta('RCN-IDQ', 'IDQ', 'reconnect', 'Recognition', 'session', 1,
           'Your starting read across four dimensions — the line we measure everything else against.',
           { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
         meta('RCN-FDR', 'Excavation', 'reconnect', 'Recognition', 'session', 2,
           'The events that opened the distance, and the self underneath them.',
           { close_type: 'reflect', produces: 'your Doors + what you are reclaiming', route: '/workspace/{memberId}/r2' }),
-        meta('RCN-DFT', 'The Drift Quiz', 'reconnect', 'Excavation', 'session', 3,
+        meta('RCN-DFT', 'The Fade', 'reconnect', 'Excavation', 'session', 3,
           'What the Fade cost, the day you want back, and the list you are coming back for.',
           { close_type: 'goal', produces: 'your inventory, your window, your Reclaim List', route: '/workspace/{memberId}/r3' }),
         meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 4,
@@ -143,7 +143,7 @@ export const CURRICULUM: Asset[] = [
       ]
     : [
         ...RECONNECT_SESSIONS,
-        meta('RCN-IDQ', 'The Mirror', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
+        meta('RCN-IDQ', 'IDQ', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
         IDENTITY_EXCAVATION,
         meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
       ]),

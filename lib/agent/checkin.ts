@@ -345,9 +345,9 @@ function practiceWeekLine(c: CheckinContext): string | null {
     // B3 ONLY: the same instrument for the body. Without this the model holds record_b3_day and no sense of when
     // to use it, which is how a tool ends up either unused or fished for.
     (pw.kind === 'b3_pilot'
-      ? 'When they tell you how a day went — a Smart Choice, a False Start, what got in the way, what was going ' +
+      ? 'When they tell you how a day went — a Good Call, a False Start, what got in the way, what was going ' +
         'through their mind — write it down with record_b3_day, in their words. Take whatever they offer and stop ' +
-        'there: one Smart Choice is a complete day, and going back for the rest turns a conversation into a form. ' +
+        'there: one Good Call is a complete day, and going back for the rest turns a conversation into a form. ' +
         'If they mention that eating and moving affected each other, record that too — but never ask for it. ' +
         "They don't have to find a connection every day. " +
         // Greg's daily script asks these two FIRST and in these words. One light question, both habits, then let
@@ -1124,7 +1124,7 @@ const MARK_PRACTICE_DAY_TOOL = {
 // tool exists rather than reusing mark_practice_day. W3 is not tappable — its cells mirror a log the member keeps —
 // but Greg makes the daily CONVERSATION the primary way that log gets written: "Daily or near-daily check-ins
 // create a sustained relationship rhythm … curious about what triggered a False Start, attentive to what made a
-// Smart Choice easy." So the Companion is not ticking a box on their behalf; it is writing down what they just
+// Good Call easy." So the Companion is not ticking a box on their behalf; it is writing down what they just
 // said, which is what a coach doing a check-in does.
 //
 // THE SAFETY PROPERTY: it records their words, never a judgment about them. Nothing here scores, counts, or
@@ -1163,7 +1163,7 @@ const RECORD_B3_DAY_TOOL = {
   name: 'record_b3_day',
   description:
     "Record TODAY in the member's Lifestyle Pilot week when they tell you how it went. Pass their OWN words, " +
-    'trimmed, never your summary. Every field is optional — a day with only a Smart Choice, or only a False ' +
+    'trimmed, never your summary. Every field is optional — a day with only a Good Call, or only a False ' +
     'Start, is a complete entry and you must not fish for the rest. good_calls: what went well that they ' +
     "noticed. false_starts: what didn't. contributed: what made the good call easy or the false start hard — the " +
     'conditions, not a cause. obstacles: what got in the way. thoughts: what was going through their mind, if ' +

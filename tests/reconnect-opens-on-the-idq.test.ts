@@ -29,6 +29,8 @@ const isBuilt = (a: (typeof CURRICULUM)[number]) =>
 test('the first REACHABLE Reconnect asset is the Mirror', () => {
   const built = reconnect.filter(isBuilt).sort((a, b) => a.order - b.order);
   assert.ok(built.length > 0, 'no built Reconnect assets at all');
+  // R1's member-facing name is IDQ as of 2026-08-31 (Jay, as brand owner): we lead with the instrument we own,
+  // and 'the Mirror' was never a term we would lead with. Greg's IDQ and the member's Session name are now the same.
   assert.equal(built[0]!.id, 'RCN-IDQ',
     `the dashboard lights the first BUILT asset; it is ${built[0]!.id} (${built[0]!.title})`);
 });
@@ -54,7 +56,7 @@ test('the curriculum and the session registry tell the same story', () => {
   // Session, which is exactly what Jay was shown. [[one-fact-many-sites]]
   const registry = sessionsForPhase('reconnect').filter((s) => s.kind === 'session');
   assert.equal(registry[0]!.id, 'r1');
-  assert.equal(registry[0]!.label, 'The Mirror');
+  assert.equal(registry[0]!.label, 'IDQ');
 
   const firstBuilt = reconnect.filter(isBuilt).sort((a, b) => a.order - b.order)[0]!;
   assert.equal(keyFromForecast('reconnect', { id: firstBuilt.id, route: (firstBuilt as { route?: string }).route }),

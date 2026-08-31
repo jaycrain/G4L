@@ -54,7 +54,7 @@ export const RECONNECT_SESSIONS: Asset[] = [
   },
   {
     id: 'RCN-DFT',
-    title: 'The Drift Quiz',
+    title: 'The Fade',
     phase: 'reconnect',
     layer: 'Excavation',
     kind: 'session',
