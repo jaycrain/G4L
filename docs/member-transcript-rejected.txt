@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ a367661 · 2026-08-30)
+# Strings EXCLUDED from the member transcript (app @ 7afc9ebf · 2026-08-31)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -14,10 +14,12 @@
 [lib/agent/onboarding-staged.ts] widening the gap. So how did it go — what pulled you away from yourself? Take me through it.
 [lib/agent/onboarding-staged.ts] That's two years of real life at once${identity ?
 [lib/agent/onboarding-staged.ts] the person you're reclaiming
-[lib/agent/onboarding-staged.ts] start bringing that person back?
+[lib/agent/onboarding-staged.ts] what is an early goal you could set that would give you direction on how to come back to who you want to be?
 [lib/agent/onboarding-staged.ts] something small and something big, something for this month and something for this year, a thing you want
 [lib/agent/onboarding-staged.ts] back and a thing you've always meant to do. Sleep through the night. Get back on the bike. Launch the
 [lib/agent/onboarding-staged.ts] business. Write the book. Whatever points at ${handle}.
+[lib/agent/onboarding-staged.ts] “${x.trim()}”
+[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} already on it.
 [lib/agent/onboarding-staged.ts] more comes back to you. If even one more surfaces right now, tell me; if not, that's completely okay.
 [lib/agent/onboarding-staged.ts] So — ${label} is who we're bringing back — “${specifics}.” That's the version that feels most like you. Did I get ${label} right?
 [lib/agent/onboarding-staged.ts] So — ${label} is who we're bringing back, the version that feels most like you. Did I get ${label} right?
@@ -27,9 +29,6 @@
 [lib/agent/onboarding-staged.ts] Four
 [lib/agent/onboarding-staged.ts] Five
 [lib/agent/onboarding-staged.ts] ${word} things, close together.
-[lib/agent/onboarding-staged.ts] “${x.trim()}”
-[lib/agent/onboarding-staged.ts] ${gapToReclaimBridge(c)} And you've already started — earlier you said you want ${items} back, so
-[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. Add anything else below — big or small.
 [lib/agent/onboarding-staged.ts] “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
 [lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 [lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
@@ -124,7 +123,6 @@
 [lib/agent/gap-confirm-choice.ts] keep:
 [lib/agent/gap-confirm-choice.ts] keep:
 [app/onboarding/reclaim-list-builder.tsx] Enter
-[app/onboarding/reclaim-list-builder.tsx] One at a time — ${expects.min} to start is plenty. You can always add more later.
 [app/components/keeper-offer.tsx] Keeping…
 [app/components/keeper-actions.ts] [keeper] keep failed for member=${memberId} (${proposal.label}):
 [app/rewire/rewire-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
@@ -243,6 +241,7 @@
 [lib/agent/reconnect.ts] ${marked.slice(0, -1).join(', ')} and ${marked[marked.length - 1]}
 [lib/agent/reconnect.ts] ${list}.
 [lib/agent/reconnect.ts] Let's start with ${name(lead)}${board.biggest ? ' — the one you said weighs most today' : ''}. Not the label, the real thing: take me back to how it actually went.
+[lib/agent/reconnect.ts] Then let's take ${name}. Same thing — not the label, what actually happened.
 [lib/agent/reconnect.ts] ${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}
 [lib/agent/reconnect.ts] You've named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
 [lib/agent/reconnect.ts] not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?
@@ -250,6 +249,7 @@
 [lib/agent/reconnect.ts] ${windowClose()}  ${legacyOpener(b.collected, !!b.legacyTuesday)}
 [lib/agent/reconnect.ts] Here we go. Rate each statement from ${AGREEMENT_1_5_HINT}.
 [lib/agent/reconnect.ts] First a few about your body.  ${itemStem(0)}
+[lib/agent/reconnect.ts] Of everything on your Reclaim List — ${named} — which one do you expect to be the hardest?
 [lib/agent/reconnect.ts] ${IDQ_CLUSTER_LEAD[i] ?? ''}${itemStem(i)}
 [lib/agent/reconnect.ts] Just a number for this one, ${IDQ_SCALE_HINT} — how true does it feel?
 [lib/agent/reconnect.ts] the physical — body, movement, sleep
@@ -439,8 +439,8 @@
 [lib/curriculum/content/rewire.ts] Focus
 [lib/curriculum/content/rewire.ts] Checkpoint
 [lib/agent/rebuild.ts] model reflects, engine carries the turn forward — never both, never a dead-end
-[lib/agent/rebuild.ts] ${B1_DIET_TURN}  ${item.stem}
-[lib/agent/rebuild.ts] ${B1_DUAL_DOMAIN}${BEAT_SEP}${B1_DIET_TURN}  ${WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem}
+[lib/agent/rebuild.ts] ${WHY_PROMPTS.activity}  ${item.stem}
+[lib/agent/rebuild.ts] ${B1_DIET_TURN}  ${WHY_PROMPTS.diet}  ${item.stem}
 [lib/agent/rebuild.ts] A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”  ${whyDeliver(n)}
 [lib/agent/rebuild.ts] A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”  ${whyDeliver(n)}
 [lib/agent/rebuild.ts] WHO THEY ARE RECLAIMING: ${who}. Do NOT address them by it.
