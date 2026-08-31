@@ -175,6 +175,55 @@ export function detectVoiceTells(text: string): string[] {
   return [...new Set(found)];
 }
 
+
+/**
+ * ONE ASK PER TURN — the gate under a prompt rule that has never had one.
+ *
+ * The system prompt has always said "One question at a time — never two, never three." On 2026-08-31 the new
+ * session eval caught the model doing it anyway, in R3:
+ *
+ *   "Who's expecting you at ten? Say it plainly — a client, a room, a project someone's paying you to make.
+ *    What else is different by 7am? Not the medal — the ordinary stuff: how you wake, what you reach for…"
+ *
+ * Two real asks. Donna hit the same shape on her walk and described the cost exactly: "when I answered the first
+ * question, there was no opportunity to answer the second one." Her answer lands against one of them and the
+ * other silently expires.
+ *
+ * A DIFFERENT MECHANISM FROM v3.5.77, which fixed the ENGINE appending a scripted question after a model
+ * question. This is the model stacking two by itself, and no amount of prompt language has stopped it — the same
+ * argument this file's header makes about Donna's four words: a prompt makes good output likely, only the engine
+ * makes bad output impossible.
+ *
+ * THE FIRST ASK WINS, and that is her observation rather than a preference: the member answers the first one. So
+ * everything from the second asking paragraph onward is dropped, which also makes the turn END on its question —
+ * the rhythm every beat in this codebase already wants.
+ *
+ * PARAGRAPH-GRANULAR, NEVER MID-SENTENCE. Deleting a whole trailing paragraph cannot produce the mangled output
+ * that killed the first substitution gate; a half-cut sentence could.
+ *
+ * "…? Or not quite?" IS ONE ASK. The confirm idiom offers its own negative, and a member answers it with a single
+ * yes or no. Counting question marks instead of asks put two false reds in one eval run before this was written.
+ */
+function countAsks(paragraph: string): number {
+  return paragraph.replace(/\?\s+Or\b[^?]{0,60}\?/gi, '?').split('?').length - 1;
+}
+
+export function oneAskOnly(text: string): { text: string; trimmed: boolean } {
+  const paras = (text ?? '').split(/\n\s*\n/);
+  const firstAsk = paras.findIndex((p) => countAsks(p) >= 1);
+  if (firstAsk === -1) return { text, trimmed: false }; // no question at all — nothing to enforce
+
+  const kept = paras.slice(0, firstAsk + 1);
+  // The asking paragraph may itself carry two. Cut it back to its first question, keeping the sentence whole.
+  const asking = kept[kept.length - 1]!;
+  if (countAsks(asking) > 1) {
+    const upToFirst = /^[\s\S]*?\?(?:\s+Or\b[^?]{0,60}\?)?/.exec(asking);
+    if (upToFirst) kept[kept.length - 1] = upToFirst[0].trim();
+  }
+  const out = kept.join('\n\n').trim();
+  return { text: out, trimmed: out !== (text ?? '').trim() };
+}
+
 export type VoiceGateResult = {
   text: string;
   removed: string[]; // tells the gate DELETED
@@ -215,6 +264,12 @@ export function applyVoiceGate(input: string): VoiceGateResult {
   text = text.replace(/ (\d+) /g, (_, i) => parked[Number(i)] ?? '');
   // Deletion can leave doubled spaces or a space before punctuation. Tidy only that — never reflow the model.
   text = text.replace(/[ \t]{2,}/g, ' ').replace(/\s+([,.;:!?])/g, '$1');
+
+  // ONE ASK PER TURN — see oneAskOnly. Runs LAST, on the text the member would actually have received, so it
+  // cannot be fooled by a question that the word-rules were about to delete anyway.
+  const asked = oneAskOnly(text);
+  if (asked.trimmed) removed.push('two-questions');
+  text = asked.text;
 
   return { text, removed: [...new Set(removed)], flagged: [...new Set(flagged)] };
 }
