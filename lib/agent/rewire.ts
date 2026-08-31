@@ -1143,7 +1143,7 @@ export const REWIRE_W3_SYSTEM =
   "gracefully if a tool isn't there. (5) RECALL VERBATIM (W-23): when you surface a prior tool, QUOTE THEIR EXACT " +
   "WORDS from MEMBER CONTEXT — never paraphrase or generalize ('the picture you built', 'that line you wrote'). Say " +
   "the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: \"[their exact " +
-  "line]\"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a " +
+  "line]\"'. Hearing their OWN words at the moment of a slip is the whole point.  If a " +
   "distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on." + SESSION_LIMITS;
 
 // Exported for the W-23 regression test — proves the member's prior-session keepers reach the model VERBATIM.

@@ -70,6 +70,16 @@ const RULES: Rule[] = [
   // "got quiet", "went quiet" — a predicate adjective. Dropping the word alone would strand the verb, so this
   // one takes the whole "got/went quiet" and leaves the plainer verb.
   { re: /\b(got|gotten|went|grew|fell)\s+quiet\b/gi, to: 'went silent', why: 'quiet' },
+  // "That's B2 done" → "That's done." An internal asset code the member has never seen, in a construction that
+  // puts a checkbox where a close should be. Donna hit it on 2026-08-30: "'That's B2 done' should not be
+  // member-facing. B2 isn't a reference they are likely to understand and 'that's (insert thing) done' is weird
+  // vernacular... The phrase should be removed from throughout the app."
+  //
+  // GATED RATHER THAN ONLY ASKED FOR. The never-say-our-codes rule existed — in ONE arc's prompt, Rewire's — and
+  // the leak came from Rebuild, which did not carry it. It now lives once in MEMBER_AGENT_SYSTEM_PROMPT for every
+  // arc, and this rule is the guarantee underneath the request. Deleting the code alone is a safe deletion here
+  // because the construction is fixed: the determiner and the verb both survive.
+  { re: /\b(that'?s)\s+(?:[RWBC][1-4])\s+(done)\b/gi, to: '$1 $2', why: 'asset-code' },
 ];
 
 /**
