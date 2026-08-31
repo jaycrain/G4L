@@ -119,7 +119,18 @@ export function parseBeatConfirm(message: string): BeatConfirmIntent | null {
   const m = (message ?? '').trim();
   if (!m.startsWith(PREFIX)) return null;
   const rest = m.slice(PREFIX.length).trim().split(/\s+/)[0] ?? '';
-  const hit = BEAT_CONFIRM_CHOICES.find((c) => c.value === rest);
+  // LOOK IN THE SET THE TAP CAME FROM, not always the default one.
+  //
+  // This read BEAT_CONFIRM_CHOICES regardless of the `set:` token — while parseBeatConfirmSet, its sibling three
+  // lines above, exists solely to read that token. The legacy set survived only by coincidence: both its values
+  // ('addition', 'done') also exist in the default set, so the wrong lookup happened to return the right answer.
+  //
+  // Found while diagnosing the Legacy Letter double-tap on 2026-08-31. It was NOT that bug — I checked before
+  // claiming it, and the real cause was a re-emitted draft (v3.5.80). But a set whose values do not overlap the
+  // default would return null here, and an unrecognised tap is deliberately NOT guessed at, so the member's tap
+  // would vanish with no error anywhere. A latent fault that costs nothing today and everything the day someone
+  // adds a chip.
+  const hit = beatConfirmChoices(parseBeatConfirmSet(m)).find((c) => c.value === rest);
   // An unrecognised or malformed tap is NOT guessed at — a tap we cannot place must not become one we can.
   return hit ? hit.value : null;
 }

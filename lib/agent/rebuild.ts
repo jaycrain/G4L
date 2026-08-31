@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, didacticStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, didacticStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer, withQuestion} from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -569,6 +569,22 @@ const b2ConsolidateStage: StageDef = {
   opener: () => B2_CONSOLIDATE_ASK,
   offersSubstance: () => true,
   gather: (b) => {
+    // ONE HOLD IF SHE DID NOT ANSWER — and exactly one.
+    //
+    // This closed unconditionally, so a member who said "I don't understand what you mean" at the last beat had
+    // her question answered by the Session ending. The session eval caught it (B2, turn 37, skills-close →
+    // complete), and it is the shape Donna described at the False Start Protocol: "It answers my question then
+    // moves on without allowing me to close out. I feel left hanging."
+    //
+    // BOUNDED AT ONE, DELIBERATELY. A close whose exit depends on the member answering correctly is a trap, and
+    // the eval's probe fires on a cadence — an unbounded hold would have kept a finished Session open forever.
+    // So: her question is answered, the ask is re-posed once, and the next turn closes whatever she says.
+    const sc = b.scratch as { heldOnce?: boolean };
+    if (didNotAnswer(b.memberMessage) && !sc.heldOnce) {
+      sc.heldOnce = true;
+      b.reply = withQuestion(b.modelText, B2_CONSOLIDATE_ASK);
+      return;
+    }
     // One turn: receive their answer, then the authored close — the profile reflection, the framework that names
     // its three groups, and the bridge into B3.
     const responses = b.administeredResponses.slice(0, SKILLS_ITEM_COUNT);
