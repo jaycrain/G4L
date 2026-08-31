@@ -1736,10 +1736,48 @@ export type EngagementConfig = {
 // real "what is this for?" and small enough that it cannot become a gate. Their questions are answered either way.
 const ENGAGE_MAX_HOLDS = 2;
 
-/** Is this message a question put TO us, rather than an answer to ours? */
-function asksBack(message: string): boolean {
+/**
+ * Did the member NOT answer the question we asked — because she is asking us something, or telling us she does
+ * not understand it?
+ *
+ * THIS IS THE FIX FOR THE COMPLAINT DONNA MADE SIX TIMES IN ONE WALK (2026-08-30): *"It asked me a question,
+ * disregarded my answer, and moved on."* She wrote a version of that about the Drift Quiz, the Disinformation
+ * Audit, the Visualization Workshop, the False Start Protocol (twice) and Strengths & Weaknesses. Six symptoms,
+ * one cause, and the cause was here.
+ *
+ * WHAT WAS WRONG. The predecessor (`asksBack`) required BOTH that the message end in '?' AND that it start with a
+ * wh-word or auxiliary — two narrow conditions ANDed together. Nearly every ordinary way a person says "I don't
+ * follow" fell through, and the doorway advanced into the instrument. Measured against twelve real phrasings, ten
+ * advanced: "I don't understand what you mean", "Sorry, what?", "huh?", "Explain please", "That question makes no
+ * sense to me". A member who said she was lost was answered by being moved past.
+ *
+ * That is `a-regex-outranked-the-member` again — a deterministic matcher deciding against what the member plainly
+ * said. Her words win.
+ *
+ * WHY NOT REUSE isProcessMetaOrAssent. It was the obvious hoist, since it already handles confusion for the
+ * Reclaim builder, so I measured it before proposing it: on those same twelve phrasings it catches exactly ONE
+ * more than asksBack. It answers "is this fragment a want?", which is a different question. Reusing it would have
+ * looked like a fix and moved almost nothing.
+ *
+ * THE SHAPE, deliberately not a third condition ANDed on:
+ *   · ANY message ending in '?' is treated as put to us. A tentative answer ("the money?") gets held once and
+ *     re-asked — one turn, and it reads as attentive. The opposite error is what Donna actually hit.
+ *   · Plus a short explicit non-comprehension list. That list has to STAY short: if it reaches a fourth patch it
+ *     has become the brittleness it replaced, and the answer then is a model signal, not more regex.
+ *
+ * NOT widened to "starts with a wh-word", which was tempting and wrong: "What I miss is riding" is an ANSWER, and
+ * holding it would have invented the mirror-image bug in the same change.
+ *
+ * Holding is capped by ENGAGE_MAX_HOLDS either way, so this can slow a doorway but never gate one.
+ */
+const DOES_NOT_FOLLOW =
+  /\b(i (don'?t|do not) (understand|get|follow)|not sure what you('| a)?re asking|what do you mean|makes no sense|doesn'?t make sense|no idea what|explain( that| this| it)?\b|say that (again|differently)|rephrase|clarify|confus(ed|ing))\b/i;
+
+export function didNotAnswer(message: string): boolean {
   const t = (message ?? '').trim();
-  return t.endsWith('?') && /^(what|why|how|who|when|where|do|does|did|is|are|can|could|should|will|would)\b/i.test(t);
+  if (!t) return true; // silence is not an answer
+  if (t.endsWith('?')) return true;
+  return DOES_NOT_FOLLOW.test(t);
 }
 
 /** The Session's first turn: the frame, then the one question, as two bubbles. */
@@ -1750,7 +1788,7 @@ export function engagementOpening(cfg: EngagementConfig, c: Collected = {}): str
 export function engagementStage(cfg: EngagementConfig): StageDef {
   const open: StageHandler = (b) => {
     const sc = b.scratch as { holds?: number };
-    if (asksBack(b.memberMessage) && (sc.holds ?? 0) < ENGAGE_MAX_HOLDS) {
+    if (didNotAnswer(b.memberMessage) && (sc.holds ?? 0) < ENGAGE_MAX_HOLDS) {
       sc.holds = (sc.holds ?? 0) + 1;
       // The model answers what they asked; the doorway's question goes back on the end, once.
       b.reply = withQuestion(b.modelText, cfg.question(b.collected));
