@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 684dc915 · 2026-08-31)
+# Strings EXCLUDED from the member transcript (app @ f6d253fa · 2026-08-31)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -127,15 +127,12 @@
 [app/onboarding/reclaim-list-builder.tsx] Enter
 [app/components/keeper-offer.tsx] Keeping…
 [app/components/keeper-actions.ts] [keeper] keep failed for member=${memberId} (${proposal.label}):
-[app/rewire/rewire-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
 [app/rewire/rewire-chat.tsx] bubble ${m.role}
 [app/rewire/rewire-chat.tsx] Thinking…
 [app/rewire/rewire-chat.tsx] Enter
-[app/rebuild/rebuild-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
 [app/rebuild/rebuild-chat.tsx] bubble ${m.role}
 [app/rebuild/rebuild-chat.tsx] Thinking…
 [app/rebuild/rebuild-chat.tsx] Enter
-[app/reclaim/reclaim-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
 [app/reclaim/reclaim-chat.tsx] bubble ${m.role}
 [app/reclaim/reclaim-chat.tsx] Thinking…
 [app/reclaim/reclaim-chat.tsx] Enter
@@ -361,8 +358,7 @@
 [lib/agent/rewire.ts] wearing, that's felt out of reach. Pick one.  Your brain rehearses a real destination far better than a vague
 [lib/agent/rewire.ts] Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and
 [lib/agent/rewire.ts] we'll find it together.
-[lib/agent/rewire.ts] That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at
-[lib/agent/rewire.ts] it for a second — that's what the work is for. Keep it. When you're ready, tell me how that feels.
+[lib/agent/rewire.ts] where you can find it.
 [lib/agent/rewire.ts] it vivid — the light, the effort, the feeling. Don't rush it.
 [lib/agent/rewire.ts] you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the
 [lib/agent/rewire.ts] whole move: the true line answers the lie, the image outlasts it.
@@ -406,7 +402,7 @@
 [lib/agent/rewire.ts] Triggers: ${triggers.join('; ')}
 [lib/agent/rewire.ts] Redirect — ${c.w3Redirect!.trim()}
 [lib/agent/rewire.ts] Reframe — “${c.w3Reframe!.trim()}”
-[lib/agent/rewire.ts] ${W3_PROTOCOL_INTRO}${BEAT_SEP}${reply || W3_REDIRECT}
+[lib/agent/rewire.ts] ${W3_PROTOCOL_INTRO}${BEAT_SEP}${reply ? withScriptedBeat(reply, W3_REDIRECT) : W3_REDIRECT}
 [lib/agent/rewire.ts] ${receipt ?
 [lib/agent/rewire.ts] Now Reframe — your true line for a bad day. Here's one you already wrote: “${line}” — want that as your bad-day line, or write a new one?
 [lib/agent/rewire.ts] And Restart — when the old voice gets loud, go back to the picture you built:  “${img}”  Give it a second — does it feel like enough to reach for on the hard day?
