@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ afe01728 · 2026-08-31)
+# Strings EXCLUDED from the member transcript (app @ 684dc915 · 2026-08-31)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -191,8 +191,8 @@
 [lib/curriculum/content/reclaim.ts] Extension
 [lib/curriculum/content/reclaim.ts] the member's Quality Day profile + a week of logs
 [lib/curriculum/content/reclaim.ts] Checkpoint
+[app/program/[memberId]/page.tsx] ${d.label} — ${short}
 [app/program/[memberId]/page.tsx] Reconnect
-[app/program/[memberId]/page.tsx] IDQ — Measure the distance between who you are and who you want to be
 [app/program/[memberId]/page.tsx] Rewire
 [app/program/[memberId]/page.tsx] Rebuild
 [app/program/[memberId]/page.tsx] Reclaim
