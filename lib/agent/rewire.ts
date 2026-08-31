@@ -441,9 +441,22 @@ const W2_IMAGE = [
 ];
 const W2_IMAGE_NUDGE = `No rush — just picture it and tell me what you see. Even a detail or two.`;
 // ── The recognition — the reveal (the weight) ──
+// PLAIN, BECAUSE SHE COULD NOT PARSE IT (Donna, 2026-08-30). The old line read: "That's not a wish. It's a goal you
+// already named, with you standing in it, on the far side of the work. Look at it for a second — that's what the
+// work is for."
+//
+// Her three objections, each of them fair: "with you standing in it, on the far side of the work" is an image
+// stacked on an image; "Look at it for a second" — look at WHAT, there is nothing on screen; and "that's what the
+// work is for" explains nothing at the moment it is said.
+//
+// It also opens by negating ("that's not a wish"), which our own voice rules forbid: declare what a thing IS.
+//
+// Her proposed replacement is adopted almost verbatim, because it is plainer than anything I wrote against it —
+// it names what just happened and asks one answerable question.
 const W2_RECOGNITION =
-  `That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at ` +
-  `it for a second — that's what the work is for. Keep it. When you're ready, tell me how that feels.`;
+  `That's the day, in your own words — a goal you already named, seen from the far side of the work. We'll keep it ` +
+  `where you can find it.` + BEAT_SEP +
+  `Take a moment with it. When you're ready, tell me how it feels.`;
 // ── The practice — the week + the W1 connection ──
 const W2_PRACTICE_1 =
   `Here's your work this week, and it's small: five minutes each morning with that image. Close your eyes, make ` +

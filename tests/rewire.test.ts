@@ -144,7 +144,11 @@ function walkImage(committed: Collected | null = CAPTURES): { state: ConvState; 
     t = applyRewireW2Turn(t.state, [], piece, { text: last ? 'That whole picture — you, back.' : 'I can see it.' });
   });
   assert.equal(t.state.stage, 'hold', 'after the fourth piece, hands into the reveal');
-  assert.match(t.reply, /that's not a wish/i, 'delivers the recognition reveal');
+  // ASSERTS THE BEAT, NOT THE SENTENCE. This pinned "that's not a wish" — an opener that both negates (our voice
+  // rules say declare what a thing IS) and, per Donna 2026-08-30, sat at the head of a reveal she could not parse.
+  // The recognition's job is to hand the day back and ask how it feels; that is what is checked now.
+  assert.match(t.reply, /in your own words/i, 'delivers the recognition reveal');
+  assert.match(t.reply, /how it feels/i, 'and closes on the one question it owes her');
   return { state: t.state, recognitionReply: t.reply };
 }
 
@@ -190,7 +194,7 @@ test('W2 · the last-image reflection must not STRAND a trailing question before
     t = applyRewireW2Turn(t.state, [], piece, { text: modelText });
   });
   assert.equal(t.state.stage, 'hold', 'still hands into the reveal');
-  assert.match(t.reply, /that's not a wish/i, 'delivers the recognition');
+  assert.match(t.reply, /in your own words/i, 'delivers the recognition');
   assert.doesNotMatch(t.reply, /is anyone with you|solo moment/i, "the model's trailing question is stripped — never stranded before the recognition");
 });
 

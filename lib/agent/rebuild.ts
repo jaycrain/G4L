@@ -522,8 +522,18 @@ const B2_EVOKE_PROBES = [
 
 // Greg's four permitted points (B2.md:371), in his approved phrasing (B2-56, B2-57, B2-58, B2-60). Two are
 // delivered; the ledger and maxShared keep it from becoming a lecture, exactly as in B1.
-const B2_TEACH_OPEN =
-  "That's the twenty-four. One or two things worth knowing about what you just rated, if you want them.";
+// NO OFFER — SERVE IT (Donna, 2026-08-30). This ended "…if you want them", and she answered "nah" once just to see
+// what happened. Her diagnosis: it "leaves things hanging for the member to keep it moving forward", and "the
+// information that comes after that isn't much of a payoff. Just serve it up."
+//
+// She is right on both counts, and the second is the sharper one — an offer implies the thing offered is optional
+// extra, which sets a bar these two points do not need to clear. They are short, they are Greg's, and they land
+// better as something said than as something granted.
+//
+// v3.5.79 added a prompt rule telling the Companion never to say "if you want them". This string is AUTHORED, so
+// the rule never reached it: we gated the model against a sentence we hardcode. Same shape as "no right or wrong
+// answers" in the Reconnect opener, in the same release. [[one-fact-many-sites]]
+const B2_TEACH_OPEN = "That's the twenty-four. Two things worth knowing about what you just rated.";
 const B2_POINTS = [
   {
     id: 'skills-not-traits',

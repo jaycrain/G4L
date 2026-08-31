@@ -882,7 +882,11 @@ export function driftOpen(c: Collected): string {
   );
 }
 const DRIFT_MORE_VARIANTS = [
-  "Past the obvious — what's the one you don't usually let yourself miss?",
+  // PLAINER (Donna, 2026-08-30): "This is an unclear question." It read "Past the obvious — what's the one you
+  // don't usually let yourself miss?", which asks her to sort her own losses into obvious and hidden before she
+  // can answer at all, and "let yourself miss" is a construction nobody says out loud. The Companion's own
+  // clarification did not help either, which is the tell that the question — not the phrasing — was the problem.
+  "Is there something you miss that you haven't said yet?",
   'And how far are you from that version of you right now — a little dusty, or a stranger? Don\'t soften it to feel better.',
   // "the Fade", not "the drift" (Cowork, 2026-08-14). The Fade is the protected term for exactly this thing, and
   // the take-stock opener four lines up already says "what has the Fade quietly cost you" — so a member met both
