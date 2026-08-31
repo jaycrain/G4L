@@ -181,6 +181,7 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0088_b3_habit_status.sql', sentinel: { table: 'b3_daily_entry', column: 'activity_status' } },
   { file: 'migrations/0089_member_language_suppressed.sql', sentinel: 'member_language_suppressed' },
   { file: 'migrations/0090_prospect_name.sql', sentinel: { table: 'onboarding_session', column: 'display_name' } },
+  { file: 'migrations/0091_door_language.sql', sentinel: { table: 'member_door', column: 'member_language' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

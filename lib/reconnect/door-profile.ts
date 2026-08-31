@@ -138,6 +138,50 @@ export async function noteDoorProfile(db: Db, memberId: string, entries: DoorPro
 }
 
 /**
+ * What ONE Door actually meant in her life — her own words, stored against that Door.
+ *
+ * Greg's R2-31 asks for `{door, rating, member_language}` per explored Door, and R2-33 for the reflection that
+ * comes with each rating. We had the first two and put the third in one undifferentiated place, so a later Session
+ * could know which Doors she holds and roughly what she said, but never what she said about a GIVEN one.
+ *
+ * VERBATIM, NEVER A SUMMARY. This takes what she typed. The model's paraphrase is not admissible here — it would
+ * be the product remembering a version of her life she did not say (their-own-words-back).
+ *
+ * SAME POSTURE AS ITS SIBLING: writes only for a Door she already holds, so walking a Door can never create one.
+ * `excavated_at` is what makes R2 resumable — the record of which Doors have been walked, and the reason she can
+ * stop after two and come back to the rest.
+ *
+ * FIRST WALK WINS on excavated_at, and language APPENDS rather than replaces. Returning to a Door she already
+ * spoke about adds what she says now; overwriting would drop the first pass, which on a second cycle is precisely
+ * the comparison Greg says this exercise exists to make.
+ */
+export async function noteDoorLanguage(db: Db, memberId: string, slug: string, text: string): Promise<boolean> {
+  if (!isDoorSlug(slug)) return false;
+  const words = (text ?? '').trim();
+  if (!words) return false; // nothing said — writing would stamp excavated_at over an empty walk
+  try {
+    const { rows } = await db.query<{ door_slug: string }>(
+      `update member_door set
+         member_language = case
+           when member_language is null or member_language = '' then $3::text
+           else member_language || E'\n\n' || $3::text
+         end,
+         excavated_at = coalesce(excavated_at, now()),
+         noted_at = now()
+       where member_id = $1 and door_slug = $2 and removed_at is null
+       returning door_slug`,
+      [memberId, slug, words],
+    );
+    return rows.length > 0;
+  } catch (err) {
+    // LOUD, same reason as noteDoorProfile: a swallowed write loses what she said about her own life, and every
+    // surface then renders it as never-asked (swallowed-read-renders-as-truth).
+    console.error(`noteDoorLanguage failed for member=${memberId} door=${slug}:`, err);
+    return false;
+  }
+}
+
+/**
  * The member's Doors with whatever profile they've given, ordered as the member holds them.
  *
  * NOT ordered by relevance. Sorting the list by rating would turn a profile into a leaderboard of one's own

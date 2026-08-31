@@ -164,6 +164,18 @@ export type Collected = {
   };
   doors?: DoorSlug[]; // one or more — CONFIRMED. In onboarding nothing lands here until the member has ruled on it.
   /**
+   * R2 ONLY — the Doors whose excavation is DONE, in the order they were walked.
+   *
+   * R2 walks every Door she marked, not just the heaviest (Jay, 2026-08-30: "we should walk through every door.
+   * It is potentially the most valuable information we can learn about a Member"). Six excavations is more than
+   * one sitting and Greg caps a sitting at 10–15 minutes, so this is what makes the Session RESUMABLE: it is the
+   * record of where she stopped. It rides in `collected`, which persists, so a member who leaves partway comes
+   * back to the Door she had not reached rather than the one she started on.
+   *
+   * A Door listed here is never re-opened. A Door she ADDS mid-excavation simply joins the queue.
+   */
+  doorsExcavated?: DoorSlug[];
+  /**
    * ONBOARDING ONLY — Doors we have INFERRED and not yet put to her. Propose → confirm → commit, the same contract
    * as every other thing we touch about a member.
    *
@@ -275,6 +287,8 @@ export type ConvState = {
   legacyTuesday?: string;
   /** Doors board: the Doors-board submission, handed across to the ACTION to persist. The engine writes nothing itself. */
   boardSubmission?: unknown;
+  /** R2 excavation: her words about ONE Door, handed to the ACTION to persist against that Door. Engine stays pure. */
+  doorLanguage?: { slug: string; text: string };
   legacyDraft?: string;
   legacyRevisions?: number;
   legacyLetter?: { body: string; datedFor: string };

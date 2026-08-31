@@ -564,6 +564,77 @@ function boardReceipt(board: BoardSubmission, c: Collected, askOpen: boolean): s
   return parts.join(BEAT_SEP);
 }
 
+/**
+ * EVERY DOOR GETS WALKED — the R2 excavation queue.
+ *
+ * Until 2026-08-30 R2 excavated exactly ONE Door (`board.biggest ?? board.doors[0]`) and the rest got a rating and
+ * nothing else. Found on Donna's live walk: she marked six, one was excavated, a second came up only because the
+ * conversation drifted there. Jay's ruling: *"we should walk through every door. It is potentially the most
+ * valuable information we can learn about a Member. I can imagine that driving what we do in Cycle 2."*
+ *
+ * That is also what Greg's memos ask for (R2-29 one at a time, R2-31 capture her language per door, R2-33 elicit
+ * the reflection after each rating — "not an immediate next door"), and what his Science Check anticipates: a
+ * member on a second cycle "will name different doors, or the same doors with different weight." That comparison
+ * needs a first pass that stored per-Door meaning. This is that first pass.
+ *
+ * ORDER IS HERS, NOT OURS. `collected.doors` is already heaviest-first — the board branch puts `biggest` at the
+ * head — and the queue simply walks it. We do not re-sort by relevance: ranking someone's losses by how they
+ * happened to rate them is the leaderboard `doorProfile` refuses to build, and the same reasoning holds here.
+ *
+ * RESUMABLE, BECAUSE SIX EXCAVATIONS IS NOT ONE SITTING. Greg caps a sitting at 10–15 minutes. `doorsExcavated`
+ * rides in `collected`, which persists, so a member who stops partway returns to the next unwalked Door. Nothing
+ * is dropped and nothing is forced — his off-target list explicitly forbids treating skipped doors as failure.
+ */
+export function nextDoorToExcavate(c: Collected): DoorSlug | null {
+  const done = new Set(c.doorsExcavated ?? []);
+  return (c.doors ?? []).find((d) => !done.has(d)) ?? null;
+}
+
+/**
+ * The handoff into the NEXT Door. ONE question — Greg's R2 is testable as "no R2 turn contains two questions", so
+ * this may never pair the Door with a second ask (when it happened, whether it's still open). Those are the
+ * model's to follow up on inside the draw-out, and "still open" the board already captured.
+ */
+/**
+ * Close the books on the Door just walked: hand her words to the action, and mark the Door done.
+ *
+ * MUTATES THE BUNDLE, WRITES NOTHING. Same split as the board — the engine records onto the turn and the action
+ * persists, so the whole arc stays replayable offline.
+ *
+ * `doorsExcavated` is appended even when she said nothing storable. A Door she sat through and had no words for is
+ * still a Door she has been asked about, and re-opening it later would be the product failing to notice she had
+ * already been there. Only `member_language` is conditional on there being something to store.
+ */
+function bankWalkedDoor(b: {
+  collected: Collected;
+  scratch: unknown;
+  doorLanguage?: { slug: string; text: string };
+}): void {
+  const scw = b.scratch as { doorWords?: string[]; doorDepth?: number; redirectChecked?: boolean };
+  const walked = nextDoorToExcavate(b.collected);
+  if (walked) {
+    const words = (scw.doorWords ?? []).join('\n\n').trim();
+    if (words) b.doorLanguage = { slug: walked, text: words };
+    b.collected.doorsExcavated = [...(b.collected.doorsExcavated ?? []), walked];
+  }
+  scw.doorWords = [];
+  // A FRESH DRAW-OUT BUDGET PER DOOR. Without this reset the next Door inherits a spent counter, so by Door three
+  // `doorDepth` is already past DOOR_MAX_DEPTH and the engine reflects an insight before she has said anything
+  // about it — the cap silently becoming a gag.
+  scw.doorDepth = 0;
+  // NOT re-armed. The redirect check catches "actually it started with X" at the top of the excavation; firing it
+  // again on Door four would re-litigate an order she has already given us.
+  scw.redirectChecked = true;
+}
+
+function nextDoorOpener(slug: DoorSlug): string {
+  const name = DOORS.find((d) => d.slug === slug)?.displayName ?? 'that one';
+  // NO COUNT IS SPOKEN — no "four to go", no "next of six". A remaining-count turns her own life into a checklist
+  // with a progress bar on it, which is the register Greg's off-target list forbids and the reason `doorProfile`
+  // refuses to render completeness. She can always see her Doors; she is never told how many she owes us.
+  return `Then let's take ${name}. Same thing — not the label, what actually happened.`;
+}
+
 const doorsStage: StageDef = {
   id: 'doors',
   mode: 'drawout',
@@ -655,6 +726,13 @@ const doorsStage: StageDef = {
       b.reply = receiveThen(b.modelText, DOORS_CLOSE);
       return;
     }
+    // HER WORDS FOR THE DOOR BEING WALKED, accumulated verbatim on scratch and handed to the action when that Door
+    // closes. Never a model paraphrase, and never written mid-Door — a Door she is still talking about has not
+    // been excavated yet, and stamping it would end the walk early on the record while she is still walking it.
+    if (isKeeperMaterial(b.memberMessage)) {
+      const scw = b.scratch as { doorWords?: string[] };
+      scw.doorWords = [...(scw.doorWords ?? []), b.memberMessage.trim()];
+    }
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
@@ -735,22 +813,33 @@ const doorsStage: StageDef = {
     } else if (intent === 'addition') {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, doorMore(b.history)); // there's more — keep drawing out
-    } else if (!(b.scratch as { meaningAsked?: boolean }).meaningAsked) {
-      // done → ask Greg's fourth question BEFORE handing to the IDQ, once per excavation. The Door work is
-      // finished and confirmed; this is the beat that turns three recorded taps into something she has actually
-      // thought about. Her answer lands in the transcript like any other turn, so no new storage and no migration.
-      (b.scratch as { meaningAsked?: boolean }).meaningAsked = true;
-      b.awaitingConfirm = false;
-      b.reply = receiveThen(b.modelText, DOORS_MEANING_Q);
     } else {
-      // done, and the meaning question is already answered → hand into the measurement block. W-35
-      // (receive-before-you-move): lead with the model's in-voice acknowledgment of the member's final answer
-      // BEFORE the scripted IDQ frame — the deterministic opener must not clobber what they just said.
-      // Same seam, the confirm path. Both routes out of the Doors work now land on the same landmark rather than
-      // one of them dropping her straight into the instrument — the two-sites gap this file keeps relearning.
-      // Same seam, the confirm path — R2 closes here too.
-      b.complete = true;
-      b.reply = receiveThen(b.modelText, DOORS_CLOSE);
+      // THIS DOOR IS WALKED. Bank her words against the Door she just finished, then take the next one she
+      // marked. Before 2026-08-30 there was no queue here: the first Door's confirm fell straight through to the
+      // meaning question, which is why all but one of Donna's Doors were rated and never spoken about.
+      bankWalkedDoor(b);
+      const next = nextDoorToExcavate(b.collected);
+      const scm = b.scratch as { meaningAsked?: boolean };
+      if (next) {
+        b.awaitingConfirm = false;
+        b.reply = receiveThen(b.modelText, nextDoorOpener(next));
+      } else if (!scm.meaningAsked) {
+        // EVERY DOOR WALKED → Greg's fourth question, once per excavation, before handing to the IDQ. It is about
+        // the SET, which is why it waits for the last Door: asking what naming them changes while four are still
+        // unspoken would ask her to sum up work she has not done yet. Her answer lands in the transcript like any
+        // other turn, so no new storage and no migration.
+        scm.meaningAsked = true;
+        b.awaitingConfirm = false;
+        b.reply = receiveThen(b.modelText, DOORS_MEANING_Q);
+      } else {
+        // done, and the meaning question is already answered → hand into the measurement block. W-35
+        // (receive-before-you-move): lead with the model's in-voice acknowledgment of the member's final answer
+        // BEFORE the scripted IDQ frame — the deterministic opener must not clobber what they just said. Both
+        // routes out of the Doors work land on the same landmark rather than one of them dropping her straight
+        // into the instrument — the two-sites gap this file keeps relearning.
+        b.complete = true;
+        b.reply = receiveThen(b.modelText, DOORS_CLOSE);
+      }
     }
   },
 };

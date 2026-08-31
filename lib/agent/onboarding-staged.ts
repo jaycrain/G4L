@@ -1529,6 +1529,11 @@ interface Beat {
   legacyTuesday?: string;
   /** Doors board: her Doors-board submission, handed to the ACTION to persist (the engine stays pure). */
   boardSubmission?: unknown;
+  /**
+   * R2 excavation: HER WORDS about ONE Door, handed to the ACTION to persist against that Door. Same split as
+   * boardSubmission — the engine records what she said onto the turn and never touches the database itself.
+   */
+  doorLanguage?: { slug: string; text: string };
   legacyLetter?: { body: string; datedFor: string };
   pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
   reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
@@ -2023,6 +2028,7 @@ function beatState(b: Beat): ConvState {
     ...(b.legacyLetter !== undefined && { legacyLetter: b.legacyLetter }),
     ...(b.legacyTuesday !== undefined && { legacyTuesday: b.legacyTuesday }),
     ...(b.boardSubmission !== undefined && { boardSubmission: b.boardSubmission }),
+    ...(b.doorLanguage !== undefined && { doorLanguage: b.doorLanguage }),
     ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
     ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
     ...(b.pendingIdentityPick && b.pendingIdentityPick.length > 0 && { pendingIdentityPick: b.pendingIdentityPick }),

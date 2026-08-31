@@ -122,11 +122,21 @@ export async function activePracticeWeeks(db: Db, memberId: string, todayOverrid
   // suite rather than as a broken product. Nothing in the app passes it.
   const today = todayOverride ?? localDate(zone);
   const { rows } = await db.query<{ kind: string; started_at: string }>(
+    // ANCHORED TO `today`, NOT TO now(). This read `now() - interval`, so the override above governed the JS half
+    // while the SQL half still asked the real clock — and a prefilter the override cannot reach is not one a test
+    // can pin. tests/practice-close.test.ts pins today to a fixed Sunday over a week opened six days earlier; it
+    // passed for exactly LOOKBACK_DAYS and began failing at 00:03 UTC on 2026-08-31 as the fixture aged out.
+    // Nothing about the product changed — the test simply got old, which is precisely the flaky-suite reading the
+    // override was written to prevent, half-applied.
+    //
+    // It is also the more correct anchor in production. now() is UTC and the window it bounds is the MEMBER's
+    // week, so a Boulder member late on a Sunday was prefiltered against tomorrow's UTC date (member-local-time).
+    // Anchoring on the end of the member's today keeps the prefilter generous in their zone rather than ours.
     `select kind, started_at
        from practice_week
-      where member_id = $1 and started_at > now() - ($2 || ' days')::interval
+      where member_id = $1 and started_at > ($3::date + interval '1 day') - ($2 || ' days')::interval
       order by started_at desc`,
-    [memberId, String(LOOKBACK_DAYS)],
+    [memberId, String(LOOKBACK_DAYS), today],
   );
   // WHETHER A WEEK IS STILL OPEN IS DECIDED HERE, NOT IN SQL. Postgres does not know what day it is where the
   // member lives, and a run's length now depends on which weekday it started (7 days, or 8–13). The SQL above is

@@ -27,7 +27,7 @@ import { emitHarvestMoment, drainHarvest, type KeeperType, type KeeperProposal }
 import { saveLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { keptScienceStages } from '../../lib/content/teaching-keep.ts';
 import { claimDoorsFromBoard, setBiggestImpact, setQuietDriftClaim, type BoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
-import { noteDoorProfile } from '../../lib/reconnect/door-profile.ts';
+import { noteDoorProfile, noteDoorLanguage } from '../../lib/reconnect/door-profile.ts';
 import { letterDateFor } from '../../lib/reconnect/legacy-letter.ts';
 import { memberToday } from '../../lib/time/zone-store.ts';
 import { DOORS } from '../../lib/doors.ts';
@@ -221,6 +221,32 @@ async function persistDoorsBoard(db: Db, memberId: string, turn: Turn): Promise<
     await setQuietDriftClaim(db, memberId, board.quietDrift);
   } catch (err) {
     console.error(`persistDoorsBoard FAILED for member=${memberId} — her taps did not reach her record:`, err);
+  }
+}
+
+/**
+ * Persist what ONE Door meant in her life, at the moment that Door's excavation closes.
+ *
+ * R2 walks every Door she marked (Jay, 2026-08-30) and this is where each walk lands. Same split as the board:
+ * the engine banks her words onto the turn, and every write is here.
+ *
+ * PER DOOR, AS EACH ONE CLOSES — not batched at the end of the Session. R2 is resumable precisely because six
+ * excavations is more than one sitting, so a member who stops partway must find that work recorded, not lost. A
+ * batch write at the close would lose exactly the members the resumability exists for.
+ *
+ * LOUD ON FAILURE, and this is the worst one to lose quietly: it is the only place her account of a specific Door
+ * is stored, and every downstream surface would render the silence as "she was never asked".
+ */
+async function persistDoorLanguage(db: Db, memberId: string, turn: Turn): Promise<void> {
+  const lang = (turn.state as { doorLanguage?: { slug: string; text: string } }).doorLanguage;
+  if (!lang?.slug || !lang.text) return;
+  try {
+    const ok = await noteDoorLanguage(db, memberId, lang.slug, lang.text);
+    if (!ok) {
+      console.error(`persistDoorLanguage: member=${memberId} door=${lang.slug} — no row updated; she does not hold that Door`);
+    }
+  } catch (err) {
+    console.error(`persistDoorLanguage FAILED for member=${memberId} door=${lang.slug} — what she said is lost:`, err);
   }
 }
 
@@ -502,6 +528,9 @@ export async function reconnectTurnAction(
     const proposals = await reconnectHarvestOffers(db, memberId, state, turn); // §2d — offered, not committed
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
     await persistDoorsBoard(db, memberId, turn); // R2 — her Doors board taps, before anything reads the set
+    // R2 — what she just said about ONE Door, as that Door's excavation closes. AFTER the board, because the
+    // board is where a newly-marked Door is created and this can only update a Door she already holds.
+    await persistDoorLanguage(db, memberId, turn);
     await persistLegacyLetter(db, memberId, turn); // R3 — the member's own letter, dated in THEIR timezone
     await persistReconnectSessionCloses(db, memberId, state, turn, session); // record the Session closes the arc bypass dropped
     await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)
