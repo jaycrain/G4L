@@ -224,16 +224,41 @@ export function describeListChange(c: ListChange): string {
 // refinement, not correction… The Member is revisiting their goals through a more informed, more experienced,
 // and possibly more honest version of themselves." Without it a member reads six passes over their own list as
 // a test they are failing.
-const C1_OPEN_FRAME =
+const C1_OPEN_LEAD =
   // NOT "This is the list…" — claimsGateOutcome reads that as the model ANNOUNCING a list into existence,
   // which is the exact fault it was built for (Donna, 2026-08-20: a Reclaim List declared that did not
-  // exist). Here the list is real and on screen, but the guard cannot know that, and weakening a guard to
-  // fit new copy is how the next real claim gets through. Reworded instead. The walk harness caught it.
+  // exist). Reworded instead; the walk harness caught it.
   'Your Reclaim List, from Reconnect — the things you said you wanted back.' + BEAT_SEP +
   'You have been through three phases since you wrote it. The point now is not to check whether you stuck to ' +
   'it. It is to read it again as the person you are now, and let it change where it should.' + BEAT_SEP +
   'Some items will still be exactly right. Some will have quietly stopped mattering. Some were never really ' +
   'yours. All of that is ordinary, and all of it is useful.';
+
+/**
+ * THE LIST ITSELF, ON SCREEN, WHERE SHE IS ASKED TO READ IT.
+ *
+ * The frame above says "Your Reclaim List, from Reconnect" and then talks ABOUT it for three beats without ever
+ * showing it. The comment inside it even claimed "the list is real and on screen" — it was not, and C1 then runs
+ * six passes asking her to revise a list she cannot see.
+ *
+ * Donna, 2026-08-30: "This needs to show me the Reclaim List instead of expecting me to go backwards to my
+ * Dashboard and then back into this. As I continue through the exercise it just feels like I'm flying blind."
+ * She got it eventually only by demanding it — "It did finally serve up the list when I was a smartass about it."
+ * Her own suggestion is what is built here: the list follows the opening, for reference.
+ *
+ * HER WORDS, UNCHANGED. Rendered verbatim from the stored list — never re-worded, re-ordered or summarised. This
+ * is the one place she is being asked whether her own sentences still fit, so showing her a tidied version would
+ * be asking about something she never wrote (their-own-words-back).
+ *
+ * NO LIST → NO CLAIM. If nothing is stored, the opening stands as it was rather than rendering an empty heading,
+ * which would read as "you wrote nothing" to a member whose list simply failed to load.
+ */
+function c1OpenFrame(c: Collected): string {
+  const items = (c.reclaimList ?? []).map((i) => i.trim()).filter(Boolean);
+  if (!items.length) return C1_OPEN_LEAD;
+  return `${C1_OPEN_LEAD}${BEAT_SEP}${items.map((i) => `· ${i}`).join('\n')}`;
+}
+
 const C1_OPEN_ASK = 'Reading it now — what feels different about this list than when you wrote it?';
 
 /** The close. Their most-owned item, in their words, and what the refined list is for. */
@@ -468,7 +493,7 @@ const c1CloseStage: StageDef = {
 const c1EngageConfig = {
   id: 'c1-open',
   next: 'c1-enduring',
-  frame: () => C1_OPEN_FRAME,
+  frame: (c: Collected) => c1OpenFrame(c),
   question: () => C1_OPEN_ASK,
   handIn: () => C1_PASSES[0]!.ask,
 };

@@ -54,3 +54,42 @@ test('THE REGRESSION: the refusal signal alone caught almost none of these', () 
   assert.deepEqual(NO_CHANGE.filter((m) => !saysNothingToChange(m) && !memberDeflecting(m)), [],
     'together they now cover every phrasing she used');
 });
+
+// ── C1 SHOWS HER THE LIST ─────────────────────────────────────────────────────────────────────────────────────
+// Donna, 2026-08-30: "This needs to show me the Reclaim List instead of expecting me to go backwards to my
+// Dashboard and then back into this. As I continue through the exercise it just feels like I'm flying blind."
+//
+// C1's opening announced "Your Reclaim List, from Reconnect" and then talked ABOUT it for three beats without
+// ever showing it — and the code comment inside that copy claimed "the list is real and on screen". It was not.
+// Six passes then asked her to revise a list she could not see.
+import { reclaimC1PassesOpening } from '../lib/agent/reclaim.ts';
+
+const SEP = String.fromCharCode(30);
+const ITEMS = ['Lose 20 lbs.', 'Regain strength and fitness', 'Cover monthly expenses'];
+
+test("C1's opening SHOWS the list, not just a heading for it", () => {
+  const reply = reclaimC1PassesOpening(ITEMS).reply;
+  for (const item of ITEMS) assert.ok(reply.includes(item), `${item} must be on screen`);
+});
+
+test('her items are rendered VERBATIM — never tidied, re-ordered or summarised', () => {
+  // This is the one place she is asked whether her own sentences still fit. Showing a cleaned-up version would be
+  // asking about something she never wrote.
+  const messy = ['lose 20 lbs.', 'Find steady employment in a creative role (can be freelance)'];
+  const reply = reclaimC1PassesOpening(messy).reply;
+  for (const item of messy) assert.ok(reply.includes(item), `${item} verbatim`);
+});
+
+test('the list sits immediately before the question about it', () => {
+  const bubbles = reclaimC1PassesOpening(ITEMS).reply.split(SEP);
+  const listAt = bubbles.findIndex((b) => b.includes(ITEMS[0]!));
+  const askAt = bubbles.findIndex((b) => /Reading it now/.test(b));
+  assert.ok(listAt >= 0 && askAt >= 0);
+  assert.equal(askAt, listAt + 1, 'she reads the list, then is asked about it — and the turn ends on the ask');
+});
+
+test('NO LIST → NO EMPTY HEADING. An absent list never renders as "you wrote nothing"', () => {
+  const reply = reclaimC1PassesOpening([]).reply;
+  assert.ok(!reply.includes('· '), 'nothing bulleted');
+  assert.match(reply, /Reading it now/, 'and the opening still stands');
+});
