@@ -970,7 +970,22 @@ const triggersStage: StageDef = {
       // are three is what makes them a set rather than three paragraphs.
       // Same shape as the identity chips: authored copy that exists, is right, and cannot be reached.
       b.stage = 'protocol';
-      b.reply = `${W3_PROTOCOL_INTRO}${BEAT_SEP}${reply || W3_REDIRECT}`;
+      // THE HANDOFF MUST ASK — the same rule W1's fifth domain got on 2026-08-27, never applied here.
+      //
+      // This took the model's turn INSTEAD of the scripted ask whenever the model said anything at all. So when
+      // its turn reflected on what she had just told it and stopped, she was dropped into `protocol` — a stage
+      // that waits for her Redirect — with nothing having asked her for one. Her next message, still answering
+      // the previous thread, was stored as her Redirect by the `idx === 0` branch below, which takes whatever
+      // arrives.
+      //
+      // Donna, 2026-08-30: "my Redirect wasn't explicitly called out like it had been previously. So, when we
+      // were populating that, isn't something I really would choose for here. It picked up a response I gave to
+      // a question around what happens in my body when I experience conflict." That line then sat in her weekly
+      // tracker as a move she never chose.
+      //
+      // withScriptedBeat keeps the model's reflection AND appends the ask, exactly as W1 does. The member is
+      // received first and then asked — she is never asked for something silently.
+      b.reply = `${W3_PROTOCOL_INTRO}${BEAT_SEP}${reply ? withScriptedBeat(reply, W3_REDIRECT) : W3_REDIRECT}`;
     } else {
       // keep drawing out — the model reflected + dug in with ONE follow-up. Its turn is the reply; nothing appended.
       b.reply = reply || W3_TRIGGER_MORE;
