@@ -6,6 +6,9 @@
 // Live Claude when ANTHROPIC_API_KEY is set; deterministic scripted fallback otherwise.
 
 import { MEMBER_AGENT_SYSTEM_PROMPT, WHAT_YOU_ARE_FOR } from './system-prompt.ts';
+
+/** The system prompt as cache-marked blocks — see checkinSystemBlocks. */
+type SystemBlocks = { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }[];
 import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { DOOR_SLUGS } from '../doors.ts';
@@ -698,7 +701,7 @@ EARNED, NOT TRIGGER-HAPPY (the precise-and-humble bar): do this ONLY when the ol
 
 // Exported so tests can assert on the ASSEMBLED prompt rather than on a constant that may not be wired into it
 // (test the seam, not the halves — a rule the agent never receives is a rule that doesn't exist).
-export function checkinSystem(c: CheckinContext): string {
+function checkinSystemStable(): string {
   // WHAT_YOU_ARE_FOR sits FIRST, ahead of the operating moment and ahead of the rules it governs. It is the
   // statement of purpose the prompt never had (45 prohibitions, one "suggest") and it is scoped to this surface
   // on purpose — see the note on the constant. Placement is the point: a purpose stated after the limits reads
@@ -753,9 +756,46 @@ YOU NOTICE WHAT MOVED. MEMBER CONTEXT may open with "Since they last talked with
 
 COMMUNITY — THEIR BRIDGE TO REAL PEOPLE. The Community is where members meet each other, and quietly pointing them toward it is your north star: the program's real aim is human connection, and because you carry no social stake you are the safe place that nudges them OUT toward people — never the substitute for them. Call it the Community. It was called "Connect" during the build; that name is retired and a member has never seen it, so never say it. MEMBER CONTEXT shows their Community life: engagement they received (someone replied to or cheered a post), what they've shared, and their accountability pacts (each tied to a Reclaim item). USE IT gently, only when it fits — if someone replied to or cheered what they shared, surface it warmly ("someone replied to what you posted about the hard week — want to go see?"); tie a pact back to the goal it serves and NOTICE, never scold, a commitment they've gone quiet on; and when a Reclaim item is one other people would help with, you may invite them to share it or find others in the Community. POSTURE: encourage reaching out, never pressure; ONE gentle invitation, never a campaign; their anonymity is theirs — don't push them to reveal their name. HARD LIMIT: you NEVER post, reply, or cheer for them — you point them to the Community and let them act. If they have no Community activity yet, you may gently invite them once toward a goal real people would help with — never as a task or a guilt.
 
-${rewireEnabled() ? `${RECALL_INSTRUCTION}\n` : ''}
+${rewireEnabled() ? `${RECALL_INSTRUCTION}\n` : ''}`;
+}
+
+/** The whole prompt, assembled. Exported because tests assert on what the agent ACTUALLY receives — a rule that
+ *  lives in a constant but never reaches the model is a rule that does not exist. */
+export function checkinSystem(c: CheckinContext): string {
+  return `${checkinSystemStable()}${checkinSystemMember(c)}`;
+}
+
+/**
+ * THE MEMBER'S HALF — everything above this is identical for every member on every turn.
+ *
+ * Split out so the stable half can be PROMPT-CACHED. This is the highest-volume model call in the product (every
+ * check-in turn, every day, every member) and it was re-sending ~5,100 tokens of unchanging instructions on each
+ * one. Nothing about the prompt's content changes; only how it is transported.
+ *
+ * The boundary is chosen where it is because it is the first thing that varies by member. `rewireEnabled()` stays
+ * on the stable side deliberately: it is a deploy-level flag, so it is constant across every turn of a running
+ * process, and if it ever flips the cached text simply changes with it — the cache is keyed on content.
+ */
+function checkinSystemMember(c: CheckinContext): string {
+  return `
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
+}
+
+/**
+ * The two halves as CACHEABLE BLOCKS: the stable instructions marked for reuse, the member's facts fresh.
+ *
+ * `cache_control: ephemeral` marks the end of the cached prefix. A read costs a tenth of a write, so this pays for
+ * itself on the second turn of any conversation and on every member after the first within the window.
+ *
+ * WHY NOT CACHE THE MEMBER BLOCK TOO: it changes every turn — a new Good Call, a moved Grinta reading, a Session
+ * closed — so it would be a cache write that is never read. Caching what varies costs more than not caching.
+ */
+export function checkinSystemBlocks(c: CheckinContext): { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }[] {
+  return [
+    { type: 'text', text: checkinSystemStable(), cache_control: { type: 'ephemeral' } },
+    { type: 'text', text: checkinSystemMember(c) },
+  ];
 }
 
 // --- Scripted (offline) — brand-voice safe (no "journey" / "I hear you" / "amazing") --------
@@ -1267,7 +1307,10 @@ function hasOpenWeek(c: CheckinContext, kind: string): boolean {
 }
 
 async function liveReply(
-  system: string,
+  // THE CACHEABLE FORM, not a flat string. This is the highest-volume model call in the product — every check-in
+  // turn, every day, every member — and it re-sent ~9,900 tokens of unchanging instructions on each one. The
+  // content is identical; only the transport changed. See checkinSystemBlocks for where the boundary sits and why.
+  system: SystemBlocks,
   history: CheckinMessage[],
   userText: string,
   executor?: ToolExecutor,
@@ -1417,7 +1460,7 @@ async function checkinGreeting(c: CheckinContext): Promise<string> {
   if (process.env.ANTHROPIC_API_KEY) {
     try {
       return (await liveReply(
-        checkinSystem(c),
+        checkinSystemBlocks(c),
         [],
         'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. Write ONLY your warm welcome — begin DIRECTLY with your greeting to the member. Do NOT write, quote, or narrate the AI disclosure or ANY instruction to yourself (never a line like "This is the first AI disclosure — include it now, verbatim…", never "—-" delimiters) — the disclosure is added for you automatically as the clean first line above your message. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
           'NEVER open with a number, score, or metric — "your Grinta went up", "your ID Score is 62" is exactly the wrong first thing; a stat is not a welcome, and on day one the numbers are meaningless to them. Lead with the person. (Their data is for later, when they ask.)\n' +
@@ -1498,7 +1541,7 @@ export async function checkinReply(
   if (process.env.ANTHROPIC_API_KEY) {
     try {
       const { reply, toolNames } = await liveReply(
-        checkinSystem(c), history, memberMessage, executor,
+        checkinSystemBlocks(c), history, memberMessage, executor,
         Boolean(c.practiceWeek?.tappable),
         // ASK EVERY OPEN WEEK, NOT THE ONE WE PICKED. `practiceWeek` (singular) is the week that most needs
         // attention — a pacing decision. Whether a TOOL is available is a capability question, and answering it
