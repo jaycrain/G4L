@@ -99,8 +99,32 @@ const capFirst = sentenceStart; // one definition — see lib/content/member-wor
 /** Strip a trailing question sentence from the model's turn, keeping the receipt. '' if it was only a question. */
 export function receiptOnly(modelText: string | undefined): string {
   const t = (modelText ?? '').trim();
-  if (!t || !/\?\s*$/.test(t)) return t; // nothing to strip
-  return t.replace(/\s*[^.!?]*\?\s*$/, '').trim();
+  if (!t) return t;
+
+  // PARAGRAPH-SCOPED, NOT TRAILING-ONLY — and this is the SAME contract withQuestion already holds.
+  //
+  // This used to strip only a question that was literally last (`/\?\s*$/`). The model routinely asks its question
+  // and then adds a coda in the same breath — "What did that look like for you? Give me a glimpse of that." — so
+  // the text does not END in '?', nothing was stripped, and the caller then appended its own scripted question.
+  // The member got TWO questions stacked, answered the first, and the engine was waiting on the second.
+  //
+  // Donna, 2026-08-30, on the False Start Protocol: "It ended up stacking two questions on top of each other. And,
+  // when I answered the first question, there was no opportunity to answer the second one." Same walk, five more
+  // reports of "it asked me a question, disregarded my answer, and moved on."
+  //
+  // withQuestion was hardened for exactly this shape after two of Jay's walks hit it, and its comment says so.
+  // The fix never reached here. One fact, two sites, and the site that kept the stale copy is the one that feeds
+  // every scripted hand-off in the arc (one-fact-many-sites).
+  //
+  // Cut from the FIRST question in the last paragraph to the end of it: what precedes is the receipt, what follows
+  // is the model asking — which is the caller's job on this turn, not the model's.
+  const paras = t.split(/\n\s*\n/);
+  const last = paras[paras.length - 1]!;
+  if (!last.includes('?')) return t; // a reflection with no forward question — keep it whole
+
+  const cut = last.replace(/(?:^|(?<=[.!?]))\s*[^.!?]*\?[\s\S]*$/, '').trim();
+  paras[paras.length - 1] = cut;
+  return paras.filter((p, i) => p.trim() || i < paras.length - 1).join('\n\n').trim();
 }
 
 /** Receive-then-open: the model's receipt (question stripped) + the single scripted opener. Opener alone if no receipt. */

@@ -69,3 +69,58 @@ test('THE REGRESSION: the old two-condition predicate let ten of these through',
   assert.ok(missedByOld.length >= 9, `the old predicate missed ${missedByOld.length} of ${CONFUSED.length}`);
   assert.deepEqual(missedByOld.filter((m) => !didNotAnswer(m)), [], 'and the new one catches every one it missed');
 });
+
+// ── TWO QUESTIONS STACKED — the other half of "it didn't listen" ──────────────────────────────────────────────
+//
+// Donna, same walk, on the False Start Protocol: "It ended up stacking two questions on top of each other. And,
+// when I answered the first question, there was no opportunity to answer the second one."
+//
+// receiveThen() joins the model's receipt to a SCRIPTED question. receiptOnly() is supposed to remove the model's
+// own forward question first — but it only stripped one that was literally last. The model habitually asks and
+// then adds a coda ("...what did that look like? Give me a glimpse"), so the text did not end in '?', nothing was
+// stripped, and the member got two questions. She answers the first; the engine is waiting on the second.
+//
+// withQuestion() was hardened for this exact shape after two of Jay's walks, with a paragraph-scoped check and a
+// comment saying so. The fix never reached receiptOnly — one fact, two sites, and the stale copy was the one
+// feeding every scripted hand-off in the arc.
+import { receiptOnly, receiveThen } from '../lib/agent/onboarding-staged.ts';
+
+const CODA = 'That is a real loss. What did that look like for you? Give me a glimpse of that.';
+
+test('a question with a coda after it is still stripped from the receipt', () => {
+  assert.equal(receiptOnly(CODA), 'That is a real loss.');
+});
+
+test('THE MEMBER NEVER GETS TWO QUESTIONS in one scripted hand-off', () => {
+  const reply = receiveThen(CODA, 'Before the ratings: where has your world actually got bigger since you started?');
+  const questions = (reply.match(/\?/g) ?? []).length;
+    assert.equal(questions, 1, `a hand-off must carry exactly one question, got ${questions}:\n${reply}`);
+});
+
+test('a reflection with no question is passed through whole', () => {
+  const plain = 'Twelve years is a long time. That lands.';
+  assert.equal(receiptOnly(plain), plain, 'nothing to strip — never trim a receipt that was not asking');
+});
+
+test('a turn that is ONLY a question leaves the scripted opener to stand alone', () => {
+  assert.equal(receiptOnly('What did that cost you?'), '');
+  assert.equal(receiveThen('What did that cost you?', 'Here is the next thing.'), 'Here is the next thing.');
+});
+
+test('a question in an earlier paragraph is kept — only the LAST paragraph is the forward ask', () => {
+  // The model quoting the member's own question mid-reflection is not the model asking. Scoping to the last
+  // paragraph is what keeps this from eating the receipt.
+  const t = 'You asked me what the point was.\n\nThat is fair, and it lands.';
+  assert.equal(receiptOnly(t), t);
+});
+
+test('THE REGRESSION: the old trailing-only strip left the coda case stacked', () => {
+  const oldReceiptOnly = (m: string) => {
+    const t = (m ?? '').trim();
+    if (!t || !/\?\s*$/.test(t)) return t;
+    return t.replace(/\s*[^.!?]*\?\s*$/, '').trim();
+  };
+  assert.equal(oldReceiptOnly(CODA), CODA, 'the old one stripped nothing here');
+  const oldReply = `${oldReceiptOnly(CODA)} Before the ratings: where has your world got bigger?`;
+  assert.ok((oldReply.match(/\?/g) ?? []).length === 2, 'which is how the member got two questions');
+});
