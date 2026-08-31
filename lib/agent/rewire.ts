@@ -8,7 +8,8 @@
 // Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the v2.3 flip.
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer,
+} from './onboarding-staged.ts';
 import { isMemberContent, isDeclineReply } from './member-turn.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
@@ -148,6 +149,19 @@ const domainsStage: StageDef = {
     const idx = sc.domainIdx ?? 0;
     if (b.memberMessage.trim().length < 4) {
       b.reply = W1_DOMAIN_NUDGE;
+      return;
+    }
+    // SHE DID NOT ANSWER, SO THIS DOMAIN IS NOT DONE.
+    //
+    // The only guard here was a LENGTH check, and "I don't understand what you mean" is thirty-one characters —
+    // so a member saying she was lost counted as her answer, the walk moved to the next domain, and the one she
+    // asked about was never returned to. The session eval caught it at W1 turn 5 on 2026-08-31 (domains → affirm).
+    //
+    // The model's reply already answers her question; the domain is simply re-posed under it rather than skipped.
+    // Same rule as the doorway (v3.5.76) and the elicitation floor — a turn where she says she does not follow is
+    // not a turn where she answered.
+    if (didNotAnswer(b.memberMessage)) {
+      b.reply = withScriptedBeat((b.modelText ?? '').trim(), W1_DOMAINS[idx]!);
       return;
     }
     const reflected = (b.modelText ?? '').trim();

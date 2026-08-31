@@ -1889,7 +1889,31 @@ export function elicitationStage(cfg: ElicitationConfig): StageDef {
     const sc = b.scratch as { said?: number };
     // Assent and process-meta ("ok", "sure", "what do you mean") are turns, not material — counting them would
     // let a member be walked past the beat by saying nothing, which is the failure this floor exists to prevent.
-    if (!isProcessMetaOrAssent(b.memberMessage) && b.memberMessage.trim()) sc.said = (sc.said ?? 0) + 1;
+    //
+    // THE COMMENT ABOVE NAMED "what do you mean" AND THE PREDICATE DID NOT CATCH IT. isProcessMetaOrAssent is
+    // tuned for "is this fragment a want?"; measured against twelve ordinary ways a person says she is lost it
+    // catches ONE. So "I don't understand what you mean" and "I'm not sure what you're asking" counted as
+    // material, filled the floor, and walked her into the next stage — the session eval caught exactly that in B2
+    // on 2026-08-31 (skills-evoke → skills-teach on "I'm not sure what you're asking").
+    //
+    // didNotAnswer is the predicate that implements the sentence this comment has always made. Same rule as the
+    // doorway (v3.5.76); this is the beat-counting half of it.
+    const counts = !isProcessMetaOrAssent(b.memberMessage) && !didNotAnswer(b.memberMessage) && b.memberMessage.trim();
+    if (counts) sc.said = (sc.said ?? 0) + 1;
+    // AND NOT COUNTING IT IS NOT ENOUGH — IT MUST NOT CARRY HER OVER EITHER.
+    //
+    // Stopping the increment left the floor check below to run on the same turn, so a member whose floor was
+    // ALREADY met got advanced by the very turn in which she said she was lost. The eval kept firing on B2 after
+    // the first fix (skills-evoke → skills-teach, turn 33) and that is what it was telling me: the counter was
+    // right and the exit was still wrong.
+    //
+    // So a turn where she did not answer never advances the beat. The model's reply answers her; the probe is
+    // re-posed under it; the floor is still met, so the very next real answer moves her on. Costs one turn and
+    // never a question of hers.
+    if (didNotAnswer(b.memberMessage)) {
+      b.reply = withQuestion(b.modelText, cfg.probes[Math.min(sc.said ?? 0, cfg.probes.length - 1)] ?? null);
+      return;
+    }
     if ((sc.said ?? 0) >= cfg.floor) {
       b.stage = cfg.next;
       b.reply = receiveThen(b.modelText, cfg.handIn(b.collected));
@@ -1901,7 +1925,7 @@ export function elicitationStage(cfg: ElicitationConfig): StageDef {
     id: cfg.id,
     mode: 'drawout',
     opener: (c) => cfg.handIn(c),
-    offersSubstance: (m) => !isProcessMetaOrAssent(m),
+    offersSubstance: (m) => !isProcessMetaOrAssent(m) && !didNotAnswer(m),
     gather: talk,
     confirm: talk, // no reflect-confirm loop: this beat gathers, it does not ratify
     forceProgress: (b) => {
