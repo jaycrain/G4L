@@ -1,6 +1,6 @@
 {
-  "date": "August 31, 2026",
-  "version": "v3.6.9",
+  "date": "September 1, 2026",
+  "version": "v3.7.1",
   "releasesSinceLast": 153,
   "sessions": 16,
   "memberSurfaces": 10,
@@ -12,19 +12,48 @@
   "playbookTabs": 4,
   "progressRegisters": 3,
   "gatedAssets": 13,
-  "tests": 2608,
-  "testFiles": 379,
+  "tests": 2611,
+  "testFiles": 380,
   "migrations": 93,
-  "sourceLines": 71741,
-  "hours": 506,
-  "commits": 1761,
-  "activeDays": 83,
-  "weeks": 12,
-  "workSessions": 197,
+  "sourceLines": 71390,
+  "hours": 507,
+  "commits": 1764,
+  "activeDays": 84,
+  "weeks": 13,
+  "workSessions": 199,
   "medianHours": "2.0",
   "longestHours": "13.1 hours",
   "next": "15.1.0",
   "react": "19.0.0",
   "typescript": "5.7.0",
-  "sdk": "0.40.0"
+  "sdk": "0.40.0",
+  "panelSubs": {
+    "program": "Four phases, your pace.",
+    "idScore": "How close you are to the person you’re reclaiming, 0–100.",
+    "grinta": "Your resilience, measured — and it grows with every phase.",
+    "badges": "Passport stamps, not trophies — the count is the point.",
+    "momentum": "The small daily choices, and the pattern they make.",
+    "playbook": "The moves that work for you, and the person you’re reclaiming, in one place.",
+    "reclaimList": "The goals where your Comeback is aimed. Add or refine anytime with your Companion.",
+    "movement": "Connect a source and your activity lands here.",
+    "community": "Give and get support from people who get it.",
+    "account": "Your details, your reminders, and your privacy, in one place."
+  },
+  "sessionTurns": {
+    "each": {
+      "b2-strengths": 35,
+      "c1-passes": 30,
+      "r3-legacy": 17,
+      "w1-disinformation": 15,
+      "w2-visualization": 7,
+      "w3-false-start": 8
+    },
+    "min": 7,
+    "max": 35,
+    "measured": 6
+  },
+  "minutesPerSession": {
+    "low": 5,
+    "high": 23
+  }
 }

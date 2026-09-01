@@ -83,7 +83,53 @@ const facts = {
 
   // stack
   next: dep('next'), react: dep('react'), typescript: dep('typescript'), sdk: dep('@anthropic-ai/sdk'),
+
+  // --- copy quoted from the app, EXTRACTED rather than transcribed -------------------------------------------
+  // Slide 7 puts each surface's own subhead under its name. Those lines are authored copy that a member reads,
+  // and the app is the source of truth — so the deck must not hold a second, forkable copy of them. The messaging
+  // ladder (lib/content/panel-messaging.ts) already exists precisely because ten subpages hand-writing their own
+  // title was ten chances to drift; a deck transcribing them would have been the eleventh.
+  panelSubs: (() => {
+    const src = readFileSync(path.join(ROOT, 'lib/content/panel-messaging.ts'), 'utf8');
+    const body = src.slice(src.indexOf('export const PANEL_MESSAGING'));
+    const out = {};
+    for (const m of body.matchAll(/^\s{2}(\w+):\s*\{/gm)) {
+      const rest = body.slice(m.index);
+      const sub = rest.match(/sub:\s*\n?\s*'((?:[^'\\]|\\.)*)'/);
+      if (sub) out[m[1]] = sub[1].replace(/\\'/g, "'");
+    }
+    return out;
+  })(),
+
+  // --- how long a Session actually runs ----------------------------------------------------------------------
+  // MEASURED, and only where it HAS been measured. These come from scripts/session-eval.ts, which plays a scripted
+  // member through the real engines against the live model and writes the transcript to dist/session-evals/. Six
+  // of the twelve Sessions have such a run; the other six have no harness yet, so there is no number for them and
+  // none is invented here. The deck states the measured range and says how many Sessions it covers.
+  //
+  // A member turn is one thing the member said. It is a FLOOR for effort, not a ceiling: the scripted persona
+  // answers more briefly than a real member does.
+  sessionTurns: (() => {
+    const dir = path.join(ROOT, 'dist/session-evals');
+    let files = [];
+    try { files = require('node:fs').readdirSync(dir).filter((f) => f.endsWith('.txt')); } catch { return null; }
+    const turns = {};
+    for (const f of files) {
+      const blocks = readFileSync(path.join(dir, f), 'utf8').split('\n\n---\n\n');
+      turns[f.replace(/\.txt$/, '')] = blocks.filter((b) => b.startsWith('MEMBER:')).length;
+    }
+    const vals = Object.values(turns).sort((a, b) => a - b);
+    if (!vals.length) return null;
+    return { each: turns, min: vals[0], max: vals[vals.length - 1], measured: vals.length };
+  })(),
 };
+
+// The pace anchor is a REAL observation, not a modelling assumption: Donna's 2026-08-30 walk put C1 at about
+// twenty minutes, and the harness recorded 30 member turns for it — roughly 40 seconds per exchange. It lives
+// here as a comment rather than a fact because one member's pace is an anchor, not a measurement of the product.
+facts.minutesPerSession = facts.sessionTurns
+  ? { low: Math.round((facts.sessionTurns.min * 40) / 60), high: Math.round((facts.sessionTurns.max * 40) / 60) }
+  : null;
 
 writeFileSync(path.join(__dirname, 'facts.json'), JSON.stringify(facts, null, 2));
 console.log(facts);
