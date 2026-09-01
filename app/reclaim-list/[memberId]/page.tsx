@@ -1,10 +1,9 @@
 import PanelHeader from '../../components/panel-header.tsx';
-import { notFound, redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
-import { dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
 import { suggestTracker } from '../../../lib/measure/store.ts';
 import { classifyGoal, cadenceTarget } from '../../../lib/reclaim/goal-kind.ts';
 import { trackedReclaimItemIds } from '../../../lib/practice/mark.ts';
@@ -20,10 +19,12 @@ import type { Db } from '../../../lib/db/schema.ts';
 // compact read (just the intentions); the trackers (a linked measure's progress + the "turn on a tracker" offer) take a
 // lot of vertical space, so they live HERE where each item can breathe (Jay, 2026-07-22). Editing the list itself stays
 // the Companion's job (propose→confirm→commit); this page is where you wire an item to your Movement and watch it — and
-// where the Companion will help manage the trackers (planned). Flag-gated with the triptych (the only place that links
-// here) so it's dark on prod until the triptych flips.
+// where the Companion will help manage the trackers (planned).
+//
+// THE TRIPTYCH GATE IS GONE (2026-09-01). This page was dark until the triptych flipped, and the triptych flipped on
+// 2026-07-23 — so the gate had been a no-op for six weeks while still reading as a live condition. It also meant a
+// member's Reclaim List could 404 if the flag were ever unset, which is not a rollback anyone wants.
 export default async function ReclaimListPage({ params }: { params: Promise<{ memberId: string }> }) {
-  if (!dashboardTriptychEnabled()) notFound();
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;

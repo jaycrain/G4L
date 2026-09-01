@@ -12,12 +12,14 @@ export function mobileEnabled(): boolean {
   return process.env.MOBILE === 'staged';
 }
 
-// Dashboard triptych (2026-07-22) — the reflect ← Companion → act layout (Companion centered, flanked by "Where You
-// Are" and "What's Next"). Replaces the docked-rail dashboard when on. Off by default so the current dashboard is
-// untouched until we flip it. Flip with DASH_TRIPTYCH === 'staged'. See docs/dashboard-triptych-spec.md.
-export function dashboardTriptychEnabled(): boolean {
-  return process.env.DASH_TRIPTYCH === 'staged';
-}
+// DASH_TRIPTYCH IS RETIRED (Jay, 2026-09-01). The triptych flipped on production 2026-07-23 and is simply the
+// dashboard now — the flag it hid behind was answering "yes" for six weeks while the branch underneath it, the
+// docked-rail RedesignDashboard, sat unreachable and still looked live to anyone reading the file. It cost real
+// confusion: asked where a member's Identity handle lives, I found and reported two dead answers before the true
+// one. A rollback nobody has reached for in six weeks is not insurance, it is a trap.
+//
+// REDESIGN below STAYS. That one is the deeper rollback to v2.5 and gates 28 sites across 21 files — retiring it is
+// a migration, not a cleanup, and is a separate decision.
 
 // Onboarding welcome (Slice B) — the first-run meet-the-Companion screen that sits AFTER the sign-up gate and BEFORE
 // the live onboarding work. Gates the whole welcome (desktop billboard + mobile 4-beat). Off by default so the live

@@ -21,8 +21,10 @@ layer + onboarding welcome + proactive outreach flipped live; **v3.2 — the Com
 ID Score/Grinta/Badges · the navy Companion hero+thread · Momentum/Reclaim/Movement/Community), a segmented-pane mobile
 fold (which SET ASIDE v3.1's mobile billboard), the Reclaim-Items subpage, and the ceremony+Opening-Tour carried onto
 the new surface. Flipped via `DASH_TRIPTYCH=staged` on Production (`main` @ `256baf7`). **Prod is now v3.2.** MOBILE
-intentionally unset (the triptych owns mobile via its responsive fold). Revert = remove `DASH_TRIPTYCH` from Production
-+ redeploy → v3.0. See [[dashboard-triptych]]. NOTE: v2.5
+intentionally unset (the triptych owns mobile via its responsive fold). **`DASH_TRIPTYCH` IS RETIRED (2026-09-01) —
+the triptych IS the dashboard, and there is no longer a revert to v3.0.** The flag had been answering "yes" for six
+weeks while the branch beneath it sat unreachable, and two dead identity strips above the live one cost real
+confusion. `REDESIGN` still gates the deeper rollback to v2.5. See [[dashboard-triptych]]. NOTE: v2.5
 Reclaim was flipped "as is" for shared team context — it is known-rough (the W-28 Rebuild→Reclaim entry/exit + the
 "how to get out of Reclaim" Loop questions are OPEN, Jay+Greg); changes are expected. Onboarding v1 and the pre-flip
 "flag-gated / prod stays v1" framing are retired. New member-facing changes now affect real prod — verify live after deploy.

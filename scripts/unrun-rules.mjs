@@ -109,6 +109,11 @@ const PARKED = {
   EVIDENCE_ITEM_COUNT: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
   EVIDENCE_PART_LABEL: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
   EVIDENCE_PART_STARTS: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
+  loadHomeState: 'The mobile billboard\'s state resolver (v3.1). Orphaned on 2026-09-01 when the DASH_TRIPTYCH '
+    + 'retirement deleted RedesignDashboard, its only production caller — RedesignShell is now unreferenced for the '
+    + 'same reason. It is not dead code so much as a SET-ASIDE LAYER: CLAUDE.md records that the triptych set the '
+    + 'v3.1 mobile billboard aside, and MOBILE is intentionally unset. Deleting it is the MOBILE flag\'s decision, '
+    + 'not the triptych\'s, so it is parked here rather than swept up in a cleanup that was scoped to one flag.',
   checkinSystem: 'The ASSEMBLED check-in prompt. Test-only BY CONSTRUCTION since v3.6.6: the agent now receives '
     + 'checkinSystemBlocks (the cacheable split), and this is the flat form the tests assert the rules actually reach '
     + 'the model through. That is the dangerous shape — a test asserting on a string the agent no longer gets — so it '

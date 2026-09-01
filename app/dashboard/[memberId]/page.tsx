@@ -44,10 +44,9 @@ import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redirect } from 'next/navigation';
-import { redesignEnabled, dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { heroCard } from '../../../lib/dashboard/hero-card.ts';
 import { ceremonyTourData } from '../../../lib/dashboard/ceremony-tour.ts';
-import RedesignDashboard from '../redesign-dashboard.tsx';
 import DashboardTriptych from '../dashboard-triptych.tsx';
 import TriptychLeft from '../triptych-left.tsx';
 import TriptychRight from '../triptych-right.tsx';
@@ -86,11 +85,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await reconcileReconnectCloses(db, memberId).catch(() => {});
 
   // Redesign (Layer 2) — flag-gated parallel render. Off in prod → everything below is the untouched live dashboard.
+  //
+  // THE TRIPTYCH IS NO LONGER A LAYER INSIDE THIS (Jay, 2026-09-01). DASH_TRIPTYCH was flipped on production
+  // 2026-07-23 and the middle implementation — RedesignDashboard, the docked-rail dashboard the triptych replaced —
+  // sat unreachable underneath it for six weeks, carrying its own identity strip and its own "Your full story" link.
+  //
+  // That is not insurance any more, it is a trap. Asked where the Identity handle lives, I read the legacy strip,
+  // then RedesignDashboard's, and reported BOTH as live before finding the real one in the triptych. Two dead
+  // answers stacked above the true one, in a file where the reader cannot tell which branch runs.
+  //
+  // So the flag is retired and its dead branch deleted. The REDESIGN flag stays: it is the deeper rollback to v2.5
+  // and gates 28 sites across 21 files — a migration, not a cleanup.
   if (redesignEnabled()) {
-    // Triptych (Layer 3) — the reflect ← Companion → act re-arrangement. Sits INSIDE the redesign (it replaces the
-    // docked-rail dashboard) and is flag-gated on top, so DASH_TRIPTYCH off → the current redesign dashboard is
-    // untouched. PHASE 1: empty shell to prove the layout/fold on both breakpoints.
-    if (dashboardTriptychEnabled()) {
+    {
       // Earn the event-driven milestone badges from committed state before the flank reads the passport — the
       // non-triptych dashboard + the /badges detail both do this, so the triptych shelf must too, or it under-counts
       // (Donna's #7: 1 of 16 on the dashboard vs 3 in the detail). Idempotent + drift-hardened.
@@ -150,7 +157,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </>
       );
     }
-    return <RedesignDashboard db={db} memberId={memberId} dash={dash} />;
   }
 
   // Sync-on-open so the Movement panel shows a just-posted ride now, not at the nightly cron (throttled, best-effort).
