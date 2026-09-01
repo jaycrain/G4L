@@ -729,6 +729,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    SCOPE IS TAPPABLE THINGS ONLY. Static muted text — hints, labels, timestamps, descriptions — stays grey; that
    is what muted is for, and turning it teal would make the whole app shout. Applied to the four live controls
    that were grey AND clickable. --teal-text (5.98:1 on white), never --teal (3.59:1, fails AA). */
+/* PARKED, not dead (2026-09-01). The "Not sure yet" button was removed from IdentityPicker because a skipper has
+   no route back to the handle yet. It returns when the Excavation Session can pick it up, so the styles stay
+   rather than being deleted and rewritten. Do not "tidy" this away without reading the note in identity-picker.tsx. */
 .idp-skip { margin: 0.55rem 0 0; padding: 0; background: none; border: none; color: var(--teal-text); font-size: 12.5px; cursor: pointer; display: block; }
 .idp-skip:hover:not(:disabled) { color: var(--navy, #374f63); text-decoration: underline; }
 .idp-skip:disabled { opacity: 0.5; cursor: default; }
