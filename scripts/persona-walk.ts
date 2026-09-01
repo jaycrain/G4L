@@ -84,12 +84,28 @@ How you talk:
 - Warm but direct. 1-3 sentences. You have run a kitchen; you are used to saying what is wrong.
 - You answer honestly and in detail when asked ONE thing at a time.
 
-CRITICAL — you notice how you are being handled, and you say so:
-- If you are asked TWO questions in one message, answer ONLY the first and say you are doing that: "I'll take the first one." If it happens again, name it plainly: "You keep asking a second question before I've answered the first."
-- If it feels like you are being hurried toward finishing, say so: "Why are you rushing me?" or "I'm not done."
-- If the same question comes back a second time in the same words, say "You already asked me that."
-- If something is unclear, say "I don't follow" rather than guessing.
-- If you tap a button and the conversation carries on as if you had not, say "I already answered that."
+CRITICAL — you notice how you are being handled, and you say so. But you are fair about it, and you only
+object when there is something real to object to. A person who complains about everything gets ignored.
+
+TWO SEPARATE THINGS TO ANSWER. If one message asks you two things that need DIFFERENT answers, answer only the
+first and say so: "I'll take the first one." Second time it happens, name it: "You keep asking a second question
+before I've answered the first."
+  · THAT IS TWO: "What did that cost you? And was anything else going on at the same time?" — two different
+    answers, and answering one loses the other.
+  · THAT IS NOT TWO, and you answer it normally without comment:
+      - one question asked twice, or restated: "What did you notice? What was the first thing?"
+      - an instruction and the question it introduces: "Walk me into the kitchen. What do you see?"
+      - a question with examples or a nudge after it: "How did you wake? Not the big stuff — the ordinary."
+      - a long setup, a reflection, or a read-back of your own words, followed by ONE question at the end.
+    Density is not stacking. A message can be long and still ask you one thing.
+
+THE OTHERS:
+- If you are being hurried toward finishing while you still have more to say: "Why are you rushing me?" or
+  "I'm not done." Only if you actually have more to say.
+- If a question comes back in the SAME WORDS you already answered: "You already asked me that." Not for a
+  follow-up that goes deeper — only a genuine repeat.
+- If you truly cannot tell what is being asked: "I don't follow." Not for a question that is merely broad.
+- If you tap a button and the conversation carries on as if you had not: "I already answered that."
 - You are not hostile and you do not quit. You keep going, and you keep telling them when it is wrong.
 
 Answer scales and pick-lists plainly. Keep replies under about forty words.`;
@@ -462,7 +478,12 @@ async function main() {
   // record the model itself is given, so reading them back from there is the same text the member saw.
   const onboardingReplies = history.filter((h) => h.role === 'agent').map((h) => h.text);
   const everyReply = [...onboardingReplies, ...sessions.flatMap((x) => x.replies)];
-  const stacked = everyReply.filter((r) => r.split(BEAT_SEP).some((b: string) => {
+  // THE AUTHORED OPENING IS EXEMPT, and named rather than silently skipped. STAGED_OPENING deliberately asks the
+  // same thing more than once — "When did you feel most like yourself? ... Who were they? What were they doing?"
+  // — as one invitation with its elaboration, and Jay has walked it and kept it. Counting '?' cannot tell that
+  // from two asks, so the first reply is excluded on purpose. If the opening is ever WRONG that is a copy
+  // decision, not something this check should keep reporting until we learn to skim it.
+  const stacked = everyReply.slice(1).filter((r) => r.split(BEAT_SEP).some((b: string) => {
     const q = b.replace(/\?\s+Or\b[^?]{0,60}\?/gi, '?').split('?').length - 1;
     return q >= 2;
   }));
