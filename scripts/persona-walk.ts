@@ -266,12 +266,6 @@ function signal(state: ConvState): string {
 const surfacesSeen = new Set<string>();
 const surfacesTapped = new Set<string>();
 
-// Which structured surfaces the member actually met, across the WHOLE path. Module-scoped because the walk is no
-// longer one loop inside main(): the Reconnect leg records into these same sets, so coverage describes the whole
-// journey rather than the first quarter of it.
-const surfacesSeen = new Set<string>();
-const surfacesTapped = new Set<string>();
-
 // ── THE RECONNECT LEG ─────────────────────────────────────────────────────────────────────────────────────────
 //
 // WHY THE WALK NO LONGER STOPS AT THE HANDOFF (2026-09-01). Onboarding had a walk and Reconnect had an eval that
@@ -464,8 +458,11 @@ async function main() {
   // ── WHAT THE WALK ASSERTS, beyond "it ran" ───────────────────────────────────────────────────────────────────
   // Both of these come straight from Donna's 2026-09-01 report, and both were live on a build with 2,640 green
   // tests. They are checked across EVERY reply in the whole path, onboarding and Reconnect together.
-  const everyReply = [...replies, ...sessions.flatMap((x) => x.replies)];
-  const stacked = everyReply.filter((r) => r.split(BEAT_SEP).some((b) => {
+  // The onboarding leg keeps no replies array of its own — its agent turns live in `history`, which is the
+  // record the model itself is given, so reading them back from there is the same text the member saw.
+  const onboardingReplies = history.filter((h) => h.role === 'agent').map((h) => h.text);
+  const everyReply = [...onboardingReplies, ...sessions.flatMap((x) => x.replies)];
+  const stacked = everyReply.filter((r) => r.split(BEAT_SEP).some((b: string) => {
     const q = b.replace(/\?\s+Or\b[^?]{0,60}\?/gi, '?').split('?').length - 1;
     return q >= 2;
   }));
