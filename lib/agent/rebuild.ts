@@ -214,7 +214,11 @@ const B1_CONSOLIDATE_ASK =
 
 // ONE TURN. Consolidation reflects and closes; it does not interrogate. The model's receipt of their answer
 // carries the personalisation, then the authored close lands — process-product (B1-14), then the baseline framing.
-const b1Consolidate = (b: { stage: string; complete: boolean; reply: string; modelText?: string }): void => {
+const b1Consolidate = (b: { stage: string; complete: boolean; reply: string; modelText?: string; memberMessage: string; scratch: unknown }): void => {
+  // THE THIRD CLOSE. skills-close got this on 2026-08-31 and c1-close an hour later; this one was missed both
+  // times, and the sibling checker found it the first time it ran. Her question is answered before the Session
+  // ends — once, then it closes whatever she says.
+  if (heldOnceIfLost(b, B1_CONSOLIDATE_ASK)) return;
   b.stage = 'complete';
   b.complete = true;
   b.reply = receiveThen(b.modelText, `${B1_PROCESS_PRODUCT}${BEAT_SEP}${B1_CLOSE}`);

@@ -42,8 +42,28 @@ const facts = {
 
   // program + surfaces
   sessions: n("grep -oE \"'([rwbc][1-4]|rewire-checkpoint)'\" lib/workspace/session-key.ts | sort -u | wc -l"),
-  memberSurfaces: n("find app -name page.tsx | grep -vE 'app/dev/|admin|founder' | wc -l"),
+  // A SURFACE IS A PANEL WITH A SUBPAGE, or a subpage alone (Account Settings) — Jay's definition, 2026-08-31.
+  // This counted every page.tsx in the app (56), which includes Session routes, checkpoints and internals. Story is
+  // NOT one: it is the Playbook's "Who you are" tab, and its standalone route is reachable only from two dead
+  // dashboard implementations.
+  memberSurfaces: n("ls -d app/{score,grinta,badges,playbook,momentum,movement,reclaim-list,connect,program,account} 2>/dev/null | wc -l"),
   doors: n('grep -c "slug:" lib/doors.ts'),
+
+  // THE MEMBER-FACING COUNTS, each derived rather than typed. Cowork's "by the numbers" slide states all of these,
+  // and a figure a marketing document asserts is exactly the kind that goes stale silently — the old By-the-Numbers
+  // PDF had 12 Sessions right and 5 Playbook tabs wrong, and nobody could tell which was which without checking.
+  //
+  // guidedSessions vs checkpoints: the registry distinguishes them by `kind`, and the deck must too — "sixteen
+  // Sessions" was in two source decks and counts the Checkpoints as Sessions.
+  guidedSessions: n("grep -c \"kind: 'session'\" lib/workspace/session-registry.ts"),
+  checkpoints: n("grep -c \"kind: 'checkpoint'\" lib/workspace/session-registry.ts"),
+  // The LIVE badge set. BADGES resolves by flag, and locally that is the 7-badge legacy set — prod runs the
+  // redesign's 16. Counting the export would have put the wrong number on a slide.
+  badges: n("sed -n '/const REDESIGN_BADGES/,/^];/p' lib/curriculum/registry.ts | grep -c \"  badge(\""),
+  // The type declaration `head: string` is not an insight — match only a head with a quoted value after it.
+  scienceInsights: sh("grep -o 'head:' lib/content/explore.ts | wc -l") - 1, // less the `head: string` type decl
+  playbookTabs: n("sed -n '/const TABS:/,/^];/p' 'app/playbook/[memberId]/redesign-playbook-view.tsx' | grep -c \"label: '\""),
+  progressRegisters: 3, // ID Score · Grinta Index · the Journey — the three feedbacks, fixed by the data contract
   gatedAssets: n("grep -oE \"'[A-Z]+-[0-9]+'\" lib/assets/definitions.ts | sort -u | wc -l"),
 
   // engineering

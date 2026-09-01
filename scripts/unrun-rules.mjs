@@ -109,6 +109,11 @@ const PARKED = {
   EVIDENCE_ITEM_COUNT: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
   EVIDENCE_PART_LABEL: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
   EVIDENCE_PART_STARTS: 'Part of the parked evidence instrument — see EVIDENCE_ITEMS.',
+  checkinSystem: 'The ASSEMBLED check-in prompt. Test-only BY CONSTRUCTION since v3.6.6: the agent now receives '
+    + 'checkinSystemBlocks (the cacheable split), and this is the flat form the tests assert the rules actually reach '
+    + 'the model through. That is the dangerous shape — a test asserting on a string the agent no longer gets — so it '
+    + 'is held safe by tests/checkin-prompt-cache.ts, which asserts the blocks JOINED equal this exactly. Parked '
+    + 'rather than deleted because the alternative is tests that read the prompt a different way from the agent.',
 };
 
 const dead = [];
@@ -167,6 +172,111 @@ const BEHAVIOUR_RULES = [
   },
 ];
 
+// ── AND THE HALF THAT COST THE MOST: ONE FACT, TWO SITES ──────────────────────────────────────────────────────
+//
+// 2026-08-31 shipped ~20 fixes. SIX of them were a rule we had already written and failed to apply at a second
+// site, and one of those six was mine — made an hour after diagnosing the same shape in someone else's code:
+//
+//   · withQuestion was hardened to scan the whole last paragraph for a question. receiptOnly, its sibling, never
+//     got the fix — and receiptOnly is the one feeding every scripted hand-off in the arc.
+//   · W1's fifth domain got "the handoff must ask" on 8/27. W3's protocol entry did not, and stored a member's
+//     answer to an earlier question as her Redirect. It sat in her weekly tracker for a week.
+//   · I fixed the close-hold in B2's skills-close, did not sweep for siblings, and the session eval found
+//     c1-close doing the same thing an hour later.
+//
+// NEITHER OF THE BUCKETS ABOVE CAN SEE THIS. Every symbol involved is referenced, and every return satisfies its
+// own function's invariant. The defect is the DIFFERENCE between two places that should agree.
+//
+// SITES ARE DISCOVERED, NEVER LISTED. A hand-written list of siblings is precisely what let the second site sit
+// unfixed — it is a per-site test wearing a different hat. Each rule finds its own family by pattern, so a sibling
+// added next month is covered without anyone remembering to add it here.
+//
+// A DIVERGENCE IS A QUESTION, NOT A VERDICT, exactly like TEST-ONLY: the honest reading is "these two disagree —
+// which one is right?" Sometimes the answer is that the odd one out is correct and the rule needs an exemption.
+const SIBLING_RULES = [
+  {
+    id: 'closing-beats-hold-once',
+    why: "A close stage ends the Session, so every one of them ended unconditionally — and when what the member "
+       + "said was 'I don't understand what you mean', her question was answered by the Session ending. Fixed in "
+       + "skills-close, then found again in c1-close an hour later by the eval.",
+    // Every stage whose id ends in -close, anywhere in the agent layer.
+    discover: (files) => sites(files, /^lib\/agent\//, /id: '([a-z0-9-]*-close)'/g),
+    mustSatisfy: (text) => /heldOnceIfLost\(/.test(text),
+  },
+  {
+    id: 'handoff-into-a-waiting-stage-must-ask',
+    why: "A stage that stores whatever arrives must be entered by a turn that ASKED for it, or the member's "
+       + "previous thought becomes her answer. W1 got this on 2026-08-27 and W3 did not; W3 then stored Donna's "
+       + "answer to a body-sensation question as her Redirect.",
+    discover: (files) => sites(files, /^lib\/agent\/(rewire|rebuild|reclaim|reconnect)\.ts$/, /b\.stage = '(protocol|affirm)';/g),
+    mustSatisfy: (text) => /withScriptedBeat\(|W1_TURN_ASK_FALLBACK|W3_REDIRECT/.test(text),
+  },
+  {
+    id: 'question-detection-is-paragraph-scoped',
+    why: "The model asks its question and then adds a coda, so the text does not END in '?'. withQuestion was "
+       + "hardened to scan the whole last paragraph; receiptOnly kept a trailing-only check and stacked two "
+       + "questions on the member for four days.",
+    discover: (files) => sites(files, /^lib\/agent\/onboarding-staged\.ts$/, /export function (withQuestion|receiptOnly)\b/g),
+    mustSatisfy: (text) => /lastPara|paras\[paras\.length/.test(text),
+  },
+];
+
+/**
+ * Find each rule's family: every match of `pattern` in the files whose path matches `where`, paired with the
+ * enclosing block so a predicate has something to test.
+ */
+function sites(files, where, pattern) {
+  const found = [];
+  for (const f of files) {
+    const rel = relative(ROOT, f);
+    if (!where.test(rel)) continue;
+    const src = readFileSync(f, 'utf8');
+    // A FRESH REGEX PER FILE. `pattern` carries /g, and a /g regex is stateful — reusing one object across the file
+    // loop let its lastIndex survive into the next file, so a rule silently found zero sites in a file that plainly
+    // contained them and reported itself as "rotted". A checker whose own matcher can go quiet is the exact defect
+    // it exists to find, so it is rebuilt per file rather than trusted to be stateless.
+    const re = new RegExp(pattern.source, pattern.flags);
+    for (const m of src.matchAll(re)) {
+      // The site's text: a generous forward slice, PLUS the body of any handler it merely REFERENCES.
+      //
+      // A stage often reads `gather: b1Consolidate` with the function defined above it, so a fix living in that
+      // function is invisible to a forward slice. This checker reported why-close as missing a guard that was
+      // three lines away in a named function — a false red, and a checker that cries wolf teaches us to skim it.
+      let text = src.slice(m.index, m.index + 1400);
+      // AND THE MATCHED SYMBOL'S OWN BODY, when the match names one. A fixed slice is a guess about how much
+      // explanation sits between a declaration and its code — receiptOnly's comment is longer than 1400 chars, so
+      // the slice stopped before the fix it was checking for and reported a false red on code fixed the day before.
+      const own = m[1] ? (bodyOf(src, m[1]) ?? constBodyOf(src, m[1])) : null;
+      if (own) text += '\n' + own;
+      for (const ref of text.matchAll(/(?:gather|confirm|opener)\s*:\s*([A-Za-z_$][\w$]*)\s*[,\n]/g)) {
+        const body = bodyOf(src, ref[1]) ?? constBodyOf(src, ref[1]);
+        if (body) text += '\n' + body;
+      }
+      found.push({ file: rel, name: m[1] ?? m[0], text });
+    }
+  }
+  return found;
+}
+
+/** Same, for a handler written as `const name = (…) => { … }` — the shape most stage handlers actually use. */
+function constBodyOf(src, name) {
+  const at = src.search(new RegExp(`const\\s+${name}\\s*(?::[^=]*)?=\\s*(?:async\\s*)?\\(`));
+  if (at < 0) return null;
+  // FIND THE ARROW FIRST. Taking the next '{' after the declaration brace-matched the PARAMETER TYPE —
+  // `const b1Consolidate = (b: { stage: string; … }) => {` — and returned the type literal as the body, so a guard
+  // living in the real body was invisible. That produced a false red on why-close for a fix three lines away.
+  const arrow = src.indexOf('=>', at);
+  if (arrow < 0) return null;
+  const open = src.indexOf('{', arrow);
+  if (open < 0) return null;
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return src.slice(open, i + 1);
+  }
+  return null;
+}
+
 /** Function body by name, brace-matched — regex alone cannot find the end of a function. */
 function bodyOf(src, name) {
   const at = src.search(new RegExp(`function\\s+${name}\\s*\\(`));
@@ -209,12 +319,36 @@ for (const rule of BEHAVIOUR_RULES) {
   if (bad.length) behaviour.push({ ...rule, miss: `${bad.length} of ${rets.length} exits: ${bad[0].slice(0, 60)}…` });
 }
 
+// SIBLING DIVERGENCE — the family is discovered, then split into those that satisfy the rule and those that do not.
+// A family where NOBODY satisfies it is not a divergence; it is a rule nobody has applied yet, and it is reported
+// differently so the two are never confused.
+const siblings = [];
+for (const rule of SIBLING_RULES) {
+  const family = rule.discover(files);
+  if (family.length < 2) { siblings.push({ ...rule, stale: `found ${family.length} site(s) — the pattern has rotted` }); continue; }
+  const ok = family.filter((x) => rule.mustSatisfy(x.text));
+  const bad = family.filter((x) => !rule.mustSatisfy(x.text));
+  if (bad.length && ok.length) siblings.push({ ...rule, ok, bad });        // genuine divergence
+  else if (bad.length) siblings.push({ ...rule, ok, bad, neverApplied: true });
+}
+
 const byFile = (a, b) => a.file.localeCompare(b.file) || a.name.localeCompare(b.name);
 dead.sort(byFile); testOnly.sort(byFile);
 
 if (process.argv.includes('--json')) {
-  console.log(JSON.stringify({ dead, testOnly, parked, behaviour }, null, 2));
+  console.log(JSON.stringify({ dead, testOnly, parked, behaviour, siblings }, null, 2));
 } else {
+  if (siblings.length) {
+    console.log(`\nONE FACT, TWO SITES — a rule applied here and not there (${siblings.length})`);
+    for (const r of siblings) {
+      if (r.stale) { console.log(`  ${r.id} — ${r.stale}`); continue; }
+      const head = r.neverApplied ? 'NOBODY applies it' : `${r.ok.length} do, ${r.bad.length} do NOT`;
+      console.log(`  ${r.id}  (${head})`);
+      for (const b of r.bad) console.log(`      missing: ${b.name.padEnd(22)} ${b.file}`);
+      for (const o of r.ok)  console.log(`      has it:  ${o.name.padEnd(22)} ${o.file}`);
+      console.log(`      ${r.why}`);
+    }
+  }
   console.log(`\nTEST-ONLY — green in CI, does nothing for a member (${testOnly.length})`);
   for (const r of testOnly) console.log(`  ${r.name.padEnd(34)} ${r.file}`);
   console.log(`\nDEAD — nothing runs it and nothing checks it (${dead.length})`);

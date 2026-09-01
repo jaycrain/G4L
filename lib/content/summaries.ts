@@ -118,11 +118,6 @@ export const PHASE_CLOSES: Record<PhaseKey, string> = {
     'a good day is made of.',
 };
 
-/** The close for a phase — the past-tense counterpart to `phaseSummary`. */
-export function phaseClose(phase: PhaseKey): string {
-  return PHASE_CLOSES[phase];
-}
-
 export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   reconnect: {
     short: 'Think about who you were before life got in the way.',
