@@ -100,6 +100,43 @@ Reclaim List is what the program routes on. (See `docs/onboarding-open-issues.md
 
 ---
 
+## Shipping — the review gate (ADOPTED 2026-09-01, supersedes push-straight-to-main)
+
+**`main` is no longer a working branch that happens to be live. It is three people's product.** Greg, Jennifer and
+Donna are on it. Push-on-green was right when the only person a bad deploy could reach was Jay; it is now a way to
+change the ground under someone mid-walk. Merging is a decision, not a reflex. **Three habits, agreed with Jay:**
+
+1. **Nothing reaches the live site without Jay seeing it first — as a PICTURE and a LINK.** Not "it's deployed,
+   check it"; not a file path. A rendered before/after in the reply, plus the preview URL and the one screen to
+   open. He is the brand and product owner, not a developer — he does not go into the repo, and a change he cannot
+   see is a change he cannot approve. **"It's committed" is not "it's done."**
+2. **Database changes and Community changes happen only when nobody is walking, and he is told BEFORE, not after.**
+   Those are the two things a preview cannot protect (below).
+3. **Fewer, larger, announced releases.** Nineteen in a day was a feature of the old world. Batch them, and let him
+   pick the moment — he knows who is mid-walk.
+
+**THE PREVIEW SHARES THE PRODUCTION DATABASE.** Checked 2026-09-01 with `vercel env ls`: `DATABASE_URL` is a single
+value covering **Production AND Preview**. There is no second copy of the data. A preview link is therefore new CODE
+over REAL member records — fine for judging a screen, and fine for walking as a demo account (member rows are
+isolated from each other), but two things can never be safely previewed:
+- **A change needing a migration.** To preview it the real schema must change first, so the risky half lands live
+  before Jay has seen anything. (Migrations are manual, not applied on deploy — see [[prod-migration-apply-drift]].)
+- **Anything shared between members.** A test post in the Community is a real post; Greg would read it.
+
+**FLAGS ARE ALL-OR-NOTHING.** They are env vars read at module scope, scoped per Vercel environment (and per preview
+branch), so flipping one flips it for every member at once. There is no "show this to Jay only" today.
+
+**THE UPGRADE, AND ITS TRIPWIRE.** The right long-term answer is a **per-member flag** — a change visible on the real
+site, with real data, to Jay's account alone. Jay: *"that upgrade is the right answer when the time is right."*
+Deliberately NOT built yet (2026-09-01): with three testers and a queue of copy and screen changes, the free path
+covers nearly everything, and the build should be paid for by the thing that needs it. **"When the time is right"
+must not be left to feel — build it when the FIRST of these happens:**
+- a change requires a **migration**, or
+- a change touches the **Community**, or anything else shared between members, or
+- the tester count passes **three** (a real Charter member is not a tester).
+
+---
+
 ## Capture quality — patterns, not patches (how we keep the AI surfaces reliable)
 
 The conversational surfaces (onboarding capture, the agents) are fuzzy by nature — the model will
