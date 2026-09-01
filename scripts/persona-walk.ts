@@ -7,6 +7,13 @@
 import { stagedOpening, liveTurnStaged } from '../lib/agent/onboarding-staged.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
 import { serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
+import {
+  liveTurnReconnect, reconnectR1Opening, reconnectOpening, reconnectR3Opening,
+  RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC,
+} from '../lib/agent/reconnect.ts';
+import { serializeBeatConfirm, type BeatConfirmIntent } from '../lib/agent/beat-confirm.ts';
+import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
+import type { Collected } from '../lib/agent/onboarding.ts';
 import type { ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
 
 const readable = (s: string) => s.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).join('\n');
@@ -58,9 +65,40 @@ CRITICAL — the thing this walk is testing:
 
 Answer scales and pick-lists plainly when asked. Keep every reply under about twenty-five words.`;
 
+
+// ── THE PERSONA WHO PUSHES BACK ───────────────────────────────────────────────────────────────────────────────
+//
+// Joanne volunteers everything; Marion is terse but compliant. Neither ARGUES, and every defect found on
+// 2026-09-01 needed someone who did. Donna answered one question when asked two ("I'm going to answer this
+// question first"), named the fault out loud ("I think it is a problem that you are asking me a question and not
+// allowing me to answer it before following on with another question"), and asked "Why are you rushing me
+// through this?" Four defects in twenty minutes, none of which 2,640 passing tests had caught.
+//
+// So this persona's job is not to be difficult. It is to be a real person who notices — and to keep answering
+// honestly while noticing, which is the combination that surfaces the fault instead of just ending the walk.
+const PROTESTER_SYSTEM = `You are role-playing a member in an onboarding conversation with an AI companion for a midlife-identity program. Stay fully in character; never break character or narrate meta.
+
+You are Marie, 54. You ran a busy restaurant kitchen for twenty years until it closed in 2024. Your mother moved in with you the same year and needs a lot of care. You have gained weight, stopped cooking for pleasure, and feel like staff in your own life.
+
+How you talk:
+- Warm but direct. 1-3 sentences. You have run a kitchen; you are used to saying what is wrong.
+- You answer honestly and in detail when asked ONE thing at a time.
+
+CRITICAL — you notice how you are being handled, and you say so:
+- If you are asked TWO questions in one message, answer ONLY the first and say you are doing that: "I'll take the first one." If it happens again, name it plainly: "You keep asking a second question before I've answered the first."
+- If it feels like you are being hurried toward finishing, say so: "Why are you rushing me?" or "I'm not done."
+- If the same question comes back a second time in the same words, say "You already asked me that."
+- If something is unclear, say "I don't follow" rather than guessing.
+- If you tap a button and the conversation carries on as if you had not, say "I already answered that."
+- You are not hostile and you do not quit. You keep going, and you keep telling them when it is wrong.
+
+Answer scales and pick-lists plainly. Keep replies under about forty words.`;
+
 const PERSONA = (process.argv[2] ?? 'joanne').toLowerCase() === 'marion'
   ? { name: 'Marion', system: MARION_SYSTEM }
-  : { name: 'Joanne', system: JOANNE_SYSTEM };
+  : (process.argv[2] ?? '').toLowerCase() === 'marie'
+    ? { name: 'Marie', system: PROTESTER_SYSTEM }
+    : { name: 'Joanne', system: JOANNE_SYSTEM };
 
 async function askJoanne(history: ConvMessage[]): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -125,9 +163,17 @@ async function tapChip(history: ConvMessage[], candidates: string[]): Promise<st
     ...history,
     { role: 'agent', text: `(Choose ONE of these words: ${candidates.join(', ')}. Reply with just that one word.)` },
   ]);
-  // A tap can only ever emit an exact candidate. Match loosely on the model's reply, else take the first.
+  // A TAP CAN ONLY EMIT A CANDIDATE — BUT A MEMBER CAN ALSO DECLINE, and until 2026-09-01 this could not.
+  // It fell back to `candidates[0]`, so a persona instructed to refuse a handle tapped one anyway and the run
+  // came back green. Marion's walk reported "chips tapped, identity captured" for a member written to refuse.
+  // A harness that can only comply cannot find a bug that only appears when someone pushes back — and pushing
+  // back is exactly what found four defects in Donna's twenty minutes.
+  //
+  // The real surface allows two things the old fallback hid: writing your own word, and saying you don't know
+  // (which the engine reads as a skip). Both are what she can actually do, so both are what this can do.
   const hit = candidates.find((c) => raw.toLowerCase().includes(c.toLowerCase()));
-  return hit ?? candidates[0]!;
+  if (hit) return hit;
+  return raw.trim() || candidates[0]!; // typed instead of tapped — reaches the classifier untouched, as it should
 }
 
 /**
@@ -214,6 +260,115 @@ function signal(state: ConvState): string {
   return `      ↳ [stage=${state.stage} · identityNoun=${JSON.stringify(c.identityNoun ?? null)} · identitySkipped=${c.identitySkipped ?? false} · reclaimList(${list.length})=${JSON.stringify(list)}]`;
 }
 
+
+// Which structured surfaces the member actually met, across the WHOLE path. Module-scoped because the walk is no
+// longer one loop inside main() — the Reconnect leg records into the same sets, so coverage is the whole journey.
+const surfacesSeen = new Set<string>();
+const surfacesTapped = new Set<string>();
+
+// Which structured surfaces the member actually met, across the WHOLE path. Module-scoped because the walk is no
+// longer one loop inside main(): the Reconnect leg records into these same sets, so coverage describes the whole
+// journey rather than the first quarter of it.
+const surfacesSeen = new Set<string>();
+const surfacesTapped = new Set<string>();
+
+// ── THE RECONNECT LEG ─────────────────────────────────────────────────────────────────────────────────────────
+//
+// WHY THE WALK NO LONGER STOPS AT THE HANDOFF (2026-09-01). Onboarding had a walk and Reconnect had an eval that
+// starts mid-arc, and NEITHER covered the path a member actually takes: fresh account, straight through. Donna
+// walked exactly that on 2026-09-01 and found four defects in twenty minutes, on a build whose 2,640 tests were
+// green and whose onboarding persona walk had run clean that morning.
+//
+// Two of the four were in beats no automated walk had ever reached — the Doors board and the Door draw-out's
+// chips. This leg reaches them.
+
+/** Tap a beat-confirm chip. The engine reads the WIRE string; the persona only chooses which one. */
+async function tapBeatConfirm(
+  history: ConvMessage[],
+  choices: { value: string; label: string }[],
+  set: string | undefined,
+): Promise<string> {
+  const menu = choices.map((c, i) => `${i + 1}. ${c.label}`).join('\n  ');
+  const raw = await askJoanne([
+    ...history,
+    { role: 'agent', text: `(Beneath that are buttons:\n  ${menu}\nReply with ONLY the number of the one you'd press.)` },
+  ]);
+  const n = Number((raw.match(/[123]/) ?? ['1'])[0]);
+  const chosen = choices[n - 1] ?? choices[0]!;
+  return serializeBeatConfirm(chosen.value as BeatConfirmIntent, (set ?? 'default') as never);
+}
+
+/** Mark Doors on the board. The persona picks which ones are hers; the harness submits them the way the board does. */
+async function submitDoorsBoard(
+  history: ConvMessage[],
+  cards: { slug: string; title?: string }[],
+): Promise<string> {
+  const menu = cards.map((c, i) => `${i + 1}. ${c.title ?? c.slug}`).join('\n  ');
+  const raw = await askJoanne([
+    ...history,
+    { role: 'agent', text: `(A board of doors:\n  ${menu}\nReply with the NUMBERS of the ones that are yours, comma separated — two to four of them.)` },
+  ]);
+  const picked = [...new Set((raw.match(/\d+/g) ?? ['1', '2']).map(Number))]
+    .filter((n) => n >= 1 && n <= cards.length).slice(0, 4);
+  const slugs = (picked.length ? picked : [1, 2]).map((n) => cards[n - 1]!.slug);
+  return serializeBoardSubmission({
+    doors: slugs.map((slug) => ({ slug: slug as never, relevance: 4 })),
+    quietDrift: false,
+    first: slugs[0] as never,
+    biggest: slugs[0] as never,
+    stillOpen: slugs as never,
+  });
+}
+
+/** Walk one Reconnect Session to completion, tapping every structured surface the way the real client does. */
+async function walkSession(
+  label: string,
+  opening: { reply: string; state: ConvState; expects?: Expectation },
+  arc: Parameters<typeof liveTurnReconnect>[3],
+  cap = 30,
+): Promise<{ complete: boolean; turns: number; replies: string[] }> {
+  console.log(`\n\n════════ ${label} ════════`);
+  const history: ConvMessage[] = [{ role: 'agent', text: opening.reply }];
+  const replies: string[] = [opening.reply];
+  let state = opening.state;
+  let expects: Expectation | undefined = opening.expects;
+  let complete = false;
+  console.log('\nCOMPANION:', readable(opening.reply));
+
+  for (let i = 0; i < cap && !complete; i++) {
+    let msg: string; let via = '';
+    if (expects?.kind === 'doors_board') {
+      msg = await submitDoorsBoard(history, (expects as { cards?: { slug: string; title?: string }[] }).cards ?? []);
+      via = ' [marked the board]';
+    } else if (expects?.kind === 'beat_confirm') {
+      msg = await tapBeatConfirm(history, expects.choices ?? [], (expects as { set?: string }).set);
+      via = ' [tapped a confirm chip]';
+    } else if (expects?.kind === 'scale') {
+      msg = await tapScale(history, expects.index, expects.total);
+      via = ' [tapped a scale chip]';
+    } else {
+      msg = await askJoanne(history);
+    }
+    if (expects?.kind) { surfacesSeen.add(expects.kind); if (via) surfacesTapped.add(expects.kind); }
+    console.log(`\n${PERSONA.name.toUpperCase()}${via}:`, msg);
+    let turn;
+    try {
+      turn = await liveTurnReconnect(state, history, msg, arc);
+    } catch (e) {
+      console.log('  [liveTurnReconnect error]', (e as Error).message);
+      break;
+    }
+    history.push({ role: 'member', text: msg }, { role: 'agent', text: turn.reply });
+    replies.push(turn.reply);
+    state = turn.state as ConvState;
+    expects = (turn as { expects?: Expectation }).expects;
+    complete = !!turn.complete;
+    console.log('\nCOMPANION:', readable(turn.reply));
+  }
+  console.log(`\n──── ${label}: ${complete ? 'closed' : 'DID NOT CLOSE'} in ${replies.length - 1} turns ────`);
+  return { complete, turns: replies.length - 1, replies };
+}
+
 async function main() {
   const open = stagedOpening();
   let state = open.state;
@@ -222,8 +377,6 @@ async function main() {
   console.log(signal(state));
 
   const MAX = 30;
-  const surfacesSeen = new Set<string>();
-  const surfacesTapped = new Set<string>();
   let expects: Expectation | undefined = (open as { expects?: Expectation }).expects;
   for (let i = 0; i < MAX; i++) {
     // Answer through the SURFACE the engine asked for, not free prose — that is what a member's client does.
@@ -261,6 +414,25 @@ async function main() {
     console.log(signal(state));
     if (turn.complete) { console.log('\n=== COMPLETE (turn', i + 1, ') ==='); break; }
   }
+  // ── STRAIGHT ON INTO RECONNECT, the way a member goes ────────────────────────────────────────────────────────
+  // The handoff is where every previous harness stopped. onboarding's `collected` IS what the real action loads
+  // (loadReconnectCaptures → reconnectR1Opening), so the walk continues on her own captured intake rather than a
+  // fixture — which is the only version that can catch a fault in what onboarding actually handed forward.
+  const sessions: { label: string; complete: boolean; turns: number; replies: string[] }[] = [];
+  const committed = (state.collected ?? {}) as Collected;
+  if (state.stage === 'complete' || (state as { complete?: boolean }).complete || committed.identityNoun || committed.identitySkipped) {
+    const legs: [string, { reply: string; state: ConvState; expects?: Expectation }, Parameters<typeof liveTurnReconnect>[3]][] = [
+      ['R1 · The Distance', reconnectR1Opening(committed) as never, RECONNECT_R1_ARC],
+      ['R2 · Excavation', reconnectOpening(committed) as never, RECONNECT_R2_ARC],
+      ['R3 · The Fade', reconnectR3Opening(committed) as never, RECONNECT_R3_ARC],
+    ];
+    for (const [label, opening, arc] of legs) {
+      const r = await walkSession(label, opening, arc);
+      sessions.push({ label, ...r });
+      if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie
+    }
+  }
+
   // COVERAGE. A surface that never appeared is not a pass — it is an untested path, and saying so is the whole
   // reason this block exists. The four structured surfaces a member meets in onboarding are listed explicitly so
   // an ABSENT one is visible rather than silently missing.
@@ -288,6 +460,30 @@ async function main() {
       : satisfiedOtherwise ? '✓ named  ' : '✗ NEVER APPEARED';
     console.log(`  ${mark} ${k}${satisfiedOtherwise && !seen ? ` — member named it herself ("${state.collected.identityNoun}"), chips not needed` : ''}`);
   }
+
+  // ── WHAT THE WALK ASSERTS, beyond "it ran" ───────────────────────────────────────────────────────────────────
+  // Both of these come straight from Donna's 2026-09-01 report, and both were live on a build with 2,640 green
+  // tests. They are checked across EVERY reply in the whole path, onboarding and Reconnect together.
+  const everyReply = [...replies, ...sessions.flatMap((x) => x.replies)];
+  const stacked = everyReply.filter((r) => r.split(BEAT_SEP).some((b) => {
+    const q = b.replace(/\?\s+Or\b[^?]{0,60}\?/gi, '?').split('?').length - 1;
+    return q >= 2;
+  }));
+  const seen = new Map<string, number>();
+  for (const r of everyReply) for (const b of r.split(BEAT_SEP)) {
+    const k = b.trim();
+    if (k.length > 40) seen.set(k, (seen.get(k) ?? 0) + 1);
+  }
+  const repeated = [...seen.entries()].filter(([, n]) => n > 1);
+
+  console.log('\n=== RECONNECT ===');
+  for (const x of sessions) console.log(`  ${x.complete ? '✓' : '✗'} ${x.label} — ${x.turns} turns`);
+  if (!sessions.length) console.log('  (onboarding did not complete, so the Reconnect leg never ran)');
+  console.log('\n=== INVARIANTS (Donna, 2026-09-01) ===');
+  console.log(`  ${stacked.length ? '✗' : '✓'} two questions in one bubble: ${stacked.length}`);
+  for (const r of stacked.slice(0, 3)) console.log('      ' + readable(r).replace(/\n/g, ' / ').slice(0, 150));
+  console.log(`  ${repeated.length ? '✗' : '✓'} a bubble repeated verbatim: ${repeated.length}`);
+  for (const [k, n] of repeated.slice(0, 3)) console.log(`      ${n}× ${k.slice(0, 130)}`);
   console.log('\n=== FINAL COLLECTED ===');
   console.log(JSON.stringify(state.collected, null, 1));
 
