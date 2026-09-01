@@ -56,6 +56,27 @@ export const PURGEABLE = [
   // currently exists, and a tester who returns to an old address should not be a surprise.
   'cranedonna@mac.com',
   'donnacrain19@gmail.com',
+
+  // ── THE CLEAN START, 2026-09-01 (Jay: "We're starting everybody clean") ──────────────────────────────────────
+  // Greg and Jennifer come on tomorrow after waiting three weeks. Everything below is a tester account being
+  // cleared so the charter group starts from the same front door, on the same build, with no half-walked history
+  // behind them. Each line is a decision, per the note above.
+
+  // Donna — three accounts from three re-walks in three days. She takes a new address each time rather than
+  // asking to be wiped, which is why the roster grew to three of her.
+  'testemail345@mac.com',   // 2026-09-01 — the walk that found the stacking, the rushing and the Doors tap
+  'te$t3ma!l@aol.com',      // 2026-08-30 — her full program walk, 16 Sessions
+  'te$t3ma!l@mac.com',      // 2026-08-30 — a partial start the same day
+
+  // Jay's own member record. NOT a fixture — his real Doors and his real Fade — and normally not something to
+  // touch on anyone's initiative but his. He asked for it directly here, as he did on 2026-08-27.
+  'jay@adjacentlabmedia.com',
+
+  // Greg's account, a month of real program work (15 Sessions, 15 badges, an IDQ retake). EXPORTED FIRST, at his
+  // request, to ~/Desktop/greg-welk-program-record-2026-09-01.json — program state and his 14 Playbook keepers in
+  // his own words. The export does NOT include Session transcripts; the diagnostic has no field for them. That
+  // was said out loud before the wipe rather than discovered after it.
+  'gjwG4L1@gmail.com',
 ] as const;
 
 /** Is this address one we are allowed to destroy? `.test` fixtures always are; real addresses only by name. */

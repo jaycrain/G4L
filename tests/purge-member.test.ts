@@ -66,7 +66,12 @@ test('the allowlist is the guard — a real member cannot be purged by typing th
   assert.equal(isPurgeable('donnacrain19@gmail.com'), true);
   assert.equal(isPurgeable('  DonnaCrain19@Gmail.com '), true, 'trim + case must not be a way past the list');
   assert.equal(isPurgeable('fresh@grintaforlife.test'), true, '.test fixtures are always disposable');
-  for (const notAllowed of ['jay@adjacentlabmedia.com', 'greg@example.com', '', '   ', 'donnacrain19@gmail.com.evil.com']) {
+  // jay@adjacentlabmedia.com USED TO BE THIS TEST'S EXAMPLE of a real member the list must refuse. On 2026-09-01
+  // he asked for his own record to be wiped in the clean start before Greg and Jennifer, so it is now ON the list
+  // — a decision, made in his words, recorded there. The example moved to an address nobody has allowed, because
+  // what this test actually proves is unchanged: being a real person's address is not a way in. The empty string,
+  // the whitespace and the suffix-injection case are the guards worth keeping intact.
+  for (const notAllowed of ['someone@gmail.com', 'greg@example.com', '', '   ', 'donnacrain19@gmail.com.evil.com']) {
     assert.equal(isPurgeable(notAllowed), false, `must refuse ${JSON.stringify(notAllowed)}`);
   }
 });
