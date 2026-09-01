@@ -97,6 +97,52 @@ const capFirst = sentenceStart; // one definition — see lib/content/member-wor
 // uses one contract and no site can reintroduce the double-ask.
 
 /** Strip a trailing question sentence from the model's turn, keeping the receipt. '' if it was only a question. */
+/**
+ * Does this sentence ASK the member for something? Not "does it contain a question mark".
+ *
+ * Donna's walk, 2026-09-01. The Companion said "So just the one: tell me what these two years have been like
+ * since the job ended." — an ask, with no '?' in it. Both this file's ask-detectors tested for '?' alone, so
+ * neither saw it, and the engine appended its own question underneath. It happened four times across three
+ * screenshots, including inside the turn where the Companion apologised for doing it:
+ *
+ *   COMPANION | You're right. That's on me — I stacked a second question on top before you'd had a chance to
+ *             | answer the first. So just the one: tell me what these two years have been like since the job
+ *             | ended. That helps me understand. Did anything else pile on around then — ?
+ *   MEMBER    | Fucker
+ *
+ * NARROW ON PURPOSE, because the failure this could cause is worse than the one it fixes. A false positive means
+ * we suppress OUR question on a turn where the model did not really ask, and the member is handed a turn with
+ * nothing to answer — a dead end, and the old seatbelt for it (the correction card) is confirm-only now. So:
+ * an explicit short list, clause-initial only, and — for the append decision — only when the turn ENDS on it.
+ * "You didn't tell me" and "he would tell me everything" are not clause-initial and do not match.
+ */
+const IMPERATIVE_ASK =
+  /(?:^\s*|[.!?;:—-]\s*)(tell me|tell us|take me through|walk me through|talk me through|say more|go on|give me)\b/i;
+
+/** Sentences of a paragraph, punctuation kept, so an ask can be located and cut at its own boundary. */
+function sentencesOf(para: string): string[] {
+  return para.match(/[^.!?]+[.!?]*/g) ?? [para];
+}
+
+/**
+ * Did the model already ask, without a question mark? Two accepted shapes, and the split between them is what
+ * keeps a false positive from stranding a member:
+ *
+ *   1. The turn ENDS on the ask — "So just the one: tell me what these two years have been like." Any form
+ *      counts here, including after a colon, because a turn that finishes on it is unambiguously the ask.
+ *   2. A sentence in the last paragraph BEGINS with it — "Go on. I'm here for it." The model routinely asks and
+ *      then adds a warm coda (receiptOnly's own comment records the same habit), so requiring the ask to be last
+ *      would miss it. Requiring sentence-START is what makes this safe: a quoted ask inside a reflection
+ *      ("every morning she would say: tell me about your day") sits mid-sentence and does not count.
+ */
+export function endsOnImperativeAsk(text: string): boolean {
+  const lastPara = (text ?? '').trim().split(/\n\s*\n/).pop() ?? '';
+  const sentences = sentencesOf(lastPara).filter((x) => x.trim());
+  const last = sentences[sentences.length - 1] ?? '';
+  if (IMPERATIVE_ASK.test(last)) return true;
+  return sentences.some((x) => /^\s*(tell me|tell us|take me through|walk me through|talk me through|say more|go on|give me)\b/i.test(x));
+}
+
 export function receiptOnly(modelText: string | undefined): string {
   const t = (modelText ?? '').trim();
   if (!t) return t;
@@ -120,7 +166,17 @@ export function receiptOnly(modelText: string | undefined): string {
   // is the model asking — which is the caller's job on this turn, not the model's.
   const paras = t.split(/\n\s*\n/);
   const last = paras[paras.length - 1]!;
-  if (!last.includes('?')) return t; // a reflection with no forward question — keep it whole
+  if (!last.includes('?')) {
+    // NO '?' — but the turn may still END on an imperative ask ("…Tell me the rest."). The caller is about to
+    // append its own question, so that sentence has to come off or the member gets two. Only the FINAL sentence
+    // is cut: an ask quoted mid-reflection is not the model asking.
+    if (endsOnImperativeAsk(t)) {
+      const kept = sentencesOf(last).slice(0, -1).join('').trim();
+      paras[paras.length - 1] = kept;
+      return paras.filter((p) => p.trim()).join('\n\n').trim();
+    }
+    return t; // a reflection with no forward question — keep it whole
+  }
 
   const cut = last.replace(/(?:^|(?<=[.!?]))\s*[^.!?]*\?[\s\S]*$/, '').trim();
   paras[paras.length - 1] = cut;
@@ -461,7 +517,28 @@ const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of d
 // by "that's the whole of it". It stays a question in the Companion's voice, not a prompt to operate a control.
 // "does that land" is banned by our own voice rules — "Not 'does that land' either — ask 'is that right'".
 // It shipped in the one line that asks a member to rule on their own fade story. (Voice sweep, 2026-08-28.)
-const GAP_FORECAST_CONFIRM = 'Have I got that right the way it happened — or is there more?';
+// ROTATED, for the same reason GAP_MORE nine lines above it is (2026-09-01). That comment says a static line
+// "read as a broken loop on the live walk" — and this constant, its neighbour, stayed static. Donna got the
+// identical sentence FOUR times while telling us her father had cancer and she had lost her job. The rule was
+// written down and not applied to the line beside it. [[one-fact-many-sites]]
+//
+// EVERY VARIANT MUST STILL BE ANSWERED BY THE SAME THREE CHIPS — "not quite right", "there's more", "that's the
+// whole of it" — which is the constraint the original comment below exists to protect. Each asks is-this-right
+// AND is-there-more, so all three taps remain a real answer. "Does that land" stays banned by the voice rules.
+const GAP_FORECAST_CONFIRM_VARIANTS = [
+  'Have I got that right the way it happened — or is there more?',
+  'Is that right, the way it went — or is there more of it?',
+  'Have I understood how it opened — or is there more you want to put in?',
+];
+/** Pick by how many times we have already asked, so the confirm never repeats verbatim as her story unfolds. */
+function gapForecastConfirm(history: ConvMessage[]): string {
+  const asked = history.filter(
+    (h) => h.role === 'agent'
+      && /(got that right the way it happened|right, the way it went|understood how it opened)/i.test(h.text),
+  ).length;
+  return GAP_FORECAST_CONFIRM_VARIANTS[Math.min(asked, GAP_FORECAST_CONFIRM_VARIANTS.length - 1)]!;
+}
+export const GAP_FORECAST_CONFIRM = GAP_FORECAST_CONFIRM_VARIANTS[0]!; // the first, for tests/fixtures
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -716,7 +793,10 @@ export function withQuestion(modelText: string, probe: string | null): string {
   // Two of Jay's walks hit this exact shape; a paragraph-scoped check is the robust contract. (The confirmation
   // card remains the seatbelt if a rhetorical '?' ever suppresses a probe we wanted.)
   const lastPara = t.split(/\n\s*\n/).pop() ?? t;
-  if (lastPara.includes('?')) return t;
+  // '?' anywhere in the last paragraph (unchanged), OR the turn ending on an imperative ask — "Tell me the rest.",
+  // "Go on. I'm here for it." Donna got our probe stacked on four of those. See IMPERATIVE_ASK for why it is a
+  // short explicit list rather than a general heuristic.
+  if (lastPara.includes('?') || endsOnImperativeAsk(t)) return t;
   return `${t}\n\n${probe}`; // a reflection with no forward question anywhere — add one
 }
 
@@ -725,7 +805,7 @@ export function withQuestion(modelText: string, probe: string | null): string {
 // engine-built lead. (Jay's walk: the engine threw away the model's rich reflection because it contained a "?"
 // and read back the stalest early gap fragment — "Well, I got married and had kids" — dropping everything just
 // drawn out. Never read a stale fragment back as "here's what I'm holding.")
-function reflectGap(modelText: string): string {
+function reflectGap(modelText: string, history: ConvMessage[]): string {
   // RECEIVE, THEN INVITE — and the invitation is always OURS now (2026-08-19).
   //
   // It used to keep the model's own trailing question when it had one, to avoid stacking two asks. That was right
@@ -736,7 +816,7 @@ function reflectGap(modelText: string): string {
   //
   // The reflection still leads and is still the model's, in her words. The structure only carries the ending.
   const t = (modelText ?? '').trim();
-  return receiveThen(t || GAP_REFLECT_LEAD, GAP_FORECAST_CONFIRM);
+  return receiveThen(t || GAP_REFLECT_LEAD, gapForecastConfirm(history));
 }
 
 // W-12: join accumulated gap chapters with a sentence boundary. When a member adds a chapter at the gap confirm, we
@@ -2574,7 +2654,7 @@ const gapStage: StageDef = {
         b.reply = s.gapHeld && more ? receiveThen(b.modelText, more) : withQuestion(b.modelText, more);
       } else {
         s.gapHeld = false;
-        b.reply = reflectGap(b.modelText);
+        b.reply = reflectGap(b.modelText, b.history);
         b.awaitingConfirm = true;
       }
     } else {

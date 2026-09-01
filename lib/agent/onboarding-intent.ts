@@ -19,6 +19,7 @@
 //   C. Fade & scope — is this a real Fade (loss/drift), forward ambition (decline), or Acceptance (resignation)?
 //   D. Resolvers — compose the primitives into the single decision a stage needs (e.g. resolveGapConfirm).
 
+import { parseBeatConfirm } from './beat-confirm.ts';
 import { matchDoors, hasResignationLanguage } from '../doors.ts';
 import { gapIsNarrative } from './onboarding-contract.ts';
 import { confirmsWhole, isAffirmation, memberWantsToWrap, type ReplyIntent } from './onboarding.ts';
@@ -241,6 +242,22 @@ export function isAnaphoricClose(message: string): boolean {
 // they're done, or deflects. A draw-out stage that sees this must advance rather than re-pose (never loop). Composes
 // the existing wrap + deflect detectors — one name the arcs pass into drawoutShouldReflect.
 export function memberWantsToAdvance(message: string): boolean {
+  // A TAP IS A FACT, AND THIS READ PROSE ONLY (fixed 2026-09-01).
+  //
+  // Donna's walk: "I clicked That's It button and it kept coming back." She was in the Door draw-out with the
+  // beat-confirm chips on screen. A tap arrives as a serialized wire string, every prose pattern below missed it,
+  // so the draw-out ticked on and asked her for more about a Door she had just closed. She tapped it twice, then
+  // had to tell the Companion it had already walked that Door. Typing "that's it" would have worked — the button
+  // was the one route that did not.
+  //
+  // Fixed in the SHARED function rather than at the Door call site: drift and window pass their member message
+  // through this same check, so all three draw-outs were tap-blind and a per-site fix would have left two of them
+  // broken and a third copy of the rule to keep in sync. [[a-tap-is-never-prose]] [[one-fact-many-sites]]
+  //
+  // ONLY 'done' ADVANCES. "There's more" and "not quite right" are taps too, and both mean stay — reading any tap
+  // as a wish to move on would end the Door work on a member who asked to keep going.
+  const tap = parseBeatConfirm(message);
+  if (tap) return tap === 'done';
   return memberSignalsGapComplete(message) || memberDeflecting(message);
 }
 

@@ -805,8 +805,22 @@ const doorsStage: StageDef = {
       b.reply = reflectReseeing(b.modelText);
       return;
     }
-    // (3) Normal insight confirm. The insight was OFFERED as a check (precise-and-humble). Model-signaled, regex fallback.
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right'); // dispute | addition | done
+    // (3) Normal insight confirm. The insight was OFFERED as a check (precise-and-humble).
+    //
+    // THE TAP IS READ FIRST — and it was not, until 2026-09-01. This beat OFFERS beat-confirm chips (see the
+    // comment on b.expects above, which announces exactly this fix), and then read the answer with the free-text
+    // classifier. A tapped chip arrives as a serialized wire string, the prose reader does not recognise it, and
+    // the draw-out carries on as though she had said nothing. Donna, that day: "I clicked That's It button and it
+    // kept coming back." She then had to tell the Companion it had already walked that Door.
+    //
+    // Her report five days earlier — "didn't take yes for an answer" — is what put the chips here. The chips
+    // shipped; the parse did not, so the comment above promised a fix the code never made, and she hit the same
+    // complaint twice. Drift (below), window and the legacy confirm have all read the tap first since they were
+    // built; this was the fourth site of one fact. [[a-tap-is-never-prose]] [[one-fact-many-sites]]
+    //
+    // Prose stays the fallback, exactly as it is for the other three: the chips are an easy path, never a gate.
+    const intent = parseBeatConfirm(b.memberMessage)
+      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right'); // dispute | addition | done
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DOOR; // they rejected the insight — take it, don't defend it
