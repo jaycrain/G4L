@@ -107,14 +107,18 @@ export default function DashboardTriptych({
               · the MY STORY link — My Story now lives in the Playbook's "Who you are" tab, beside the story-so-far.
                 It is the description of whose Playbook it is; next to a greeting it was just a nav item.
             The strip keeps the one thing nothing else says: who they're reclaiming. */}
-        {identitySelves && (
-          <div className="tri-member">
-            <div className="tri-member-id">
-              <span className="tri-member-name">Hi {firstName}!</span>
-              <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>
-            </div>
+        {/* THE GREETING IS NOT CONDITIONAL ON THE IDENTITY (fixed 2026-09-01). It used to be: the whole strip was
+            wrapped in {identitySelves && …}, so a member who never named a handle got a dashboard that did not say
+            hello. Nobody decided that — the greeting was written inside a conditional meant for the Identity, and
+            the two facts rode together because they shared a container. They are independent: we always know their
+            name, we do not always know who they're reclaiming. Found on the founder's own account, which has no
+            handle. See [[identity-claimed-in-session]] for the other half — giving them a route to name it. */}
+        <div className="tri-member">
+          <div className="tri-member-id">
+            <span className="tri-member-name">Hi {firstName}!</span>
+            {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
           </div>
-        )}
+        </div>
         {/* Mobile-only segmented control (CSS-shown ≤1000px). Composer lives at the foot of the center pane, so this
             wayfinding sits at the TOP, not a bottom tab bar. */}
         <div className="tri-seg" role="tablist" aria-label="Dashboard sections">
