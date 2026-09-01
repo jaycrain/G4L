@@ -60,7 +60,11 @@ export const SESSION_REGISTRY: SessionDef[] = [
   // It was ONE entry with five segments and a note saying "the ring advances by internal beat" — which is the
   // line that made Reconnect the only phase without Session boundaries. The ring now fills per Session, and the
   // member returns to the dashboard between them. R1 is the mirror and comes FIRST, per Greg's spec.
-  { id: 'r1', phase: 'reconnect', label: 'IDQ', kind: 'session', segments: ['B'] },
+  // R1's MEMBER-FACING name is 'The Distance' (Jay, 2026-09-01, resolving Greg's walk note). The IDQ stays
+  // the instrument — the Identity DISTANCE Questionnaire that produces the ID Score — and 'r1' stays the key.
+  // Greg suggested "Who am I?"; Jay wanted a name that describes the WORK, not the person, and nothing else
+  // in Cycle 1 is a question. It also explains the ID Score every time it is read: ID = Identity Distance.
+  { id: 'r1', phase: 'reconnect', label: 'The Distance', kind: 'session', segments: ['B'] },
   // EXCAVATION (Jay, 2026-08-29: "I love the word Excavation relative to what we're doing"). R2 carries TWO of
   // Greg's assets — Identity Excavation (RCN-EXC) and The Doors (RCN-FDR) — under one Session, and it was
   // titled after the second of them. Jay asked mid-walk "is this the excavation?", which is what a member

@@ -34,9 +34,12 @@ test('retired names appear nowhere on it', () => {
   }
 });
 
-test('Reconnect reads IDQ → Excavation → The Fade, in that order', () => {
+// RENAMED 2026-09-01: R1's member-facing label is 'The Distance'. The IDQ is still the instrument behind it —
+// the Identity DISTANCE Questionnaire that produces the ID Score — and 'r1' is still the key. What this test
+// guards is unchanged: the three Reconnect Sessions, in order, read from ONE table.
+test('Reconnect reads The Distance → Excavation → The Fade, in that order', () => {
   const names = SESSION_REGISTRY.filter((d) => d.phase === 'reconnect' && d.kind === 'session').map((d) => d.label);
-  assert.deepEqual(names, ['IDQ', 'Excavation', 'The Fade']);
+  assert.deepEqual(names, ['The Distance', 'Excavation', 'The Fade']);
 });
 
 test('every Session line pairs its registry label with its own summary', () => {

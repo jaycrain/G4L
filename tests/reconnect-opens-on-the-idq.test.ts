@@ -56,7 +56,9 @@ test('the curriculum and the session registry tell the same story', () => {
   // Session, which is exactly what Jay was shown. [[one-fact-many-sites]]
   const registry = sessionsForPhase('reconnect').filter((s) => s.kind === 'session');
   assert.equal(registry[0]!.id, 'r1');
-  assert.equal(registry[0]!.label, 'IDQ');
+  // 'The Distance' since 2026-09-01 — the member-facing name for R1. (This file's name still says idq; it is
+  // about R1 OPENING Reconnect, which has not changed, and renaming it would cost more than it explains.)
+  assert.equal(registry[0]!.label, 'The Distance');
 
   const firstBuilt = reconnect.filter(isBuilt).sort((a, b) => a.order - b.order)[0]!;
   assert.equal(keyFromForecast('reconnect', { id: firstBuilt.id, route: (firstBuilt as { route?: string }).route }),

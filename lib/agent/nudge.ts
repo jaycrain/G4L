@@ -41,9 +41,9 @@ export type Nudge = { kind: string; text: string; priority: number };
 export function computeNudges(s: NudgeSignals): Nudge[] {
   const n: Nudge[] = [];
   if (!s.hasIdq) {
-    n.push({ kind: 'idq_baseline', text: 'Ready for your IDQ? It sets your baseline ID Score.', priority: 90 });
+    n.push({ kind: 'idq_baseline', text: 'Ready for The Distance? It sets your baseline ID Score.', priority: 90 });
   } else if (s.daysSinceLastIdq != null && s.daysSinceLastIdq >= 60) {
-    n.push({ kind: 'idq_due', text: 'Your IDQ is ready again — it shows how far you have come.', priority: 85 });
+    n.push({ kind: 'idq_due', text: 'The Distance is ready again — it shows how far you have come.', priority: 85 });
   }
   if (s.curriculumNext) {
     const c = s.curriculumNext;

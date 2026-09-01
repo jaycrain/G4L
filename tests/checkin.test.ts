@@ -230,7 +230,10 @@ test('contextBlock · with REWIRE on, keepers are tagged by FUNCTION so the mode
 });
 
 test('proactiveTeaser is signal-driven', () => {
-  assert.match(proactiveTeaser({ ...base, idScore: null }), /IDQ/);
+  // 'The Distance' since 2026-09-01 — R1's member-facing name. The teaser is copy a MEMBER reads, so it uses the
+  // Session name; the IDQ is still the instrument behind it. What this guards is unchanged: with no ID Score the
+  // teaser points at the Session that produces one.
+  assert.match(proactiveTeaser({ ...base, idScore: null }), /The Distance/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: 'Fuel Plan' }), /Fuel Plan/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: null, direction: 'up' }), /working/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: null, direction: null }), /on your mind/);

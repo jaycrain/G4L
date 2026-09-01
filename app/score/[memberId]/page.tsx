@@ -48,7 +48,7 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         {dash?.score ? (
           <p className="sub-personal">Your ID Score right now is <strong>{Math.round(dash.score.score)}</strong>. {dash.score.context}</p>
         ) : (
-          <p className="sub-personal">You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.</p>
+          <p className="sub-personal">You don’t have an ID Score yet. Your first one lands when you take The Distance, in Reconnect.</p>
         )}
         {/* Trimmed: the header states the 0-100 read verbatim. The four-corners framing is the part it cannot
             carry, so that survives as its own sentence below. */}

@@ -128,7 +128,7 @@ export const CURRICULUM: Asset[] = [
   // RCN-WIN-LIST stop being catalogue rows and become what they always were — parts of a Session.
   ...(reconnectStaged
     ? [
-        meta('RCN-IDQ', 'IDQ', 'reconnect', 'Recognition', 'session', 1,
+        meta('RCN-IDQ', 'The Distance', 'reconnect', 'Recognition', 'session', 1,
           'Your starting read across four dimensions — the line we measure everything else against.',
           { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
         meta('RCN-FDR', 'Excavation', 'reconnect', 'Recognition', 'session', 2,
@@ -143,7 +143,7 @@ export const CURRICULUM: Asset[] = [
       ]
     : [
         ...RECONNECT_SESSIONS,
-        meta('RCN-IDQ', 'IDQ', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
+        meta('RCN-IDQ', 'The Distance', 'reconnect', 'Recognition', 'session', 1, 'Your starting read across four dimensions.', { produces: 'your ID Score (baseline measurement)', route: '/workspace/{memberId}/r1' }),
         IDENTITY_EXCAVATION,
         meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
       ]),

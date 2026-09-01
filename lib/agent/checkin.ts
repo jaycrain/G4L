@@ -1575,7 +1575,7 @@ export async function checkinReply(
 
 /** A short, dismissible proactive teaser for the resting bubble (or null). Signal-driven. */
 export function proactiveTeaser(c: CheckinContext): string | null {
-  if (c.idScore === null) return 'Ready for your IDQ when you are.';
+  if (c.idScore === null) return 'Ready for The Distance when you are.';
   if (c.lastCompletedAsset) return `How did ${c.lastCompletedAsset} land?`;
   if (c.direction === 'up') return 'Your score moved up — want to talk about what is working?';
   if (c.direction === 'down') return 'Checking in — how are you feeling today?';

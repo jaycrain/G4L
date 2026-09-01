@@ -5,7 +5,7 @@
 import type { AssetDefinition, AssetVariant } from './types.ts';
 
 export const ASSET_NAMES: Record<string, string> = {
-  'R-1': 'IDQ',
+  'R-1': 'The Distance', // member-facing; the IDQ is the instrument behind it (see session-registry.ts)
   'R-4': 'Identity Excavation',
   'R-6': 'Window Exercise',
   'W-1': 'Disinformation Audit',

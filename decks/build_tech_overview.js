@@ -276,7 +276,7 @@ title(s, 'The Program, as it runs today.', 'Cycle 1 · The Foundation — four p
 const TURNS = (F.sessionTurns && F.sessionTurns.each) || {};
 const PROGRAM = [
   ['Reconnect', 'the gateway', NAVY, '5A7183', [
-    ['IDQ',                     '24 items — your starting read.',              null],
+    ['The Distance',            '24 items — your starting read.',              null],
     ['Excavation',              'Mark your Doors from 12, then walk each one.',    null],
     ['The Fade',                'What it cost, then the Legacy Letter.',           TURNS['r3-legacy']],
   ], '6 items · Grinta read, ceremony, badge.'],
@@ -570,11 +570,11 @@ chrome(s, 23);
 
 // 24 · your first Sessions
 s = slide();
-title(s, 'Your first Session: the IDQ.', 'Where the measured Comeback begins.');
+title(s, 'Your first Session: The Distance.', 'The Identity Distance Questionnaire — where the measured Comeback begins.');
 IM(s, { path: RINGS, x:9.6, y:1.8, w:2.8, h:2.8 });
 T(s, [
   { text:"When you're ready, your first Session is the ", options:{} },
-  { text:'IDQ', options:{bold:true, color:NAVY} },
+  { text:'The Distance', options:{bold:true, color:NAVY} },
   { text:". You'll answer a set of questions, rating yourself across the areas of your life — where you are now, against the fuller version of you that you remember. It's where your ", options:{} },
   { text:'ID Score', options:{bold:true, color:NAVY} },
   { text:' begins: the distance left to close.\n\nFrom there, ', options:{} },
@@ -600,7 +600,7 @@ T(s, [
   { text:'A full first sitting\n', options:{bold:true} },
   { text:'Onboarding → Threshold → Tour → settled with the Companion.\n\n', options:{} },
   { text:'Your first Session\n', options:{bold:true} },
-  { text:'The IDQ — your ID Score, and the baseline for everything after it.\n\n', options:{} },
+  { text:'The Distance — your ID Score, and the baseline for everything after it.\n\n', options:{} },
   { text:'All the way through the Reconnect Checkpoint\n', options:{bold:true} },
   { text:'Where your first work is measured and your Grinta moves for the first time.', options:{} },
 ], { x:0.9, y:2.35, w:5.35, h:2.75, fontFace:HEAD, color:BODY, fontSize:14, valign:'top', lineSpacingMultiple:1.12, margin:0 });
