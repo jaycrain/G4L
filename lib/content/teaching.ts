@@ -110,7 +110,13 @@ const ASSET_TITLE: Record<string, string> = {
   // of a kept read. Two retired spellings slipped in from Greg's document titles: the old two-word label for r2
   // (it is just "the Doors" now) and his house camel-casing of the four Rs on c1. The guard greps this file as
   // plain text, comments included, so do not name either mistake here — it would re-trip on the explanation.
-  r1: 'The Distance', r2: 'the Doors', r3: 'the Drift Quiz',
+  // MEMBER-FACING NAMES ONLY (2026-09-01). This chip reads "from ___ · Reconnect" on a kept read, so it must
+  // say what the member calls the Session. R1 and R3 both used to carry Greg's INSTRUMENT names; renaming R1
+  // to The Distance left R3 as the only one still crediting a name no member has ever been shown. Greg's
+  // instrument names live in his Science Check and memos, not on a member's surface. R2 stays "the Doors"
+  // on purpose — the board and the conversation both call it that, so it matches their experience even
+  // though the Session title is Excavation.
+  r1: 'The Distance', r2: 'the Doors', r3: 'The Fade',
   w1: 'Disinformation Audit', w2: 'Visualization Workshop', w3: 'Mindful Monitoring',
   b1: 'What Is Your Why?', b2: 'Strengths and Weaknesses', b3: 'Monitoring Health Decisions',
   // C1 was RETITLED BY GREG on 2026-08-07 — "I also think the term Readiness may not be a good fit anymore. I
