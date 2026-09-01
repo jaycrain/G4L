@@ -127,6 +127,48 @@ export function receiptOnly(modelText: string | undefined): string {
   return paras.filter((p, i) => p.trim() || i < paras.length - 1).join('\n\n').trim();
 }
 
+/**
+ * Drop a trailing sentence in which the MODEL has already invited the tap — the engine is about to do that itself.
+ *
+ * receiptOnly cuts at the first QUESTION in the last paragraph, which is the right contract and the wrong shape
+ * here: the model previews the chips as an IMPERATIVE, so there is no '?' to cut at and both invitations survive.
+ * Marion's live walk, 2026-09-01, at the identity beat:
+ *
+ *   "…That's why the arguing worked. It came from someone certain, who they trusted to tell them the truth.
+ *    Let me offer you a few words for that version of you. Tap one, or write your own — it's a handle, not a
+ *    verdict, and we can change it."
+ *   "Here are a few words for who that was — tap the one that fits, or write your own. It's a handle to hold
+ *    onto, not a label set in stone, and we can change it anytime."
+ *
+ * The same instruction twice, in two voices, at one of the most loaded moments in onboarding. It reads exactly
+ * like a machine — and it lands right where a member is deciding whether this thing is worth being honest with.
+ *
+ * SCOPED TO THIS SEAM ON PURPOSE. This could have been a global rule in receiptOnly, or a new prompt instruction
+ * telling the model not to preview the chips. Both are worse: a global cut would strip legitimate prose on beats
+ * that have no chips, and a prompt rule is a string the authored copy can drift away from — the exact failure
+ * this file has been bitten by twice. The engine owns the invite, so the engine removes a duplicate of it.
+ *
+ * It only ever removes the model's OWN framing of an affordance we are about to describe. It never touches the
+ * reflection, which is the part that is about the member.
+ */
+export function dropPickInvite(modelText: string | undefined): string {
+  const t = (modelText ?? '').trim();
+  if (!t) return t;
+  // The tells are the affordance itself — tapping, picking, or writing your own. Deliberately narrow: these are
+  // things only the chooser can offer, so they cannot match a member-facing reflection.
+  const INVITE = /\b(tap (?:one|the one|whichever)|pick (?:one|whichever)|write your own|choose one)\b/i;
+  const paras = t.split(/\n\s*\n/);
+  const last = paras[paras.length - 1]!;
+  // Split the last paragraph into sentences and drop the trailing run that invites the tap.
+  const sentences = last.match(/[^.!?]+[.!?]*/g) ?? [last];
+  let end = sentences.length;
+  while (end > 0 && INVITE.test(sentences[end - 1]!)) end--;
+  if (end === sentences.length) return t; // nothing to drop
+  const kept = sentences.slice(0, end).join('').trim();
+  paras[paras.length - 1] = kept;
+  return paras.filter((p) => p.trim()).join('\n\n').trim();
+}
+
 /** Receive-then-open: the model's receipt (question stripped) + the single scripted opener. Opener alone if no receipt. */
 export function receiveThen(modelText: string | undefined, opener: string): string {
   const receipt = receiptOnly(modelText);
@@ -2276,7 +2318,9 @@ const identityStage: StageDef = {
       // receiveThen is the pattern this file already uses for exactly this seam: the model keeps the reflection
       // (its trailing question stripped, so there aren't two asks), the ENGINE keeps the structural line. The
       // authored copy is not a fallback for a silent model — it is the frame the chips hang on.
-      b.reply = receiveThen(b.modelText, IDENTITY_PICK_OFFER);
+      // dropPickInvite first: the model routinely previews the chips in its own words, and IDENTITY_PICK_OFFER is
+      // about to say the same thing. See its note — Marion's walk got both, back to back.
+      b.reply = receiveThen(dropPickInvite(b.modelText), IDENTITY_PICK_OFFER);
     } else {
       // Gather. Never-strand a member who won't name a PAST self: offer the "find it later" skip after a couple
       // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
@@ -3902,7 +3946,121 @@ export async function liveTurnStaged(
     tools: STAGED_TOOLS,
     messages,
   }));
-  return applyStagedTurn(state, history, memberMessage, parseStagedTurn(res.content));
+  const turn = parseStagedTurn(res.content);
+
+  // THE CHIPS ARE THE ENGINE'S GUARANTEE, NOT THE MODEL'S CHOICE (Jay, 2026-09-01).
+  //
+  // Marion's two live walks ran the same code against the same persona and diverged: once the model proposed
+  // candidates at turn four and she picked "Teacher"; once it never proposed any, and she reached the gap stage
+  // having never been offered a handle at all. Same prompt, same member, different day — because whether the
+  // chooser appears was left to the model deciding to call a tool.
+  //
+  // Jay's ruling: "We HAVE to offer chips that are selected. If it's a trade off between ultimate flexibility for
+  // any human words any way, and 100% accuracy, it's the latter." So the offer stops being a judgement and
+  // becomes a guarantee — the same call he made on 2026-07-29 when tap-to-pick replaced extraction, for the same
+  // reason (the model kept not committing a clear pick).
+  //
+  // WHY HERE AND NOT IN THE ENGINE: applyStagedTurn is pure and replayable — every onboarding fixture depends on
+  // it doing no I/O. So the ENGINE owns the decision (a pure predicate, testable offline) and the wrapper owns
+  // the call. The forced result is merged in as if the model had volunteered it, so the engine below is unchanged
+  // and every existing fixture still describes real behaviour.
+  if (mustForceIdentityCandidates(state, turn, history)) {
+    const words = await forceIdentityWords(client.messages as unknown as MessageCreator, messages);
+    if (words.length) {
+      turn.identityCandidates = words;
+      // The offer outranks the model's skip. Leaving the flag set would hand the engine a skip on the very turn
+      // we are putting chips in front of her — released and offered at once, which is neither.
+      if (turn.record?.identitySkipped) delete turn.record.identitySkipped;
+    }
+  }
+
+  return applyStagedTurn(state, history, memberMessage, turn);
+}
+
+/**
+ * Should the wrapper FORCE a candidate proposal this turn? Pure, so it can be reasoned about and tested offline.
+ *
+ * Fires only when all of these hold:
+ *   · we are in the identity stage and the member still has no handle,
+ *   · the model did NOT propose candidates itself (we never override a model that did its job),
+ *   · the member HAS given us a past self, so there is real language to draw the words from — proposing off
+ *     nothing would hand someone a label from thin air, which is the one thing this beat must never do, and
+ *   · they are at or past the third gather turn: after the two-turn breathe floor Jay asked for twice ("a couple
+ *     more turns"), and before the five-turn release, so there are two chances to offer before anyone is let go.
+ */
+export function mustForceIdentityCandidates(
+  state: ConvState,
+  turn: ModelTurn,
+  history: ConvMessage[],
+): boolean {
+  if (state.stage !== 'identity') return false;
+  if (state.collected?.identityNoun) return false;
+  if ((turn.identityCandidates ?? []).filter((w) => w?.trim()).length > 0) return false;
+  if (!state.collected?.athleticPast) return false;
+  // ONE OFFER IS OWED, NOT AN ENDLESS ONE. If the chooser has already been in front of them they have had their
+  // chance, and declining it is a legitimate answer we do not re-litigate. Matched against the authored constant
+  // rather than a copy of its text, so a wording edit cannot silently disable the check.
+  if (history.some((h) => h.role === 'agent' && h.text.includes(IDENTITY_PICK_OFFER))) return false;
+  // THE MODEL HAS A skip_identity TOOL, AND IT USES IT. Marion said "Can we just move on?" and the model skipped
+  // her on the spot — a fourth exit, and the most powerful one, because it bypasses the engine's turn counting
+  // entirely. It fired before she was ever shown a chip. So a model-signalled skip does not outrank an offer the
+  // member never received: it TRIGGERS the offer instead, and only counts once she has actually seen one.
+  const modelWantsToSkip = turn.record?.identitySkipped === true;
+  const scratch = state.stageScratch?.identity as { identityTurns?: number } | undefined;
+  return modelWantsToSkip || (scratch?.identityTurns ?? 0) >= 3;
+}
+
+/**
+ * One dedicated call whose ONLY job is to name 2–4 candidate handles from what the member has already said.
+ *
+ * Deliberately narrow: it gets the transcript and a forced tool, so "the model declined to offer" is not a
+ * reachable outcome the way it is on a conversational turn juggling reflection, capture and a question. Failure
+ * is swallowed — if this errors the member simply continues on the ordinary path and is released at five turns
+ * as before. A crash here would take down an onboarding turn to fix a quality problem, which is a bad trade.
+ */
+type MessageCreator = {
+  create(args: unknown): Promise<{ content: Array<{ type: string; name?: string; input?: unknown }> }>;
+};
+
+async function forceIdentityWords(
+  messages_: MessageCreator,
+  messages: { role: 'user' | 'assistant'; content: string }[],
+): Promise<string[]> {
+  try {
+    const res = await captureCreate((model) => messages_.create({
+      model,
+      max_tokens: 200,
+      system:
+        'You are naming candidate handles for a midlife member reclaiming who they used to be. Read the ' +
+        'conversation and propose 2–4 single words for that past self, drawn FROM THEIR OWN LANGUAGE — the ' +
+        'nouns and images they actually used. Natural case, no leading article ("Swimmer", never "the ' +
+        'Swimmer"). Never a diagnosis, never a judgment, never a word about who they are NOW. If they spoke ' +
+        'about teaching, "Teacher" is fair; do not invent a life they did not describe.',
+      tools: [{
+        name: 'offer_identity_words',
+        description: 'Propose 2–4 candidate handle words from the member’s own language.',
+        input_schema: {
+          type: 'object' as const,
+          properties: { words: { type: 'array', items: { type: 'string' } } },
+          required: ['words'],
+        },
+      }],
+      tool_choice: { type: 'tool' as const, name: 'offer_identity_words' },
+      messages,
+    }));
+    for (const block of res.content) {
+      if (block.type === 'tool_use' && block.name === 'offer_identity_words') {
+        const words = (block.input as { words?: unknown })?.words;
+        if (Array.isArray(words)) {
+          return words.map((w) => String(w ?? '').trim()).filter(Boolean).slice(0, 4);
+        }
+      }
+    }
+    return [];
+  } catch (err) {
+    console.error('[identity] forced candidate proposal failed — falling through to the ordinary path:', (err as Error)?.message);
+    return [];
+  }
 }
 
 export type { Ctx };

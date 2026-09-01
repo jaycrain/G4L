@@ -110,7 +110,16 @@ test('the gap openers cannot be called without the history they judge on', () =>
 test('the chips are always introduced — the frame is not a fallback for a silent model', () => {
   assert.doesNotMatch(CODE, /b\.modelText \|\| IDENTITY_PICK_OFFER/,
     'as a fallback, the frame only ever shows when the model is silent — which is never');
-  assert.match(CODE, /receiveThen\(b\.modelText, IDENTITY_PICK_OFFER\)/,
+  // MATCHES THE PROPERTY, NOT THE LITERAL CALL (loosened 2026-09-01). This pinned the exact expression
+  // `receiveThen(b.modelText, IDENTITY_PICK_OFFER)`, so wrapping the first argument broke it — even though the
+  // thing it guards was untouched. The frame is still unconditional, still the opener, still built from the
+  // model's text; the wrapper only strips the model's own duplicate of the invite (dropPickInvite, added after
+  // Marion's walk served both). An assertion that fails on a change it was never about teaches you to edit the
+  // test to make it quiet, which is how a real guard gets deleted one day.
+  //
+  // What is still nailed down: the offer reaches receiveThen as the OPENER (never a fallback — see above), and
+  // the receipt is derived from b.modelText rather than replaced by something else.
+  assert.match(CODE, /receiveThen\([^;]*\bb\.modelText\b[^;]*,\s*IDENTITY_PICK_OFFER\)/,
     "model keeps the reflection, engine keeps the frame — this file's own pattern for the seam");
 });
 

@@ -29,6 +29,39 @@ Two things to weave in NATURALLY when the moment fits (don't force them early):
 
 If the companion asks if you're ready to begin or similar, respond briefly and warmly.`;
 
+// ── A SECOND PERSONA, and she exists to exercise the ESCAPE rather than the capture ──────────────────────────
+//
+// Joanne is a talker: she volunteers a handle readily, which makes her a good test of "does the Companion rush"
+// and a weak one for "what happens to a member who has nothing to give". Those are different code paths, and on
+// 2026-09-01 the second one changed — the five-turn hard escape stopped requiring an empty past self, so the
+// member it now releases is precisely the one it could never release before: someone who HAS described the past
+// self and still cannot put a word on it.
+//
+// Nobody had ever walked that. Marion does. She is deliberately hard in the way real people are hard: she gives
+// the material and then declines the label, without being obstructive about it.
+const MARION_SYSTEM = `You are role-playing a member in an onboarding conversation with an AI companion for a midlife-identity program. Stay fully in character; never break character or narrate meta.
+
+You are Marion, 57. You taught high-school history for twenty-six years and took early retirement two years ago after a restructure you did not choose. Your kids are grown and gone. You feel like a spare part.
+
+How you talk:
+- SHORT. Usually one sentence. Often just a few words. You are not rude, you are tired and a bit guarded.
+- You answer what is asked, plainly, without elaborating or volunteering extra.
+- You do not perform enthusiasm. Dry, flat, occasionally a bit dark.
+
+CRITICAL — the thing this walk is testing:
+- If asked to NAME who you used to be, or to pick or coin a word for that person, you cannot do it and you say so.
+  Use plain deflections: "I don't know." / "Nothing comes to mind." / "I've never thought about myself that way."
+  / "Can we just move on?" Do NOT invent a noun, ever, however many times you are asked.
+- You WILL describe what you miss if asked about it — being useful, a room full of teenagers arguing about
+  something that mattered, knowing what your week was for. You just will not give it a name.
+- If the companion offers to leave the naming for later, accept.
+
+Answer scales and pick-lists plainly when asked. Keep every reply under about twenty-five words.`;
+
+const PERSONA = (process.argv[2] ?? 'joanne').toLowerCase() === 'marion'
+  ? { name: 'Marion', system: MARION_SYSTEM }
+  : { name: 'Joanne', system: JOANNE_SYSTEM };
+
 async function askJoanne(history: ConvMessage[]): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // Match liveTurnStaged's client config — the 'identity' encoding header dodges a node-fetch gzip premature-close bug.
@@ -56,7 +89,7 @@ async function askJoanne(history: ConvMessage[]): Promise<string> {
   const res = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 200,
-    system: JOANNE_SYSTEM,
+    system: PERSONA.system,
     messages,
   });
   const block = res.content.find((c) => c.type === 'text');
