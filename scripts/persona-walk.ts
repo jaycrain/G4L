@@ -235,8 +235,25 @@ async function main() {
   const missing: string[] = [];
   for (const k of ['identity_pick', 'gap_confirm', 'reclaim_list', 'scale']) {
     const seen = surfacesSeen.has(k);
-    if (!seen) missing.push(k);
-    console.log(`  ${seen ? (surfacesTapped.has(k) ? '✓ tapped ' : '! typed  ') : '✗ NEVER APPEARED'} ${k}`);
+    // identity_pick IS THE ONE CONDITIONAL SURFACE, and this cost a false red on 2026-09-01 worth writing down.
+    //
+    // The chips are the fallback for a member who will not produce a word — not a station everyone must pass
+    // through. Joanne volunteered "The Swimmer" herself; the engine captured it verbatim and asked "Did I get the
+    // Swimmer right?", she confirmed, and the walk ended with a handle she had named and agreed to. That is the
+    // BEST outcome this stage has, and the harness called it a failure because it was checking for a mechanism
+    // instead of a result.
+    //
+    // The check that matters is unchanged and still fires: finishing with NO handle and NEVER having been offered
+    // the chips is a real defect — it is what the live walk caught an hour ago — and it still fails here. The
+    // other three surfaces stay unconditional: a member always confirms their gap, always builds the list, and
+    // always answers the scale. (A missing `scale` scrolled past in a 2026-08-20 run and a real member reached
+    // the end of onboarding without her baseline — which is why absence exits non-zero at all.)
+    const satisfiedOtherwise = k === 'identity_pick' && !!state.collected.identityNoun;
+    if (!seen && !satisfiedOtherwise) missing.push(k);
+    const mark = seen
+      ? (surfacesTapped.has(k) ? '✓ tapped ' : '! typed  ')
+      : satisfiedOtherwise ? '✓ named  ' : '✗ NEVER APPEARED';
+    console.log(`  ${mark} ${k}${satisfiedOtherwise && !seen ? ` — member named it herself ("${state.collected.identityNoun}"), chips not needed` : ''}`);
   }
   console.log('\n=== FINAL COLLECTED ===');
   console.log(JSON.stringify(state.collected, null, 1));

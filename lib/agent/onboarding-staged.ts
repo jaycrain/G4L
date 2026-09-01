@@ -2282,15 +2282,35 @@ const identityStage: StageDef = {
       // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
       s.identityTurns = (s.identityTurns ?? 0) + 1;
       const skipOfferable = s.identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
-      if (s.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.athleticPast && !b.collected.identityNoun) {
+      // THE HARD ESCAPE NO LONGER REQUIRES AN EMPTY PAST SELF (2026-09-01). It read
+      // `>= MAX && !athleticPast && !identityNoun`, so the one member it could never release was the one who had
+      // TALKED — a rich past self and still no word for it looped on NAME_PROMPT with no way out. Nobody chose
+      // that; it fell out of a condition written for the silent case. Five turns is the ceiling for everyone, and
+      // capture stays foolproof: no member can be held on this beat (Jay, 2026-09-01 — "members who truly can't
+      // name one still get out after five turns").
+      if (s.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.identityNoun) {
         b.collected.identitySkipped = true;
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected, b.history)}`;
       } else {
-        // CAT-20: rotate the skip offer by how often we've already made it — the same paragraph twice reads as a
+        // WE STOP OFFERING THE EXIT TO SOMEONE WHO HAS ALREADY GIVEN US THE PAST SELF (Jay, 2026-09-01).
+        //
+        // This branch had it backwards: `skipOfferable ? offer : NAME_PROMPT` applied to BOTH cases, so the more a
+        // member told us, the sooner the Companion offered to move on without a name. The live walk caught it —
+        // Joanne described open-water swimming in detail, said "'The Swimmer' doesn't feel wrong", and two turns
+        // later was asked "You don't need a label to do this work … want to do that?" She agreed, and finished
+        // onboarding with no Identity, never once shown the chips.
+        //
+        // The skip offer was written for the member who will not name a past self at all. That case is unchanged.
+        // With material in hand the right move is to keep asking for the word, because the model has what it needs
+        // to propose candidates and the chips are one turn away.
+        //
+        // CAT-20: the offer still rotates by how often it has been made — the same paragraph twice reads as a
         // broken loop to a terse member (the whole-reply guard misses it, since withQuestion varies the lead).
         const offer = skipOffer(b.history);
-        const probe = !b.collected.athleticPast ? (skipOfferable ? offer : IDENTITY_REDRAW) : skipOfferable ? offer : NAME_PROMPT;
+        const probe = b.collected.athleticPast
+          ? NAME_PROMPT
+          : skipOfferable ? offer : IDENTITY_REDRAW;
         b.reply = withQuestion(b.modelText, probe);
       }
     }
