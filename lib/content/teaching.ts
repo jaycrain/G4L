@@ -29,6 +29,7 @@
 
 import { sessionSummary, sessionAsset, type Summary, type AssetId } from './summaries.ts';
 import { exploreFor, exploreForReconnectStage, type Explore } from './explore.ts';
+import { SESSION_REGISTRY } from '../workspace/session-registry.ts';
 import type { SessionKey } from '../workspace/session-key.ts';
 
 /** One kept read — the Session's distilled science takeaway, bound for "What you've learned". */
@@ -104,27 +105,31 @@ export function teachingKeeper(
   return { text, assetId: assetLabel, tab: 'learned' };
 }
 
-/** Asset titles for the kept read's provenance chip — "from Disinformation Audit · Rewire" (Rev 1's mockup). */
-const ASSET_TITLE: Record<string, string> = {
-  // NAMING IS GUARDED HERE (tests/naming-guard.test.ts) — these strings are member-facing, on the provenance chip
-  // of a kept read. Two retired spellings slipped in from Greg's document titles: the old two-word label for r2
-  // (it is just "the Doors" now) and his house camel-casing of the four Rs on c1. The guard greps this file as
-  // plain text, comments included, so do not name either mistake here — it would re-trip on the explanation.
-  // MEMBER-FACING NAMES ONLY (2026-09-01). This chip reads "from ___ · Reconnect" on a kept read, so it must
-  // say what the member calls the Session. R1 and R3 both used to carry Greg's INSTRUMENT names; renaming R1
-  // to The Distance left R3 as the only one still crediting a name no member has ever been shown. Greg's
-  // instrument names live in his Science Check and memos, not on a member's surface. R2 stays "the Doors"
-  // on purpose — the board and the conversation both call it that, so it matches their experience even
-  // though the Session title is Excavation.
-  r1: 'The Distance', r2: 'the Doors', r3: 'The Fade',
-  w1: 'Disinformation Audit', w2: 'Visualization Workshop', w3: 'Mindful Monitoring',
-  b1: 'What Is Your Why?', b2: 'Strengths and Weaknesses', b3: 'Monitoring Health Decisions',
-  // C1 was RETITLED BY GREG on 2026-08-07 — "I also think the term Readiness may not be a good fit anymore. I
-  // proposed a new title of 'Looking Forward' to somewhat reflect the process of reclaiming." The curriculum
-  // and the session registry both followed; this file did not, so the member-facing provenance chip kept the
-  // retired title for three weeks. The LAYER is still Readiness — that is Greg's internal gradient, not a name.
-  c1: 'Looking Forward', c2: 'the Bigger World Audit', c3: 'Quality Days',
+/**
+ * The Session name on a kept read's provenance chip — "from Disinformation Audit · Rewire" (Rev 1's mockup).
+ *
+ * DERIVED FROM THE SESSION REGISTRY, not restated here (2026-09-01). This was a hand-written table of twelve
+ * names, and on the day it was replaced SIX of the twelve said something the member never sees: two of Greg's
+ * document titles ("Mindful Monitoring" for the False Start Protocol, "Monitoring Health Decisions" for The
+ * Lifestyle Pilot), and four smaller drifts in punctuation and stray articles.
+ *
+ * The history in this one map is the argument. C1 was retitled by Greg on 2026-08-07; the curriculum and the
+ * registry both followed and this file did not, so the chip credited a retired title for three weeks. R1 and R3
+ * carried instrument names rather than Session names until 2026-09-01. Each was fixed as its own small edit, and
+ * each fix left the duplication that produced it — so there was always a seventh.
+ *
+ * One table now decides what a Session is called. A rename reaches the chip because there is nowhere else for it
+ * to be written down. [[one-fact-many-sites]]
+ */
+const CHIP_ALIAS: Record<string, string> = {
+  // THE ONE DELIBERATE EXCEPTION. The Session's title is Excavation, but the board and the conversation both call
+  // it the Doors, so this is the name the member actually holds. An alias is honest about that; silently letting
+  // the table drift was not.
+  r2: 'the Doors',
 };
+const assetTitle = (asset: string): string =>
+  CHIP_ALIAS[asset] ?? SESSION_REGISTRY.find((d) => d.id === asset)?.label ?? asset;
+
 const PHASE_TITLE: Record<string, string> = { r: 'Reconnect', w: 'Rewire', b: 'Rebuild', c: 'Reclaim' };
 
 /**
@@ -137,7 +142,7 @@ export function teachingSourceLabel(key: SessionKey, stage?: string | null): str
   // checkpoint, which spans all three and has no single asset of its own.
   const asset = sessionAsset(key) ?? (key === 'r4' ? reconnectAssetForStage(stage) : undefined);
   if (!asset) return 'the Program';
-  return `${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}`.trim().replace(/ ·\s*$/, '');
+  return `${assetTitle(asset)} · ${PHASE_TITLE[asset[0]!] ?? ''}`.trim().replace(/ ·\s*$/, '');
 }
 
 /**
