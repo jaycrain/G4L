@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 8dad403e · 2026-09-02)
+# Strings EXCLUDED from the member transcript (app @ 0a3ddc14 · 2026-09-02)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -262,8 +262,8 @@
 [lib/agent/reconnect.ts] ${idLine} ${doorLine} Baseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.
 [lib/agent/reconnect.ts] One last thing.${SEP}I'd like you to write a letter — to yourself, a year from today. Not a plan and not a pep talk. The letter you'd want to be handed in a year by the version of you who kept going.${SEP}I'll ask you a few things and then draft it in your words, and you can change anything that isn't right.
 [lib/agent/reconnect.ts] ${opener}${BEAT_SEP}${first.prompt}
-[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}
-[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}
+[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${askRevision}
+[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${askRevision}
 [lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}${BEAT_SEP}
 [lib/agent/reconnect.ts] Same as before: rate each statement from ${AGREEMENT_1_5_HINT}.
 [lib/agent/reconnect.ts] Just a number, 1 to 5 — how true does that feel right now?  ${checkpointDeliver(index)}
