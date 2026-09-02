@@ -15,8 +15,33 @@ import { serializeBeatConfirm, type BeatConfirmIntent } from '../lib/agent/beat-
 import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
 import type { Collected } from '../lib/agent/onboarding.ts';
 import type { ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
+import { memberDisplay, looksLikeMachineLine } from '../lib/agent/member-display.ts';
 
-const readable = (s: string) => s.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).join('\n');
+// WHAT THE PERSONA SEES MUST BE WHAT A MEMBER SEES — bubbles split, and a structured turn shown as the LABEL that
+// was on the button rather than the wire string behind it.
+//
+// `memberDisplay` was missing here, and it cost the gate real evidence. A tap is pushed into history raw, so the
+// persona was replayed `[beat-confirm] done` as its OWN previous message — and did the obvious thing, which was
+// to type that string back as prose at the next beat that looked similar. The engine read it as a tap at a beat
+// that had offered nothing, which is the only reason the stale-tap defect surfaced at all.
+//
+// Two costs, and the second is worse than the bug it found. The confirm beat it typed past was never exercised as
+// a real tap, so the gate reported a surface covered that it had in fact faked; and a harness able to emit strings
+// no member can produce manufactures passes as readily as failures. [[eval-harness-must-tap-not-type]]
+//
+// The same helper the chat components and the stored transcript already use — a fourth site of one fact, now
+// reading it from the same place as the other three. [[one-fact-many-sites]]
+const readable = (s: string) => s.split(BEAT_SEP).map((t) => memberDisplay(t.trim())).filter(Boolean).join('\n');
+
+/** A persona emitting machine syntax has stopped role-playing a member — no member can type this. Failed loudly
+ *  rather than passed through: the engine's stale-tap guard would now neutralise it silently, and the walk would
+ *  look clean while a beat went untested. */
+function assertNotMachineSyntax(said: string, who: string): string {
+  if (looksLikeMachineLine(said)) {
+    throw new Error(`${who} typed a wire string — the harness must TAP a structured surface, never type it: ${said}`);
+  }
+  return said;
+}
 
 // The persona — a real midlife fade, tuned to trip the two failure modes:
 //  (1) she states who she is professionally in passing (does the Companion name her unbidden?)
@@ -147,7 +172,11 @@ async function askJoanne(history: ConvMessage[]): Promise<string> {
     messages,
   });
   const block = res.content.find((c) => c.type === 'text');
-  return block && block.type === 'text' ? block.text.trim() : '(…)';
+  const said = block && block.type === 'text' ? block.text.trim() : '(…)';
+  // The backstop, not the fix — `readable` now shows the persona a button label rather than the wire string it
+  // was imitating, so this should never fire. It throws rather than stripping: the run failing loudly is the
+  // point, because the alternative is a gate that reports a structured surface covered when it was typed past.
+  return assertNotMachineSyntax(said, PERSONA.name);
 }
 
 // THE HARNESS MUST USE THE SAME AFFORDANCES THE MEMBER DOES (Jay, 2026-07-30).

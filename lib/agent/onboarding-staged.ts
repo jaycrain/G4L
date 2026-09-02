@@ -22,6 +22,7 @@
 // behind the flag — the first live-eval gate.
 
 import { looksLikeMachineLine, memberDisplay } from './member-display.ts';
+import { isStaleWireAnswer } from './wire-answer.ts';
 import { sentenceStart } from '../content/member-words.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
@@ -3397,6 +3398,22 @@ export function runArcTurn(
   // them in a loop — the failure in the other direction, and the reason the advance-bias exists at all.
   if ((state.awaitingConfirm ?? false) && memberIsConfused(memberMessage) && !alreadyClarified(history)) {
     return { reply: CLARIFY_REPLY, state, complete: false };
+  }
+  // A STALE TAP IS NOT AN ANSWER — held here, beside crisis and the confusion gate, and for the same reason they
+  // are: it is a rule that must hold in every arc, and a rule enforced at each reader is a rule the next reader
+  // forgets. That is the exact history of the tap fix it completes — four sites, and the fifth would have been
+  // missed. [[one-fact-many-sites]]
+  //
+  // NEUTRALISED, NOT REJECTED. Emptying the message here is one change at the boundary that covers every reader
+  // below it: nothing is merged into `collected`, `isKeeperMaterial` cannot store a wire string as the member's
+  // own words for a Door, and `memberWantsToAdvance` sees nothing to advance on — so the beat simply holds and
+  // the model's turn carries on. An early return would have to invent a reply for a member who did not say
+  // anything, and re-asking the question already on screen is the repeat we forbid everywhere else.
+  //
+  // THE RAW STRING STILL REACHES THE TRANSCRIPT — the caller writes the member's turn from its own copy. The
+  // record of what arrived stays accurate; only the engine's reading of it changes. See lib/agent/wire-answer.ts.
+  if (isStaleWireAnswer(memberMessage, { stage: state.stage, awaitingConfirm: state.awaitingConfirm, collected: state.collected })) {
+    memberMessage = '';
   }
   const collected = mergeStaged({ ...state.collected }, model.record, memberMessage, doorPolicyFor(arc.id, state.stage));
   // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —

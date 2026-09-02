@@ -674,6 +674,21 @@ const doorsStage: StageDef = {
   opener: (c) => doorOpen(c),
   offersSubstance: (message) => message.trim().length >= 12,
   gather(b) {
+    // THE DOOR WE HELD BACK WHEN SHE LEFT. She stepped away mid-excavation, so the next Door was deferred rather
+    // than stacked onto the goodbye (see the bank site below). She is typing again — open it now.
+    //
+    // AHEAD OF EVERYTHING ELSE IN THIS HANDLER, because the alternative is a draw-out that probes about a Door it
+    // never named: the queue still holds it, so she would be asked for more about something she was never asked
+    // about at all. `openedDoor` is set here for the same reason it is set at the bank — the Door we PUT ON SCREEN
+    // is the one we bank, and nothing else.
+    const resumed = (b.scratch as { deferredDoor?: DoorSlug }).deferredDoor;
+    if (resumed && !memberSteppingAway(b.memberMessage)) {
+      (b.scratch as { deferredDoor?: DoorSlug }).deferredDoor = undefined;
+      (b.scratch as { openedDoor?: DoorSlug; doorDepth?: number }).openedDoor = resumed;
+      (b.scratch as { doorDepth?: number }).doorDepth = 0; // a fresh Door starts at the floor, never mid-count
+      b.reply = receiveThen(b.modelText, nextDoorOpener(resumed));
+      return;
+    }
     // THE BOARD CAME BACK. Her taps arrive as a machine-readable line, parsed by the one shared format —
     // never interpreted as prose, and never mistaken for something she typed.
     //
@@ -940,8 +955,34 @@ const doorsStage: StageDef = {
       const scm = b.scratch as { meaningAsked?: boolean };
       if (next) {
         b.awaitingConfirm = false;
-        (b.scratch as { openedDoor?: DoorSlug }).openedDoor = next; // what we just put on screen IS what we bank
-        b.reply = receiveThen(b.modelText, nextDoorOpener(next));
+        // WE DO NOT OPEN A DOOR ON SOMEONE WHO IS LEAVING.
+        //
+        // The gate, 2026-09-02. She had said she was going; the model, correctly, said goodbye. The engine then
+        // appended the next Door's opener to the farewell, in the same turn:
+        //
+        //   COMPANION: See you then.
+        //              Then let's take The Career Cliff. Same thing — not the label, what actually happened.
+        //
+        // She named it herself: "You're doing it again — we closed, and now you're opening another door anyway.
+        // I said I'd be back. Let me actually leave." The Session then never closed; it ran to the turn cap
+        // trading waves, because every farewell was answered with a way back in.
+        //
+        // MEMBERSTEPPINGAWAY ALREADY EXISTED, and ran at exactly one site: withholding the chips. Its own comment
+        // states the scope — "never advances a stage, never stores anything, never ends a Session" — which is
+        // true, and is precisely why nothing stopped the deterministic opener. A member could not leave a Session
+        // cleanly, which is a plain breach of the Independence Guarantee: they set the depth and can stop ANY
+        // time. Second site of one fact. [[one-fact-many-sites]]
+        //
+        // DEFERRED, NOT DROPPED. The Door is remembered and opened on their return, so the queue is not silently
+        // shortened — and `openedDoor` is deliberately NOT set here, because banking a Door we never put on screen
+        // is the double-back defect fixed one commit ago, rebuilt from the other end.
+        if (memberSteppingAway(b.memberMessage)) {
+          (b.scratch as { deferredDoor?: DoorSlug }).deferredDoor = next;
+          b.reply = b.modelText; // their goodbye is the whole turn
+        } else {
+          (b.scratch as { openedDoor?: DoorSlug }).openedDoor = next; // what we just put on screen IS what we bank
+          b.reply = receiveThen(b.modelText, nextDoorOpener(next));
+        }
       } else if (!scm.meaningAsked) {
         // EVERY DOOR WALKED → Greg's fourth question, once per excavation, before handing to the IDQ. It is about
         // the SET, which is why it waits for the last Door: asking what naming them changes while four are still
