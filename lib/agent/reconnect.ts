@@ -743,6 +743,16 @@ const doorsStage: StageDef = {
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
     const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.doorDepth, DOOR_MIN_DEPTH, DOOR_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
+    // A TAP REACHING THE DRAW-OUT IS AN ANOMALY WORTH SEEING. The chips belong to the confirm; if a serialized
+    // tap arrives here, the member answered a chooser the engine was no longer waiting on — which is one way a
+    // Door gets discussed and never banked, and then re-opened later. Logged rather than corrected: what the right
+    // correction is depends on how it happens, and nobody has seen it happen yet.
+    if (b.memberMessage.startsWith('[beat-confirm]')) {
+      try {
+        console.warn('[door-queue] tap reached the draw-out, not the confirm —',
+          JSON.stringify({ advance, depth: sc.doorDepth, excavated: b.collected.doorsExcavated ?? [] }));
+      } catch { /* never break a turn */ }
+    }
     if (!advance) {
       b.reply = heldDrawout(b.modelText, b.model.depthReady, doorMore(b.history));
     } else {
@@ -837,8 +847,25 @@ const doorsStage: StageDef = {
       // THIS DOOR IS WALKED. Bank her words against the Door she just finished, then take the next one she
       // marked. Before 2026-08-30 there was no queue here: the first Door's confirm fell straight through to the
       // meaning question, which is why all but one of Donna's Doors were rated and never spoken about.
+      // THE DOOR QUEUE, LOGGED — because the fault here is intermittent and reasoning about it has failed twice.
+      //
+      // Donna hit it twice ("it kept coming back", "it doubled back when we were already done") and Marie twice
+      // ("You already asked me about The Load-Bearer. We finished it"). A deterministic replay of this branch is
+      // CORRECT — one bank per Door marked, no repeat, clean close — and an instrumented live walk came back clean
+      // too. It reproduces roughly one run in three, which is exactly the shape that gets diagnosed by a captured
+      // artifact rather than by another read of the code.
+      //
+      // So this is not debug scaffolding left behind. It is the one line that turns the next occurrence — on a
+      // walk, or on a member's real Session — into evidence instead of a report we cannot act on. Cheap, never on
+      // the member's path, and it cannot fail a turn. [[read-the-artifact-not-the-summary]]
+      const excavatedBefore = [...(b.collected.doorsExcavated ?? [])];
       bankWalkedDoor(b);
       const next = nextDoorToExcavate(b.collected);
+      try {
+        console.warn('[door-queue]', JSON.stringify({
+          intent, before: excavatedBefore, after: b.collected.doorsExcavated ?? [], next, doors: b.collected.doors ?? [],
+        }));
+      } catch { /* a log must never break a turn */ }
       const scm = b.scratch as { meaningAsked?: boolean };
       if (next) {
         b.awaitingConfirm = false;
