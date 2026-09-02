@@ -27,7 +27,19 @@ const BOUND = [
   { banned: /\bno (right or )?wrong answers\b/i, provenInPrompt: /no wrong answers/ },
   { banned: /\bnot a (test|grade|score|judgment)\b/i, provenInPrompt: /"not a score", "not a grade", "not a test"/ },
   { banned: /\bno scor(es|ing)\b/i, provenInPrompt: /"no scores" \/ "no scoring"/ },
-  { banned: /\bthat'?s [A-Z]\d\b/, provenInPrompt: /NEVER ANNOUNCE THE END OF A UNIT/ },
+  // WIDENED 2026-09-02, from Donna: "for the love of God please eliminate the phrase 'There's (thing) done'.
+  // that is not American English."
+  //
+  // The prompt bans this construction "in any form" and has since it was written. This entry implemented the
+  // NARROWEST instance of it — an asset code, `that's B2` — so the rule was stated, taught to the model, guarded
+  // by a test, and still shipped SIX times in authored copy: the Door close, the Reclaim sort, and four in the
+  // practice week. A rule enumerated by instance always has the next instance outside it. [[one-fact-many-sites]]
+  //
+  // The exclusions are the legitimate English the pattern would otherwise swallow: "that's how it's done",
+  // "what you've done", "that's not done". Announcing the end of a unit is the target, not the word.
+  { banned: /\b(?:that|there)'?s\s+(?:the\s+|your\s+|a\s+|an\s+)?[\w''-]+(?:\s+[\w''-]+){0,3}\s+done\b/i,
+    allow: /\b(?:that'?s\s+(?:how|what|why|when|not)\b|what\s+you'?ve\s+done|all\s+you'?ve\s+done)/i,
+    provenInPrompt: /NEVER ANNOUNCE THE END OF A UNIT/ },
   { banned: /\b(?:R[1-4]|W[1-3]|B[1-4]|C[1-4]) (?:is|was|done)\b/, provenInPrompt: /NEVER SAY OUR INTERNAL NAMES/ },
 ];
 
@@ -40,7 +52,25 @@ function authoredCopy(): { file: string; text: string }[] {
       try { src = readFileSync(new URL(`../${f}`, import.meta.url), 'utf8'); } catch { continue; }
       // Comments explain the rules and quote the banned phrases on purpose — they are not what a member reads.
       const body = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-      for (const m of body.matchAll(/['"`]([^'"`\\]{12,600})['"`]/g)) out.push({ file: f, text: m[1]! });
+      // THE APOSTROPHE BUG, fixed 2026-09-02, and it made this whole guard partly blind.
+      //
+      // The old pattern was /['"`]([^'"`\\]{12,600})['"`]/ — one character class for BOTH the delimiter and the
+      // forbidden interior. A straight apostrophe is in that class, so `"That's the week done."` was captured as
+      // "s the week done." with `That'` eaten. Every rule that matches on a string's opening words could not fire
+      // on any string containing a straight apostrophe — which is most of the Companion's voice.
+      //
+      // That is exactly how six violations of "never announce the end of a unit" shipped in files this guard was
+      // already scanning, until Donna read them out loud: "for the love of God please eliminate the phrase."
+      //
+      // Now the delimiter is captured and the interior is anything up to the SAME delimiter, so an apostrophe
+      // inside a double-quoted string is just a character. Curly apostrophes always worked, which is why this
+      // survived — most authored copy uses them, and the straight ones looked like a style inconsistency.
+      // ONE PATTERN PER DELIMITER. The interior may contain the OTHER quote characters — that is the whole point:
+      // a double-quoted string is allowed to contain an apostrophe, and most of the Companion's voice does.
+      // A single alternating class for both delimiter and interior is what broke this.
+      for (const re of [/"([^"\\\n]{12,600})"/g, /'([^'\\\n]{12,600})'/g, /`([^`\\]{12,600})`/g]) {
+        for (const m of body.matchAll(re)) out.push({ file: f, text: m[1]! });
+      }
     }
   }
   return out;
@@ -57,11 +87,26 @@ test('the scan actually reaches authored copy — an empty scan passes vacuously
   assert.ok(copy.length > 500, `expected the authored corpus, found ${copy.length} strings`);
 });
 
+test('every file the inventory NAMES actually exists — a listed-but-missing file is skipped in silence', () => {
+  // THIS IS WHY THE INVENTORY COULD ROT. authoredCopy() reads each listed file in a try/catch and `continue`s on
+  // failure, so a file that has been deleted or moved contributes nothing and says nothing. On 2026-09-02 the list
+  // still named app/dashboard/redesign-dashboard.tsx, deleted the day before with DASH_TRIPTYCH — the transcript
+  // and this guard had both been quietly building from 76 files while believing they had 77.
+  //
+  // It matters twice over: this list defines what the prompt-rule guard SCANS, and it is the same list that builds
+  // the Cowork transcript — the file marketing and the second-edition book quote from. A gap here is copy nobody
+  // is checking and nobody can quote. [[swallowed-read-renders-as-truth]]
+  const missing = (SECTIONS as { files: string[] }[])
+    .flatMap((s) => s.files)
+    .filter((f) => { try { readFileSync(new URL(`../${f}`, import.meta.url)); return false; } catch { return true; } });
+  assert.deepEqual(missing, [], 'listed in transcript-sources.mjs but not on disk — fix the list or restore the file');
+});
+
 test('NO authored string says what the Companion is forbidden to say', () => {
   const violations: string[] = [];
   for (const { file, text } of authoredCopy()) {
-    for (const { banned } of BOUND) {
-      if (banned.test(text)) violations.push(`${file} — ${String(banned)} — "${text.slice(0, 80)}"`);
+    for (const { banned, allow } of BOUND) {
+      if (banned.test(text) && !(allow && allow.test(text))) violations.push(`${file} — ${String(banned)} — "${text.slice(0, 80)}"`);
     }
   }
   assert.deepEqual(violations, [],

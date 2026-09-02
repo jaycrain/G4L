@@ -29,16 +29,16 @@ test('W-35 · the handoff LEADS with the model’s acknowledgment, then the R2 c
   // Reconnect is three Sessions and a Checkpoint, so this is a Session CLOSE and the dashboard comes next.
   assert.equal(turn.complete, true, 'the Doors Session closes');
   assert.ok(turn.reply.startsWith(ack), 'receives their final answer FIRST — W-35, unchanged');
-  assert.match(turn.reply, /Door work done/i, 'then names what was done');
+  assert.match(turn.reply, /back through every Door you named/i, 'then names what was done');
   assert.match(turn.reply, /Drift Quiz/i, 'and what the next Session is');
-  assert.ok(turn.reply.indexOf('carried it') < turn.reply.indexOf('Door work done'), 'receive before the frame');
+  assert.ok(turn.reply.indexOf('carried it') < turn.reply.indexOf('back through every Door'), 'receive before the frame');
 });
 
 test('W-35 · graceful — no model acknowledgment → the break stands alone (no stray separator)', () => {
   const asked = applyReconnectTurn(atInsightConfirm, [], "yeah, that's it", { text: '', replyIntent: 'done' });
   const turn = applyReconnectTurn(asked.state, [], 'It means I stopped calling it laziness.', { text: '' });
   assert.equal(turn.state.stage, 'doors');
-  assert.ok(turn.reply.startsWith("That's the Door work done"), 'opens cleanly on the break');
+  assert.ok(turn.reply.startsWith("You've been back through every Door"), 'opens cleanly on the break');
   assert.doesNotMatch(turn.reply, /^\s*\n/, 'no leading blank separator when there is nothing to receive');
 });
 

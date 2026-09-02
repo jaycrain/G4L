@@ -1164,7 +1164,7 @@ const c2PriorWorkStage: StageDef = {
 // The probes are the engine's floor, not its script: withQuestion keeps the model's own follow-up whenever it
 // asked one, so these are what gets asked when it trails into a statement. [[drawout-rhythm-model-owns-questions]]
 const C2_EXPANSION_PROBES = [
-  "That's the sort done. Now the part the numbers can't tell me: what feels possible now that didn't a while ago?",
+  "Now the part the numbers can't tell me: what feels possible now that didn't a while ago?",
   'Where do you notice yourself being more willing than you used to be?',
   'Anything you have stopped avoiding, even a little?',
   'What has made that possible — is it something that would hold if this week got hard?',

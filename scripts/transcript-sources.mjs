@@ -93,7 +93,8 @@ export const SECTIONS = [
   // ("Noticing and defining a quality day, one day at a time") into the page's hero and added the day labels a
   // member reads while back-filling. Listed the same day the copy landed — the guard caught it before the bundle
   // could ship a version of Quality Days that no longer matched the app.
-  { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/rewire/w3-moves.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
+  { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/rewire/w3-moves.ts', 'lib/practice/close.ts',
+      'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
   // WHERE IT LIVES — the line at every Session close naming what she made and where it went. Authored, and read
@@ -129,7 +130,6 @@ export const SECTIONS = [
   {
     title: 'Dashboard & subpages (UI copy)',
     files: [
-      'app/dashboard/redesign-dashboard.tsx',
       'app/dashboard/topbar-view.tsx', // brand · Playbook · account — on every logged-in screen
       'app/dashboard/dashboard-triptych.tsx', // the mobile fold's pane labels: Where You Are · G4L Companion · What's Next
       'app/dashboard/triptych-center.tsx', // the Companion hero, breadcrumb, keeper + "Where you stand"

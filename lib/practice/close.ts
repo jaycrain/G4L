@@ -98,7 +98,7 @@ export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>, w3?: W3CloseE
   if (grid.kind === 'w3_logging') {
     const opener = anyMarked
       ? "That's the week. Here's what you noticed —"
-      : "That's the week done. Nothing got written down — which might mean a hard week, or just that the noticing " +
+      : "Nothing got written down this week — which might mean a hard week, or just that the noticing " +
         'slipped. Either is worth knowing.';
     // The ONE affirmation the close is allowed to make, and only when it is true. Greg's disallowed list is
     // explicit — "Great, you avoided False Starts today!", "You only had two Smart Choices this week" — so nothing
@@ -141,8 +141,8 @@ export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>, w3?: W3CloseE
           ? 'A week is short, and yours does not fall into an obvious shape — which is itself worth knowing.'
           : '';
     const opener = anyMarked
-      ? "That's the week of tracking done. Here is what got marked —"
-      : "That's the week done. Nothing got marked, which might mean a hard week or just that the logging slipped.";
+      ? "Here's what got marked this week —"
+      : "Nothing got marked this week, which might mean a hard week or just that the logging slipped.";
     const extra = [
       ...(pattern ? [pattern] : []),
       'What was going on in the days that felt like quality — and what got in the way on the ones that did not?',
@@ -160,7 +160,7 @@ export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>, w3?: W3CloseE
     : // The hardest case to get right. A week with nothing marked is where a product is most tempted to console or
       // to scold, and both land as judgement. Say the true thing: we don't know what the week held, and asking is
       // more use than assuming.
-      "That's the week done. Nothing got marked — which might mean it was a hard week, or just that logging slipped.";
+      "Nothing got marked this week — which might mean it was a hard week, or just that logging slipped.";
   return {
     kind: grid.kind,
     lines,

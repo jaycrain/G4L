@@ -391,7 +391,8 @@ const DOORS_CLOSE = (
   // And the Doors are NOT on the dashboard. redesign-dashboard.tsx keeps them off it deliberately — "privacy:
   // sensitive if someone's looking over the member's shoulder" — so this sent him to look somewhere they were
   // designed not to be. They live in the Playbook, under "Who you are".
-  "That's the Door work done — the part that asks you to remember. Your Doors are in your Playbook now, under " +
+  "You've been back through every Door you named — the part that asks you to remember. Your Doors are in your " +
+  "Playbook now, under " +
   "Who you are, and you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to " +
   "yourself a year out."
 );
