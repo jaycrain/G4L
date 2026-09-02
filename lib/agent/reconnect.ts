@@ -485,6 +485,13 @@ function applyCorrection(doors: DoorSlug[], fromSlug: DoorSlug, toSlug: DoorSlug
   else if (!next.includes(toSlug)) next.unshift(toSlug);
   return Array.from(new Set(next));
 }
+// Pure: a model-INFERRED correction. The truer Door becomes primary; the one SHE named is kept, demoted, never
+// deleted. This is applyCorrection's non-destructive twin — same intent about which Door leads, without taking a
+// Door out of her record on our reading of her story. See the commit site for why.
+function applyPromotion(doors: DoorSlug[], fromSlug: DoorSlug, toSlug: DoorSlug): DoorSlug[] {
+  const kept = doors.filter((d) => d !== toSlug);
+  return Array.from(new Set([toSlug, ...kept]));
+}
 // Pure: apply a confirmed WIDEN/NAME — ADD the Door (secondary; primary is untouched), dedup. Retires nothing. If
 // the set was empty, the added Door becomes primary.
 function applyAddition(doors: DoorSlug[], toSlug: DoorSlug): DoorSlug[] {
@@ -686,6 +693,10 @@ const doorsStage: StageDef = {
       // `c.doors` arrives PRIMARY-FIRST by convention, so ruling #8 — biggest-impact becomes primary — is
       // expressed here as ordering, not a second field. The DB half (is_primary + named_door) is the action's.
       b.collected.doors = board.biggest ? [board.biggest, ...next.filter((d) => d !== board.biggest)] : next;
+      // WHAT SHE ACTUALLY TAPPED, kept apart from the working set. `doors` gets reordered and added to as the
+      // Session goes; this is the record of her own structured statement, and it is what protects a Door she
+      // named from being deleted later on a model's reading of her story. See the revision commit.
+      b.collected.doorsMarked = Array.from(new Set([...(b.collected.doorsMarked ?? []), ...marked]));
 
       // MARKING NOTHING IS AN ANSWER, and it must not read as a failed step. She gets the ordinary excavation.
       if (boardIsEmpty(board)) {
@@ -785,10 +796,50 @@ const doorsStage: StageDef = {
       if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door(s), humbly
       // Not disputed → they accepted. COMMIT: a correct SWAPS (soft-delete substrate); widen/name ADD (retire nothing).
       if (isDoorSlug(rev.toSlug)) {
+        // A MODEL-INFERRED RE-SEEING NEVER DELETES A DOOR SHE NAMED. It promotes the truer one and KEEPS hers.
+        //
+        // The gate caught this on 2026-09-02, and the Companion's own words are the evidence. It said:
+        //
+        //   "So it isn't one door or the other. The cliff opened it, and The Load-Bearer walked in through the
+        //    opening. Let me add that alongside the career one, so the record holds both."
+        //
+        // She agreed. The engine then REMOVED The Career Cliff — the Door she had marked on the board minutes
+        // earlier as both first and biggest — because the model tagged the proposal 'correct' while its prose
+        // promised an add. Its closing line then read her back a count of Doors the record no longer held.
+        //
+        // We cannot fix the model saying one thing and tagging another, and we should not try to read its prose to
+        // decide — that is the inference that got stage-agreement reverted. What we CAN do is make the wrong tag
+        // survivable, and the asymmetry is not close: keeping a Door she may not need costs her one excavation she
+        // can wave off, and it is a Door SHE named. Deleting one silently reduces her own account of her life
+        // while the Companion tells her it is holding it.
+        //
+        // flatMislabel IS THE EXCEPTION, and it is the right one: the model sets it when the member EXPLICITLY
+        // corrects us — "no, I meant the divorce, not the marriage" — which is her words, not our reading. That
+        // still swaps, because she said so. Everything else adds.
+        // A DOOR SHE MARKED ON THE BOARD IS NOT OURS TO DELETE — narrow, and only here.
+        //
+        // The gate, 2026-09-02. The Companion said: "So it isn't one door or the other. The cliff opened it, and
+        // The Load-Bearer walked in through the opening. Let me add that alongside the career one, so the record
+        // holds both." She agreed — and the engine REMOVED The Career Cliff, which she had marked on the board
+        // minutes earlier as both first and biggest. Its closing line then told her a count. The
+        // record held one fewer.
+        //
+        // The engine did what it was told: the model tagged the proposal 'correct' while its prose promised an
+        // add. We cannot fix that by reading its prose — that inference is what got stage-agreement reverted. But
+        // the board is not a reading of anything. It is her, tapping cards, saying THESE are mine. A model's
+        // re-seeing may promote a truer Door ahead of hers; it may not take hers out of her own record.
+        //
+        // SWAPPING IS STILL RIGHT EVERYWHERE ELSE, and this deliberately does not touch it: a correction on a Door
+        // she never marked still swaps in place, and flatMislabel — the flag for when SHE explicitly corrects us,
+        // "no, I meant the divorce" — still swaps whatever its provenance. Her words, her call, either way.
+        const hersByTap = !!rev.fromSlug && !rev.flatMislabel
+          && (b.collected.doorsMarked ?? []).includes(rev.fromSlug);
         b.collected.doors =
-          rev.kind === 'correct' && rev.fromSlug
+          rev.kind === 'correct' && rev.fromSlug && !hersByTap
             ? applyCorrection(b.collected.doors ?? [], rev.fromSlug, rev.toSlug)
-            : applyAddition(b.collected.doors ?? [], rev.toSlug);
+            : rev.kind === 'correct' && rev.fromSlug
+              ? applyPromotion(b.collected.doors ?? [], rev.fromSlug, rev.toSlug)
+              : applyAddition(b.collected.doors ?? [], rev.toSlug);
         // ENFORCEABLE DEFAULT-EMIT (R4): the tell fires UNLESS the model flagged a routine change (flat mislabel for a
         // correct, a mechanical add for widen/name). A correct carries the from→to pair; an add carries just the Door.
         if (!rev.flatMislabel && !rev.mechanical) {

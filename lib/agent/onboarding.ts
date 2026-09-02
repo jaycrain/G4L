@@ -175,6 +175,8 @@ export type Collected = {
    * A Door listed here is never re-opened. A Door she ADDS mid-excavation simply joins the queue.
    */
   doorsExcavated?: DoorSlug[];
+  /** Doors the member TAPPED on the board — her own structured statement, never rewritten by a model re-seeing. */
+  doorsMarked?: DoorSlug[];
   /**
    * ONBOARDING ONLY — Doors we have INFERRED and not yet put to her. Propose → confirm → commit, the same contract
    * as every other thing we touch about a member.
