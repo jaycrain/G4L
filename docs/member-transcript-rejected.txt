@@ -1,7 +1,8 @@
-# Strings EXCLUDED from the member transcript (app @ 1b910688 · 2026-09-02)
+# Strings EXCLUDED from the member transcript (app @ c94669b8 · 2026-09-02)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
+[lib/agent/onboarding-staged.ts] “”‘’(\[\-—\s]+/,
 [lib/agent/onboarding-staged.ts] p.trim() || i
 [lib/agent/onboarding-staged.ts] ${leads[b.history.length % leads.length]} ${text}
 [lib/agent/onboarding-staged.ts] ?m|i
