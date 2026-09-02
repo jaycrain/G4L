@@ -25,7 +25,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } 
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, withQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, withQuestion, endsOnOpenQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -342,7 +342,15 @@ function doorMore(history: ConvMessage[]): string | null {
 const DOOR_INSIGHT_CONFIRM = 'Have I got that right — or is it not quite?';
 function reflectDoor(modelText: string): string {
   const t = (modelText ?? '').trim();
-  if (t && /\?\s*$/.test(t)) return t;
+  // KEEP THE MODEL'S QUESTION ONLY IF THE CHIPS ANSWER IT. This returned the model's text untouched on any
+  // trailing '?', and the caller attached the confirm chips regardless — so "When did you first feel it?" was
+  // shown above There's more / That's it / Not quite right (Donna, four times, 2026-09-02).
+  //
+  // The draw-out now declines to advance on an open question at all, so this is the CAP path: depth ran out while
+  // the model was still probing and we have to move. Its ask is then stripped and ours replaces it — what
+  // reflectGap does one beat over, for the reason its comment gives: "her three options must answer the question
+  // actually on screen."
+  if (t && /\?\s*$/.test(t)) return endsOnOpenQuestion(t) ? receiveThen(t, DOOR_INSIGHT_CONFIRM) : t;
   if (t) return `${t}\n\n${DOOR_INSIGHT_CONFIRM}`;
   return `Tell me more about how it actually went.`;
 }
@@ -396,10 +404,18 @@ const DOORS_CLOSE = (
   // And the Doors are NOT on the dashboard. redesign-dashboard.tsx keeps them off it deliberately — "privacy:
   // sensitive if someone's looking over the member's shoulder" — so this sent him to look somewhere they were
   // designed not to be. They live in the Playbook, under "Who you are".
+  //
+  // AND IT NO LONGER NAMES THE LETTER (Donna, 2026-09-02). This promised the Legacy Letter here, at the close of
+  // the Doors. She asked about it — reasonably, having just been told it was coming — and the Companion replied
+  // that it would generate one. It does not, and it must not: she writes that letter herself, in R3. Her note:
+  // "it shouldn't be mentioned here."
+  //
+  // The promise is not lost, it is made where it is kept. R3's own opener says it in the same words — "first what
+  // the Fade actually cost, then a letter you'll write to yourself a year out" — and that pairing was always the
+  // point. Naming it twice bought nothing, and naming it a Session early invited a question we answered wrongly.
   "You've been back through every Door you named — the part that asks you to remember. Your Doors are in your " +
   "Playbook now, under " +
-  "Who you are, and you can change them any time. Next comes the Drift Quiz, and then a letter you'll write to " +
-  "yourself a year out."
+  "Who you are, and you can change them any time. Next comes the Drift Quiz."
 );
 
 const DOORS_MEANING_Q =

@@ -36,7 +36,8 @@
     "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts",
     "canon:sync": "node scripts/sync-canon-mount.mjs",
     "handoffs": "node scripts/handoffs.mjs",
-    "walk:teaching": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts"
+    "walk:teaching": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts",
+    "canon:check": "node scripts/canon-drift.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",

@@ -145,6 +145,52 @@ export function endsOnImperativeAsk(text: string): boolean {
   return sentences.some((x) => /^\s*(tell me|tell us|take me through|walk me through|talk me through|say more|go on|give me)\b/i.test(x));
 }
 
+// CAN THE CONFIRM CHIPS ACTUALLY ANSWER THE QUESTION ON SCREEN?
+//
+// Donna, 2026-09-02, four times across the Doors and the Fade: "I was asked a question and also offered buttons.
+// I ignored the buttons, entered an answer in the field, and they went away." Her screenshot is the whole case —
+// the Companion ends its turn with
+//
+//     When did you first feel it?
+//
+// and the engine staples its own ask underneath: "Have I got that right?" with There's more / That's it / Not
+// quite right. She was asked one question and offered the answers to a different one. Ignoring the buttons was
+// the only sensible move available to her.
+//
+// It is the STACKING defect wearing new clothes — her own earlier report, "asking me a question and not allowing
+// me to answer it." withQuestion already refuses to append the engine's probe when the model has asked something.
+// The chips never learned the same rule.
+//
+// GRAMMAR, NOT MEANING. The test is not "do the buttons feel apt" — that is a judgement, and judging the model's
+// prose is what got stage-agreement reverted for reciting a member's protest back to her as a goal. It is the far
+// narrower question of whether the final question is one these three answers FIT:
+//
+//   · "When did you first feel it?"            → wh-word first. "That's it" answers nothing. OPEN.
+//   · "Have I got that right — or is it not quite?" → auxiliary first, a yes/no ruling. The chips ARE its answers.
+//
+// An imperative ask counts as open for the same reason and is already detected — "Tell me what that was like."
+//
+// SUPPRESSION ONLY, so the failure directions are not symmetric: reading a ruling as open costs a member one tap
+// on a beat where the composer is still there, and reading an open question as a ruling is what she reported four
+// times in one walk. Same asymmetry that governs memberSteppingAway.
+const WH_OPENER = /^(who|whose|whom|what|when|where|why|how|which)\b/i;
+
+/** Does this turn end on a question the beat-confirm chips cannot answer? Pure, paragraph-scoped — same contract
+ *  as withQuestion, which learned the hard way that a trailing-character window misreads a long coda. */
+export function endsOnOpenQuestion(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  // The LAST bubble is what sits directly above the chips; anything earlier is not what she is answering.
+  const lastBubble = t.split(BEAT_SEP).map((s) => s.trim()).filter(Boolean).pop() ?? t;
+  if (endsOnImperativeAsk(lastBubble)) return true;
+  const lastPara = lastBubble.split(/\n\s*\n/).pop()?.trim() ?? lastBubble;
+  if (!/\?\s*$/.test(lastPara)) return false; // ends on a statement — the chips are the only ask, which is right
+  const sentences = sentencesOf(lastPara).filter((s) => s.trim());
+  const question = (sentences[sentences.length - 1] ?? lastPara).trim()
+    .replace(/^["'“”‘’(\[\-—\s]+/, ''); // strip a leading quote or dash so the opener is the first real word
+  return WH_OPENER.test(question);
+}
+
 export function receiptOnly(modelText: string | undefined): string {
   const t = (modelText ?? '').trim();
   if (!t) return t;
@@ -775,6 +821,15 @@ export function drawoutShouldReflect(
   // asking for another Tuesday until she forced it). This can't flatten: it only fires on an explicit move-on signal.
   if (memberWantsToMove) return true;
   const t = (modelText ?? '').trim();
+  // THE MODEL ASKED SOMETHING THE CHIPS CANNOT ANSWER — so it is not finished, whatever it flagged.
+  //
+  // `wrappedUp` below already refuses to advance on "another probe", and that instinct was right; it just guarded
+  // ONE of the three ways this returns true. `depthReady` came straight through it, which is how Donna met an open
+  // question with confirm chips under it four times in a single walk. The rule existed and ran at one site.
+  //
+  // Bounded by the CAP so it can never loop: a model that keeps asking is still cut off at max, and reflectDoor
+  // strips the stranded question on that path so the chips are never left answering the wrong thing.
+  if (endsOnOpenQuestion(t) && depth < max) return false;
   const wrappedUp = depth >= min && t.length >= 40 && !/\?\s*$/.test(t); // a declarative reflection, not another probe
   return (depthReady === true && depth >= min) || wrappedUp || depth >= max;
 }
@@ -2051,7 +2106,7 @@ export function engagementStage(cfg: EngagementConfig): StageDef {
  * The recap moves up into the frame (it is orientation, not part of the ask), the instrument's own framing stays
  * with the instrument, and one question sits between them.
  */
-export const CHECKPOINT_ENGAGE_Q = "Before the numbers — what's different now that wasn't when you started?";
+export const CHECKPOINT_ENGAGE_Q = "What feels different now than when you started?";
 
 export function checkpointEngagement(cfg: {
   next: StageId;

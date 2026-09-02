@@ -781,7 +781,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // Kept in step with mirrorEngageQuestion() in reconnect.ts — this is the no-list branch of the same question.
   // It cannot import that one: this table is a static Record with no Collected to read from.
   'mirror-open': 'Of everything on your Reclaim List, which one do you expect to be the hardest?',
-  'checkpoint-open': "Before the numbers — what's different now that wasn't when you started?",
+  'checkpoint-open': "What feels different now than when you started?",
   // B1's five stages (Greg B1.md:257). Fallback prompts only — the arc supplies its own openers; these exist so a
   // tool-only model turn never renders a blank reply.
   'why-activity-talk': 'What makes you want to move — the reason that is actually yours?',
