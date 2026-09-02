@@ -47,17 +47,22 @@ function presentItem(i: number): string {
 }
 
 /** Parse a member reply to a 1–5 Likert value, leniently. Returns null if unclear. */
-export function parseLikert(message: string): number | null {
-  const digit = message.match(/\b([1-5])\b/);
-  if (digit) return Number(digit[1]);
-  const m = message.toLowerCase();
-  if (/not at all|never|strongly disagree/.test(m)) return 1;
-  if (/rarely|a little|disagree/.test(m)) return 2;
-  if (/sometimes|somewhat|neutral|mixed/.test(m)) return 3;
-  if (/often|mostly|agree/.test(m)) return 4;
-  if (/very much|always|completely|definitely|strongly agree/.test(m)) return 5;
-  return null;
-}
+// parseLikert COMES FROM THE KERNEL (2026-09-02). This file carried its own, and the two had diverged:
+//
+//   member types                        kernel   this copy
+//   "on a scale of 1 to 5, I'm a 4"       4          1
+//   "question 3: a 5"                     5          3
+//
+// The kernel's strips scale and item references before taking a number (CAT-33); this one took the first digit it
+// saw anywhere. Same failure family as withQuestion in reconnect.ts — a fix made once and never carried — except
+// that this surface is PARKED for the Cycle 2 retake, so the wrong number would have been recorded the first time
+// a member retook the IDQ rather than today. Debt with a fuse on it.
+//
+// The kernel's takes a `max` (B1's SDT instrument is 1–7); the IDQ is 1–5, which is the default, so every caller
+// here is unchanged. [[one-fact-many-sites]]
+import { parseLikert } from './onboarding-staged.ts';
+export { parseLikert };
+
 
 export function idqOpening(): IdqTurn {
   const intro =

@@ -529,6 +529,11 @@ const GAP_FORECAST_CONFIRM_VARIANTS = [
   'Have I got that right the way it happened — or is there more?',
   'Is that right, the way it went — or is there more of it?',
   'Have I understood how it opened — or is there more you want to put in?',
+  // A FOURTH, because Donna went four rounds. Three variants meant a member who kept saying "there's more" still
+  // met a repeat on the fourth — the exact thing the rotation exists to prevent, just one round later. She told us
+  // her father's cancer, her job, and the weight, and the fourth round is where the hardest part usually arrives.
+  // All four stay answerable by the same three chips, which is the constraint this line lives under.
+  'Is that the whole of it now — or is there still more?',
 ];
 /** Pick by how many times we have already asked, so the confirm never repeats verbatim as her story unfolds. */
 function gapForecastConfirm(history: ConvMessage[]): string {
@@ -1737,6 +1742,28 @@ export function stageStep(arc: ArcConfig, stage: string | undefined | null): num
 // closure sets the reply + next stage; the ACTION scores + persists). Everything instrument-specific (opener,
 // items, count, frames, completion) lives in the config; the loop lives here, once.
 const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
+/**
+ * AGREEMENT IN WORDS, on the 1–5 scale only.
+ *
+ * These came from lib/agent/idq-conversation.ts, which had its own parser and understood them while the kernel did
+ * not. Neither was a superset of the other: that one took the first digit it saw ("on a scale of 1 to 5, I'm a 4"
+ * → 1) but read "strongly agree"; this one strips scale references correctly and returned null on the words. So
+ * merging is the fix, not swapping — and the gap was LIVE, not parked: R1 runs on this parser, and a member
+ * answering "not at all" instead of "1" was being re-prompted for an answer they had already given.
+ *
+ * ORDER IS LOAD-BEARING. "strongly disagree" contains "disagree", and "not at all" must beat "all"; the longest
+ * phrase is tested first so a specific answer is never read as its own weaker substring.
+ *
+ * FIVE-POINT ONLY. B1's SDT instrument is 1–7 and Reclaim's reads are 1–10, where "strongly agree" does not mean
+ * 5 — so this applies when max is 5 and stays out of the way otherwise, rather than guessing a midpoint.
+ */
+const LIKERT_AGREEMENT: [RegExp, number][] = [
+  [/\bstrongly disagree\b|\bnot at all\b|\bnever\b/i, 1],
+  [/\bstrongly agree\b|\bvery much\b|\balways\b|\bcompletely\b|\bdefinitely\b/i, 5],
+  [/\bdisagree\b|\brarely\b|\ba little\b/i, 2],
+  [/\bneutral\b|\bsometimes\b|\bsomewhat\b|\bmixed\b/i, 3],
+  [/\bagree\b|\boften\b|\bmostly\b/i, 4],
+];
 // Parse a Likert reply to an integer in [1, max]. `max` defaults to 5 (the IDQ / Grinta scale — every existing caller
 // is unchanged); B1's SDT instrument passes 7, and Reclaim's C2/C3 pass 10. Matches a 1–2 digit number (so "10" reads
 // as ten, not "1") and clamps to [1, max]; a value outside the range (or a spelled word above the scale) returns null
@@ -1755,6 +1782,7 @@ export function parseLikert(msg: string, max = 5): number | null {
   const inRange = [...cleaned.matchAll(/\b(\d{1,2})\b/g)].map((x) => Number(x[1])).filter((n) => n >= 1 && n <= max);
   if (inRange.length) return inRange[0]!;
   for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (n <= max && new RegExp(`\\b${w}\\b`).test(m)) return n;
+  if (max === 5) for (const [re, n] of LIKERT_AGREEMENT) if (re.test(m)) return n;
   return null;
 }
 

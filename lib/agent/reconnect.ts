@@ -25,7 +25,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } 
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, withQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -254,15 +254,20 @@ function beatConfirmUnlessLeaving(memberMessage: string, prompt: string, set: Be
   return memberSteppingAway(memberMessage) ? undefined : beatConfirmExpectation(prompt, set);
 }
 
-function withQuestion(modelText: string, probe: string | null): string {
-  const t = (modelText ?? '').trim();
-  if (!t) return probe ?? NOTHING_LEFT_TO_ASK;
-  if (!probe) return t;
-  if (/\?\s*$/.test(t)) return t;
-  const lastQ = t.lastIndexOf('?');
-  if (lastQ !== -1 && t.length - lastQ <= 60) return t;
-  return `${t}\n\n${probe}`;
-}
+// withQuestion NOW COMES FROM THE ARC KERNEL (2026-09-01). This file carried its own copy, and it was two
+// generations behind the one it was copied from:
+//
+//   · it tested `/\?\s*$/` plus a 60-character trailing window — the char-window heuristic that the kernel's own
+//     comment records as REPLACED, because a long coda after the question pushes the '?' out of the window and a
+//     second question gets appended. Two of Jay's walks hit that shape; the fix never crossed to this file.
+//   · it had no notion of an imperative ask, added to the kernel on 2026-09-01 after Donna got our probe stacked
+//     onto "Tell me what that day was actually like" four times in one Excavation.
+//
+// Same inputs, before this change: the kernel HELD on both, this copy STACKED on both. That is the whole of her
+// "asking me a question and not allowing me to answer it" — in the one Session she and Jay have both struggled in.
+//
+// Deleted rather than patched. A second copy is how it fell behind, and patching it would leave a third chance to
+// diverge. [[one-fact-many-sites]]
 
 // SHARED draw-out advance rule (fixes the systematic "reflect but re-ask" tic across every draw-out beat — Doors,
 // Drift, Window, and the future Rs). A draw-out beat advances to its reflect-confirm when:
@@ -2069,7 +2074,13 @@ export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string
       'check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the ' +
       'story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), ' +
       'offered — never asserted — and only when the material earns it. Once they confirm the insight, accept it and ' +
-      'let the beat move — do not reflect it again or ask a further question.'
+      'let the beat move — do not reflect it again or ask a further question.\n\n' +
+      'ONE DOOR AT A TIME, AND ONLY THE ONE IN FRONT OF YOU. Their whole marked set is in your context above, and ' +
+      'the engine opens those Doors one at a time, in order. Do NOT name, summarize, or draw a thread across Doors ' +
+      'that have not been opened yet. When you do, the engine opens the next one on schedule and the member reads ' +
+      'it as being asked to repeat work already done — in one member\'s words: "You already asked me that. We just ' +
+      'did The Load-Bearer — I answered it, you reflected it back, and I confirmed it." The thread across all of ' +
+      'them is real and it belongs at the CLOSE, after the last Door is walked, not partway through.'
     );
   if (stage === 'drift')
     return (

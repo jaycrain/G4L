@@ -233,7 +233,12 @@ test('reconnect revision · an AFFIRMATION WITH added color still commits (defau
   // The live-walk bug: "yeah, that's truer — it was really the carrying…" reads as 'addition', not 'done'. A re-seeing
   // is a yes/no offer, so anything that isn't a DISPUTE commits (and keeps drawing out) — never a re-proposal loop.
   const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' }, collected: { doors: ['marriage'] } };
-  const turn = applyReconnectTurn(pending, [], "yeah, that's truer — it was really the carrying, all of it landing on me", { text: 'go on', replyIntent: 'more' });
+  // FIXTURE TEXT CHANGED 2026-09-02, not the assertion. It was 'go on' — a neutral stand-in when this was written,
+  // and since then "go on" is recognised as an IMPERATIVE ASK, because Donna got our probe stacked underneath
+  // "Go on. I'm here for it." So the engine now correctly holds its probe on that text, and the assertion below
+  // (that the turn keeps drawing out with a question) was measuring the stand-in rather than the behaviour.
+  // A reflection with no ask in it is what this test always meant by "the model said something".
+  const turn = applyReconnectTurn(pending, [], "yeah, that's truer — it was really the carrying, all of it landing on me", { text: 'That lands — the carrying is the truer name for it.', replyIntent: 'more' });
   assert.deepEqual(turn.state.collected.doors, ['load_bearer'], 'accepted-with-color still commits the swap');
   assert.deepEqual(turn.state.reseeingTells, [{ fromSlug: 'marriage', toSlug: 'load_bearer' }], 'and emits the tell');
   assert.equal(turn.state.pendingRevision, undefined, 'no re-proposal loop — the offer resolved');

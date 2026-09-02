@@ -80,6 +80,30 @@ const RULES: Rule[] = [
   // arc, and this rule is the guarantee underneath the request. Deleting the code alone is a safe deletion here
   // because the construction is fixed: the determiner and the verb both survive.
   { re: /\b(that'?s)\s+(?:[RWBC][1-4])\s+(done)\b/gi, to: '$1 $2', why: 'asset-code' },
+  // WIDENED 2026-09-02 — and she had to report it twice to get here.
+  //
+  // The rule above handles only the ASSET-CODE form, because that is the instance she quoted first. But her 8/30
+  // note said the construction: "'that's (insert thing) done' is weird vernacular... The phrase should be removed
+  // from throughout the app." On 2026-09-01 she said it again, harder: "for the love of God please eliminate the
+  // phrase 'There's (thing) done'. that is not American English."
+  //
+  // Between those two reports the model produced "That's the real work of this part done" unprompted, on a build
+  // whose authored copy had just been cleaned of all six instances. So the prompt ban is not holding at generation
+  // time, and this is the layer that does not have to hope. Same safe deletion as the code form: the determiner
+  // and the verb both survive, so "That's the week done" becomes "That's done" and no sentence can break.
+  //
+  // It leaves an announcement, which the prompt separately forbids — but a shorter one, without the vernacular she
+  // has now flagged twice. Saying what she HAS instead needs a rewritten sentence, and this gate deletes rather
+  // than writes, deliberately: the first version of it substituted and mangled a question mid-story.
+  //
+  // THE SPAN REFUSES RELATIVE CLAUSES, which is what keeps this safe at five words. "That's the real work of this
+  // part done" is the model's own line and has to be reachable; "that's the thing I should have done" must not be,
+  // because collapsing it to "that's done" would delete her meaning rather than our vernacular. So the span may
+  // not contain a pronoun or an auxiliary — the tell that what follows is a clause about her, not a name for a
+  // unit of our program. Case is carried through from $1: the first version wrote a lowercase "that's" into the
+  // middle of a member's turn.
+  { re: /\b(that'?s|there'?s)\s+(?!how\b|what\b|why\b|when\b|not\b|all\b)(?:the|your|a|an|his|her|their)?\s*(?:(?!\b(?:i|you|we|they|he|she|should|could|would|have|had|has|been|already|just)\b)[\w'’-]+\s+){0,5}?(done)\b/gi,
+    to: '$1 $2', why: 'unit-announcement' },
 ];
 
 /**
