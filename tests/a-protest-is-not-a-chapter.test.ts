@@ -113,3 +113,30 @@ test('THE CONFIRM IS DIFFERENT: an addition is a chapter by CONTEXT, not by cont
   const protested = (applyStagedTurn(at, [], DONNA, { text: '' }).state.collected as Collected).gap ?? '';
   assert.ok(!/already asked me that/i.test(protested), 'but a protest at the confirm still must not');
 });
+
+test('THE HANDLE IS NOT A CHAPTER: what she said before the gap opened stays out of it', () => {
+  // The gate showed the single word a member tapped as her handle — "Anchor" — sitting inside her fade story,
+  // and before that a verbatim copy of her answer to the identity question. The backstop was sweeping the WHOLE
+  // conversation, so everything from an earlier stage was filed as how her life narrowed.
+  //
+  // Where the fade story starts is derivable from the transcript: the gap stage begins on the turn the Companion
+  // teaches the Doors, and that line is owed exactly once. No new state.
+  const history = [
+    { role: 'member' as const, text: 'In the middle of a dinner rush, six people moving around me like we had rehearsed it.' },
+    { role: 'agent' as const, text: 'Here are a few words for who that was — tap the one that fits.' },
+    { role: 'member' as const, text: 'Anchor' },
+    { role: 'agent' as const, text: 'Somewhere the distance started to open — an accumulation of what we call Doors. What pulled you away?' },
+    { role: 'member' as const, text: 'The restaurant closed and my mother moved in the same month.' },
+    { role: 'agent' as const, text: 'Go on.' },
+    { role: 'member' as const, text: 'I stopped cooking for myself and the weight came on.' },
+    { role: 'agent' as const, text: 'Go on.' },
+  ];
+  const at: ConvState = { stage: 'gap', collected: { identityNoun: 'Anchor' } as Collected, stageScratch: { gap: { gapTurns: 4 } } } as ConvState;
+  const gap = (applyStagedTurn(at, history, 'And I am invisible in my own house now.', { text: '' })
+    .state.collected as Collected).gap ?? '';
+
+  assert.ok(!/\bAnchor\b/.test(gap), `her handle is in her fade story: "${gap.slice(0, 80)}…"`);
+  assert.ok(!/dinner rush/i.test(gap), 'and so is her answer to a different question');
+  assert.match(gap, /restaurant closed/i, 'while the chapters she actually told us survive');
+  assert.match(gap, /invisible in my own house/i, 'including the one she just said');
+});

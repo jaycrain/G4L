@@ -1557,7 +1557,32 @@ function gapStageCorpus(history: ConvMessage[], current: string): string {
  * track, and I have been wrong three times today about this file. It is written down rather than guessed at.
  */
 function gapStoreCorpus(history: ConvMessage[], current: string): string {
-  return [...history.filter((h) => h.role === 'member').map((h) => h.text), current]
+  // WHERE THE FADE STORY STARTS, derived from the transcript rather than tracked in state.
+  //
+  // The first version of this took every member turn in the conversation, so a member's identity-stage answer and
+  // the single word they tapped as their handle were filed as part of how their life narrowed. The gate showed
+  // "Anchor" sitting in the middle of one member's fade story, and before that a verbatim copy of her answer to a
+  // completely different question.
+  //
+  // I said this needed state we do not track. It does not: the gap stage begins on the turn the Companion teaches
+  // the Doors, and taughtDoorsCount already knows that line because the teaching is owed exactly once. Everything
+  // the member said BEFORE that sentence belongs to another stage and is not their fade.
+  //
+  // Falls back to the whole history when the opener has not been said yet — the never-strand backstop must never
+  // strand someone because a matcher missed a line. A too-wide corpus is the bug we are fixing; an EMPTY one is
+  // the member losing their story, which is worse.
+  const OPENER = /what we call Doors|caused that version of you|pulled you away from/i;
+  const opened = history.findIndex((h) => h.role === 'agent' && OPENER.test(h.text));
+  // SLICE ONLY WHEN THERE IS AN EARLIER STAGE TO EXCLUDE. In the live flow the opener is how the gap stage BEGINS,
+  // so it sits after the identity turns and everything before it belongs to another stage. But a conversation can
+  // start here — a resume, or a member whose first gap answer lands before the opener is on the record — and then
+  // index 0 is a real chapter, not an identity answer.
+  //
+  // Dropping it cost a whole gap in testing: the corpus fell from 41 characters to 31, under the never-strand
+  // floor, and the member was asked the same question twice with nothing captured. Losing someone's story to fix
+  // a stray word is the wrong trade in every direction.
+  const scoped = opened > 1 ? history.slice(opened) : history;
+  return [...scoped.filter((h) => h.role === 'member').map((h) => h.text), current]
     .filter((t) => !isConversationalMeta(t) && !isAboutTheApp(t))
     .join(' ');
 }
