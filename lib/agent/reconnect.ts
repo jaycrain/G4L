@@ -1461,7 +1461,31 @@ function legacyOpener(_c: Collected, tuesdayCarried = false): string {
 
 /** Shown with the draft. Never "is this good?" — an appraisal question invites a polite yes on the one artifact
  *  that has to be theirs. */
-const LEGACY_ASK_REVISION = "Read it back. What's not right — a line that isn't how you'd say it, or something missing?";
+const LEGACY_ASK_REVISION_VARIANTS = [
+  "Read it back. What's not right — a line that isn't how you'd say it, or something missing?",
+  "Read it again. What still isn't yours — a phrase you'd never use, or something left out?",
+  "One more read. What would you change — a line that sounds like someone else wrote it, or something you'd add?",
+];
+/**
+ * ROTATED, because a member can ask for more than one revision and the second ask was word-for-word the first.
+ *
+ * Caught by the gate on 2026-09-02 — its first block of a build. The same sentence twice, on the one artifact in
+ * the whole program that has to sound like the member: a letter to themselves. Being asked the identical question
+ * about their own words is the fastest way to make a person stop editing and just say it's fine, which is exactly
+ * what this prompt exists to prevent (Donna, 2026-08-18: "Read it back. What's not right?" / "I just said, it
+ * sounds great!").
+ *
+ * Same idiom as gapForecastConfirm, and the same reason: this is the THIRD line this week that was written once
+ * and asked more than once. All three variants stay answerable by the same two legacy chips.
+ */
+function legacyAskRevision(history: ConvMessage[]): string {
+  const asked = history.filter(
+    (h) => h.role === 'agent' && /(read it back|read it again|one more read)/i.test(h.text),
+  ).length;
+  return LEGACY_ASK_REVISION_VARIANTS[Math.min(asked, LEGACY_ASK_REVISION_VARIANTS.length - 1)]!;
+}
+/** The first variant — for tests and fixtures that need a stable string. */
+const LEGACY_ASK_REVISION = LEGACY_ASK_REVISION_VARIANTS[0]!;
 /** Asked ONCE the member has said there is a change — it invites the words, where ASK_REVISION invites the verdict. */
 const LEGACY_INVITE_CHANGE = "Tell me what to change and I'll write it back for you to read.";
 /** Said instead of a bare "Saved" when the change could not be written — never claim an edit that isn't in it. */
@@ -1482,10 +1506,11 @@ const legacyStage: StageDef = {
     // they confirm, so a draft they hate costs them one sentence and never reaches their record.
     if (b.model.legacyBody) {
       b.legacyDraft = b.model.legacyBody;
-      b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
+      const askRevision = legacyAskRevision(b.history);
+      b.reply = `${b.model.legacyBody}${BEAT_SEP}${askRevision}`;
       b.awaitingConfirm = true;
       // TWO chips, and "That's mine" rather than "That's it" — see LEGACY_CONFIRM_CHOICES.
-      b.expects = beatConfirmExpectation(LEGACY_ASK_REVISION, 'legacy');
+      b.expects = beatConfirmExpectation(askRevision, 'legacy');
       return;
     }
     // Otherwise the model is still asking its prompts — let its question stand. The engine never appends one of
@@ -1533,10 +1558,11 @@ const legacyStage: StageDef = {
       // The redraft they asked for has arrived and is being shown — the debt is paid.
       (b.scratch as LegacyScratch).changeAsked = false;
       if (rounds + 1 < LEGACY_MAX_REVISIONS) {
-        b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
+        const askRevision = legacyAskRevision(b.history);
+      b.reply = `${b.model.legacyBody}${BEAT_SEP}${askRevision}`;
         b.awaitingConfirm = true;
         // TWO chips, and "That's mine" rather than "That's it" — see LEGACY_CONFIRM_CHOICES.
-        b.expects = beatConfirmExpectation(LEGACY_ASK_REVISION, 'legacy');
+        b.expects = beatConfirmExpectation(askRevision, 'legacy');
         return;
       }
       // At the cap: fall through to COMMIT below, carrying the new draft with it. Held in a local rather than
