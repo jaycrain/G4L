@@ -446,6 +446,11 @@ async function main() {
   // COVERAGE. A surface that never appeared is not a pass — it is an untested path, and saying so is the whole
   // reason this block exists. The four structured surfaces a member meets in onboarding are listed explicitly so
   // an ABSENT one is visible rather than silently missing.
+  // WHAT MAKES THIS A GATE. Every check below appends here rather than exiting where it stands, so one run
+  // reports EVERY reason it failed instead of the first. A gate you have to run four times to see four problems
+  // is a gate people stop running.
+  const failures: string[] = [];
+
   console.log('\n=== SURFACE COVERAGE ===');
   const missing: string[] = [];
   for (const k of ['identity_pick', 'gap_confirm', 'reclaim_list', 'scale']) {
@@ -495,15 +500,37 @@ async function main() {
   const repeated = [...seen.entries()].filter(([, n]) => n > 1);
 
   console.log('\n=== RECONNECT ===');
-  for (const x of sessions) console.log(`  ${x.complete ? '✓' : '✗'} ${x.label} — ${x.turns} turns`);
+  for (const x of sessions) {
+    console.log(`  ${x.complete ? '✓' : '✗'} ${x.label} — ${x.turns} turns`);
+    if (!x.complete) failures.push(`${x.label} did not close in ${x.turns} turns`);
+  }
   if (!sessions.length) console.log('  (onboarding did not complete, so the Reconnect leg never ran)');
   console.log('\n=== INVARIANTS (Donna, 2026-09-01) ===');
+  if (stacked.length) failures.push(`${stacked.length} turn(s) carried two questions in one bubble`);
   console.log(`  ${stacked.length ? '✗' : '✓'} two questions in one bubble: ${stacked.length}`);
   for (const r of stacked.slice(0, 3)) console.log('      ' + readable(r).replace(/\n/g, ' / ').slice(0, 150));
+  if (repeated.length) failures.push(`${repeated.length} bubble(s) repeated verbatim`);
   console.log(`  ${repeated.length ? '✗' : '✓'} a bubble repeated verbatim: ${repeated.length}`);
   for (const [k, n] of repeated.slice(0, 3)) console.log(`      ${n}× ${k.slice(0, 130)}`);
+  // ── THE VERDICT ─────────────────────────────────────────────────────────────────────────────────────────────
+  // Exit code is the whole point of a gate. `npm run gate` before anyone walks: a non-zero here means a member
+  // would have met one of the things Donna and Marie met, and the run says which.
+  //
+  // IT DOES NOT GATE ON PROTESTS. The persona objecting is a signal to READ, not a pass/fail — she over-triggered
+  // three times on the first calibrated run, and a gate that cries wolf gets skipped, which is how the fit
+  // estimator and the green-light banner both stopped being read. Protests are printed; only the mechanical
+  // failures fail the run.
+  if (failures.length) {
+    console.error(`\n=== GATE: FAILED (${failures.length}) ===`);
+    for (const f of failures) console.error(`  ✗ ${f}`);
+    console.error('\nDo not start a walk on this build.');
+  } else {
+    console.log('\n=== GATE: PASSED — every Session closed, one ask per bubble, nothing repeated ===');
+  }
+
   console.log('\n=== FINAL COLLECTED ===');
   console.log(JSON.stringify(state.collected, null, 1));
+  if (failures.length) process.exit(1);
 
   // A SIGNAL NOBODY IS OBLIGED TO ACT ON IS NOT A TEST.
   //
@@ -517,7 +544,7 @@ async function main() {
   // and nobody is reading carefully.
   if (missing.length) {
     console.error(`\nFAILED — the member was never handed: ${missing.join(', ')}`);
-    process.exit(1);
+    failures.push(`surfaces never shown: ${missing.join(', ')}`);
   }
 }
 

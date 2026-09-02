@@ -12,6 +12,7 @@
     "start": "next start",
     "test": "node scripts/run-tests.mjs",
     "typecheck:scripts": "node scripts/typecheck-scripts.mjs",
+    "gate": "node --experimental-strip-types --env-file=.env.local scripts/persona-walk.ts marie",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
     "db:reset": "rm -rf .pglite && echo 'local dev DB wiped — restart the dev server to recreate it'",
     "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/migrate.ts",
