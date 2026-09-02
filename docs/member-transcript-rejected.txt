@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 31d65e5f · 2026-08-31)
+# Strings EXCLUDED from the member transcript (app @ 8dad403e · 2026-09-02)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -78,7 +78,6 @@
 [lib/agent/onboarding-staged.ts] ONLY record a concrete want. Do NOT record a passing aside, a moment of confusion ("this isn't making sense"),
 [lib/agent/onboarding-staged.ts] a logistics remark, or an identity statement of WHO they are ("I'm a director") — an identity belongs to who
 [lib/agent/onboarding-staged.ts] REPLACE the reclaim item you MOST RECENTLY added with a sharper, more complete version — pass the WHOLE new phrasing in `text`, in their words. Two triggers: (1) after you gently drew them toward something trackable ('ride my bike more' → 'ride my bike a couple times a week'); (2) whenever their reply just adds an amount, number, cadence, or detail to the want you most recently added — FOLD it in ('lose weight' + 'about 25 lbs' → 'lose about 25 lbs'; 'core work' + '2-3 days a week' → 'core work, 2-3 days a week'). This updates the item in place — it does NOT add a second one. Use add_reclaim_item ONLY for a genuinely new, distinct want.
-[lib/agent/onboarding-staged.ts] the Swimmer
 [lib/agent/onboarding-staged.ts] the Maker
 [lib/agent/onboarding-staged.ts] the Friend Who Always Called
 [lib/agent/onboarding-staged.ts] Untamed
@@ -103,6 +102,7 @@
 [lib/agent/onboarding-staged.ts] engine's to do, never yours — and if they ask what comes next, the next step arrives here in a moment;
 [lib/agent/onboarding-staged.ts] FINISH WHAT YOU PROMISE. Taking their wants one at a time is right — ANNOUNCING that you will is the failure. "Let me take those one at a time — they each deserve it" was said, one want was addressed, and the beat ended; this stage hands straight to the baseline survey, so there was never another turn to keep it in. Do not offer a review you will not carry out unless you address EVERY item before moving on. The safer move is not to promise one at all: receive each want as it lands, and close by telling them the whole list is on their dashboard and theirs to change anytime. If you DO reflect the list back, name every item you tagged — a partial read-back tells them you were only half listening. NEVER ANNOUNCE THE MECHANICS — never say "let me make that concrete" or "before I capture that". Just receive what they gave you, in plain language.
 [lib/agent/onboarding-staged.ts] CURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).
+[lib/agent/onboarding-staged.ts] [identity] forced candidate proposal failed — falling through to the ordinary path:
 [app/onboarding/welcome.tsx] by your side.
 [app/onboarding/welcome.tsx] Reconnect
 [app/onboarding/welcome.tsx] Rewire
@@ -241,6 +241,7 @@
 [lib/agent/reconnect.ts] ${list}.
 [lib/agent/reconnect.ts] Let's start with ${name(lead)}${board.biggest ? ' — the one you said weighs most today' : ''}. Not the label, the real thing: take me back to how it actually went.
 [lib/agent/reconnect.ts] Then let's take ${name}. Same thing — not the label, what actually happened.
+[lib/agent/reconnect.ts] [door-queue] tap reached the draw-out, not the confirm —
 [lib/agent/reconnect.ts] ${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}
 [lib/agent/reconnect.ts] You've named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
 [lib/agent/reconnect.ts] not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?
@@ -286,6 +287,8 @@
 [lib/agent/reconnect.ts] that's the truer one
 [lib/agent/reconnect.ts] no, it really is the marriage
 [lib/agent/reconnect.ts] what were my Doors again?
+[lib/agent/reconnect.ts] CURRENT STAGE: the Doors excavation. Draw out the primary Door over a few exchanges, then reflect an INSIGHT (the normalized cost / how it targeted who they were / the sequence) IN THEIR WORDS, offered as a check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), offered — never asserted — and only when the material earns it. Once they confirm the insight, accept it and let the beat move — do not reflect it again or ask a further question.  ONE DOOR AT A TIME, AND ONLY THE ONE IN FRONT OF YOU. Their whole marked set is in your context above, and the engine opens those Doors one at a time, in order. Do NOT name, summarize, or draw a thread across Doors that have not been opened yet. When you do, the engine opens the next one on schedule and the member reads it as being asked to repeat work already done — in one member's words: "You already asked me that. We just did The Load-Bearer — I answered it, you reflected it back, and I confirmed it." The thread across all of them is real and it belongs at the CLOSE, after the last Door is walked, not partway through.
+[lib/agent/reconnect.ts] it as being asked to repeat work already done — in one member's words: "You already asked me that. We just
 [lib/agent/reconnect.ts] THE ENGINE OPENS EVERY BEAT — NOT YOU. Do NOT ask them to picture a Tuesday a year from now, do not ask them to imagine the version of themselves who did the work, and do not mention or promise a letter. Those belong to the beats AFTER this one and the engine opens each with its own words. If you ask early they will answer you, and then the real beat will ask them the same thing again — which reads as the product not listening, and is the single most damaging thing that can happen in this conversation.
 [lib/agent/reconnect.ts] (They ALREADY answered 1 in the Window beat: "${tuesday}" — do not ask it again; use it.)
 [lib/agent/reconnect.ts] ${i + 1}. ${p.prompt}
@@ -581,6 +584,15 @@
 [lib/rewire/w3-entry.ts] recordW3Entry failed for member=${memberId} date=${e.entryDate}:
 [lib/rewire/w3-entry.ts] w3_daily_entry.source
 [lib/rewire/w3-moves.ts] saveW3Moves: ${m.slot} failed for member=${memberId}:
+[lib/practice/close.ts] ${n} ${n === 1 ? one : many}
+[lib/practice/close.ts] ${r.label} — no days marked.
+[lib/practice/close.ts] ${r.label} — ${plural(r.done, 'day', 'days')}.
+[lib/practice/close.ts] ${r.label} — none this week. It was there, waiting.
+[lib/practice/close.ts] ${r.label} — ${r.done}, past the ${r.target} you set.
+[lib/practice/close.ts] ${r.label} — ${r.done} of ${r.target}. Exactly what you aimed for.
+[lib/practice/close.ts] ${r.label} — ${r.done} of the ${r.target} you aimed for.
+[lib/practice/close.ts] You used the protocol you wrote ${w3.recoveryUsed} times. That is the skill this week was for.
+[lib/practice/close.ts] Across the week, ${best.label.toLowerCase()} showed up most and ${thin.label.toLowerCase()} least.
 [lib/practice/mark.ts] select id from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = $2
 [lib/practice/mark.ts] delete from practice_mark where id = $1
 [lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
@@ -623,16 +635,13 @@
 [lib/practice/grid.ts] Visualization
 [lib/practice/grid.ts] Visualization
 [lib/practice/grid.ts] select closed_at from practice_week where member_id = $1 and kind = $2
-[lib/content/teaching.ts] the IDQ
 [lib/content/teaching.ts] the Doors
-[lib/content/teaching.ts] the Drift Quiz
-[lib/content/teaching.ts] the Bigger World Audit
 [lib/content/teaching.ts] Reconnect
 [lib/content/teaching.ts] Rewire
 [lib/content/teaching.ts] Rebuild
 [lib/content/teaching.ts] Reclaim
 [lib/content/teaching.ts] the Program
-[lib/content/teaching.ts] ${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}
+[lib/content/teaching.ts] ${assetTitle(asset)} · ${PHASE_TITLE[asset[0]!] ?? ''}
 [lib/rebuild/skills-map.ts] Predisposing
 [lib/rebuild/skills-map.ts] Enabling
 [lib/rebuild/skills-map.ts] Reinforcing
@@ -714,42 +723,6 @@
 [lib/connect/post-session-nudge.ts] ${e.actor} replied to what you wrote about ${e.postLabel}.
 [lib/connect/post-session-nudge.ts] ${e.actor} saw what you wrote about ${e.postLabel}.
 [lib/connect/post-session-nudge.ts] Look in
-[app/dashboard/redesign-dashboard.tsx] Reconnecting
-[app/dashboard/redesign-dashboard.tsx] Rewiring
-[app/dashboard/redesign-dashboard.tsx] Rebuilding
-[app/dashboard/redesign-dashboard.tsx] Reclaiming
-[app/dashboard/redesign-dashboard.tsx] Physical
-[app/dashboard/redesign-dashboard.tsx] Self
-[app/dashboard/redesign-dashboard.tsx] Social
-[app/dashboard/redesign-dashboard.tsx] Outlook
-[app/dashboard/redesign-dashboard.tsx] Reconnect
-[app/dashboard/redesign-dashboard.tsx] Rewire
-[app/dashboard/redesign-dashboard.tsx] Rebuild
-[app/dashboard/redesign-dashboard.tsx] Reclaim
-[app/dashboard/redesign-dashboard.tsx] redesignDashboard.pulseBeats
-[app/dashboard/redesign-dashboard.tsx] Session ${curSessionIdx + 1} of ${phaseSessions.length}
-[app/dashboard/redesign-dashboard.tsx] ${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}
-[app/dashboard/redesign-dashboard.tsx] the ${dash.identityNoun}
-[app/dashboard/redesign-dashboard.tsx] ${HERO_VERB[activePhase] ?? 'Reconnecting'} ${identitySelves}
-[app/dashboard/redesign-dashboard.tsx] select threshold_crossed_at, tour_completed_at from member_profile where member_id=$1
-[app/dashboard/redesign-dashboard.tsx] Or move on to ${practiceNext.label}
-[app/dashboard/redesign-dashboard.tsx] Reclaimed
-[app/dashboard/redesign-dashboard.tsx] Movement
-[app/dashboard/redesign-dashboard.tsx] Strava
-[app/dashboard/redesign-dashboard.tsx] Connected
-[app/dashboard/redesign-dashboard.tsx] Soon
-[app/dashboard/redesign-dashboard.tsx] + 400 more
-[app/dashboard/redesign-dashboard.tsx] Movement
-[app/dashboard/redesign-dashboard.tsx] Strava
-[app/dashboard/redesign-dashboard.tsx] Connect
-[app/dashboard/redesign-dashboard.tsx] Soon
-[app/dashboard/redesign-dashboard.tsx] + 400 more
-[app/dashboard/redesign-dashboard.tsx] rreg-dir dir-${dash.score.direction}
-[app/dashboard/redesign-dashboard.tsx] ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}
-[app/dashboard/redesign-dashboard.tsx] rreg-dir dir-${grinta.direction}
-[app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
-[app/dashboard/redesign-dashboard.tsx] Momentum
-[app/dashboard/redesign-dashboard.tsx] Badges
 [app/dashboard/dashboard-triptych.tsx] the Athlete
 [app/dashboard/dashboard-triptych.tsx] Rebuild
 [app/dashboard/dashboard-triptych.tsx] g4l:show-pane
