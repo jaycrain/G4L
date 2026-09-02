@@ -79,6 +79,7 @@ import {
   confirmsProposal,
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
+  canBeGapChapter,
   shouldCaptureStagedReclaim,
   memberIsConfused,
 } from './onboarding-intent.ts';
@@ -1535,6 +1536,32 @@ function gapStageCorpus(history: ConvMessage[], current: string): string {
   return [...history.filter((h) => h.role === 'member').map((h) => h.text), current].join(' ');
 }
 
+/**
+ * The same corpus, for STORING rather than for MATCHING — and the difference is the whole point.
+ *
+ * gapStageCorpus above is built to be SCANNED for Doors, where a stray identity answer is harmless because
+ * matchDoors is specific. The never-strand backstop then reuses it to WRITE the member's fade story, and there a
+ * stray turn is not harmless: it is filed as their account of how their life narrowed.
+ *
+ * Found by the gate on 2026-09-02, on a run that passed every check. A persona who had been asked something twice
+ * said so — "You just asked me that… I already answered it." — and because no single turn had qualified as a fade,
+ * the backstop swept the whole history into her gap and her complaint became part of her story. Donna produced the
+ * same sentence the day before.
+ *
+ * THIS DROPS ONLY WHAT MUST NEVER BE STORED, and nothing else. Filtering each turn through canBeGapChapter was the
+ * obvious move and it is wrong: her REAL chapters do not pass it individually — that is precisely why this
+ * backstop exists — so it would have left her with an empty gap instead of a polluted one.
+ *
+ * STILL OPEN, and deliberately not fixed here: the corpus is the whole conversation, so a member's identity-stage
+ * answer and their tapped handle also land in it. Scoping the history to the gap stage needs state we do not
+ * track, and I have been wrong three times today about this file. It is written down rather than guessed at.
+ */
+function gapStoreCorpus(history: ConvMessage[], current: string): string {
+  return [...history.filter((h) => h.role === 'member').map((h) => h.text), current]
+    .filter((t) => !isConversationalMeta(t) && !isAboutTheApp(t))
+    .join(' ');
+}
+
 // --- The per-stage BREATHE FLOOR (Increment 1a) --------------------------------------------------------
 // Generalizes v1's DOOR_MIN_TURNS (the Door-beat "breathe" floor, onboarding.ts:158) across identity/gap/
 // reclaim: a stage may advance to its reflect-confirm only once it has BREATHED — the Companion drew the
@@ -2567,9 +2594,9 @@ const gapStage: StageDef = {
     // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
     // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
     const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '' && !isForwardAmbition(b.model.record.gap);
-    if (!b.collected.gap && !s.noFade && shouldCaptureStagedGap(b.memberMessage)) {
+    if (!b.collected.gap && !s.noFade && canBeGapChapter(b.memberMessage)) {
       b.collected.gap = tidyGapProse(b.memberMessage);
-    } else if (b.collected.gap && !s.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
+    } else if (b.collected.gap && !s.noFade && !modelTaggedGap && canBeGapChapter(b.memberMessage)) {
       // W-33: join with a sentence boundary (joinGapChapters, W-12) — a raw space ran the member's sentences together
       // ("consumed me It also…"). Same helper the confirm-append path uses; boundary-only, no internal/proper-noun risk.
       // tidyGapProse (milie walk): mechanics-only cleanup of the raw backstop text (never the model's clean set_gap).
@@ -2579,7 +2606,7 @@ const gapStage: StageDef = {
     // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
     // story so we advance instead of looping the opening question.
     if (!b.collected.gap && !s.noFade && (s.gapTurns ?? 0) >= GAP_MAX_TURNS) {
-      const corpus = gapStageCorpus(b.history, b.memberMessage).trim();
+      const corpus = gapStoreCorpus(b.history, b.memberMessage).trim();
       // NEVER fabricate a fade: still never-strand a subtle real fade the matcher missed, but do NOT grab a corpus
       // that positively declares thriving (or is pure forward ambition) — that would manufacture a fade for a
       // genuinely-thriving member. (CAT-03; preserves the run-2 never-strand for real subtle fades.)
@@ -2766,7 +2793,17 @@ const gapStage: StageDef = {
       const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
       // THROUGH tidyGapProse, like every other gap write. This site reached joinGapChapters raw, which is how a
       // tap's wire string reached Jay's stored fade story — the one write of four that skipped the boundary.
-      if (!modelTaggedGap) b.collected.gap = tidyGapProse(joinGapChapters(b.collected.gap ?? '', tidyGapProse(b.memberMessage)));
+      // META ONLY HERE — NOT the full canBeGapChapter, and the difference is the point.
+      //
+      // At the confirm the member has been ASKED "is there more?", so what they say next is a chapter by CONTEXT,
+      // not by content. Requiring it to independently read as a fade blocks the ordinary way people add one:
+      // "Yeah, there was work too — it piled on and crowded everything out" carries no Door and no loss word, and
+      // my first pass at this silently dropped it. That is the failure this beat was built to prevent (Jay's walk,
+      // 3/5/6) — an addition heard as a move-on.
+      //
+      // So the only thing excluded here is what must never be stored anywhere: a complaint about the conversation.
+      const protesting = isConversationalMeta(b.memberMessage) || isAboutTheApp(b.memberMessage);
+      if (!modelTaggedGap && !protesting) b.collected.gap = tidyGapProse(joinGapChapters(b.collected.gap ?? '', tidyGapProse(b.memberMessage)));
       b.collected.doorsProposed = proposeDoors(b.collected, gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
       // ANTI-LOOP (shared contract): a rambling / drifting member's every reply reads as an 'addition', so this

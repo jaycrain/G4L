@@ -19,6 +19,7 @@
 //   C. Fade & scope — is this a real Fade (loss/drift), forward ambition (decline), or Acceptance (resignation)?
 //   D. Resolvers — compose the primitives into the single decision a stage needs (e.g. resolveGapConfirm).
 
+import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { parseBeatConfirm } from './beat-confirm.ts';
 import { matchDoors, hasResignationLanguage } from '../doors.ts';
 import { gapIsNarrative } from './onboarding-contract.ts';
@@ -490,6 +491,37 @@ export function memberAddingMoreGap(message: string): boolean {
 // Then divorce."); otherwise an inferred gap must be a substantial real-fade narrative WITH a loss signal (this
 // is what stops a no-fade optimizer's ambition from being backstopped as a fade).
 const STAGED_GAP_MIN_CHARS = 80;
+/**
+ * Can this member turn become a CHAPTER OF THEIR FADE STORY?
+ *
+ * `shouldCaptureStagedGap` asks whether the words look like a fade. This asks the second question the gap capture
+ * was never asking: whether they were TELLING us their story or TALKING TO US ABOUT THE CONVERSATION.
+ *
+ * THE RUN THAT FOUND IT, 2026-09-02. A persona built to push back was asked something she had already answered,
+ * and said so:
+ *
+ *   "You just asked me that. That's what the last twenty minutes have been — me telling you what pulled me away
+ *    from her. The closing, my mother, the invisible work. I already answered it."
+ *
+ * That was appended to her gap and stored as part of her fade. It passes the fade matcher for a good reason — it
+ * NAMES her Doors, because she was listing what she had already told us. Content alone cannot tell the two apart.
+ * Donna produced the identical shape the day before ("You already asked me that. I just answered it").
+ *
+ * THE GUARD ALREADY EXISTED. `isConversationalMeta` was built for this exact sentence and carries an
+ * ALREADY_ANSWERED matcher; `isAboutTheApp` was written for the second shape. Both were wired into the Reclaim
+ * List — `canBeReclaimItem` is this function's twin, one file over — and neither reached the gap. Fifth instance
+ * this week of a rule that exists and runs in one place. [[one-fact-many-sites]]
+ *
+ * WHY THIS IS NOT THE REVERTED WORK. Stage-agreement inferred that the member had DIVERGED and then captured what
+ * she said next; it recited her protest back as a goal and was reverted, and its note says the prose-detection
+ * idea is dead. This does the opposite: it captures nothing on a judgement, it only DECLINES to store a shape we
+ * already refuse to store elsewhere. Excluding is safe where inferring is not — the worst case is a chapter she
+ * has to say again, not a sentence of ours put in her mouth.
+ */
+export function canBeGapChapter(message: string): boolean {
+  return shouldCaptureStagedGap(message) && !isConversationalMeta(message) && !isAboutTheApp(message);
+}
+
 export function shouldCaptureStagedGap(message: string): boolean {
   const m = (message ?? '').trim();
   if (memberDeflecting(m) || isAffirmation(m) || isForwardAmbition(m)) return false; // never a wrap/refusal/ambition
