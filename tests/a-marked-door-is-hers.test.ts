@@ -72,3 +72,49 @@ test('the board records what she tapped', () => {
   assert.ok(marked.includes('career_cliff' as never), 'her taps are recorded');
   assert.ok(marked.includes('loss' as never));
 });
+
+// ── THE DOUBLE-BACK ──────────────────────────────────────────────────────────────────────────────────────────
+//
+// Donna hit this twice ("I clicked That's It button and it kept coming back"; the Companion's own "I doubled back
+// when we were already done") and Marie twice more ("You already asked me about The Load-Bearer. We finished it").
+// Three days, three walkers, and I was wrong about the cause twice before the queue log showed it:
+//
+//   bank career_cliff  → next=aging_parents
+//   bank aging_parents → next=loss            ← "Then let's take The Loss" goes on screen
+//   bank VANISHING     → next=loss            ← and again
+//
+// A re-seeing inserted a Door at the FRONT of the set mid-excavation. bankWalkedDoor asked "which Door is first
+// unwalked?" instead of "which Door did I open?", got the newcomer, and the queue offered the announced Door a
+// second time. Ordering is a legitimate thing for a re-seeing to change; re-pointing a walk in progress is not.
+import { nextDoorToExcavate } from '../lib/agent/reconnect.ts';
+
+test('a Door inserted mid-excavation does not make the engine re-announce the current one', () => {
+  // Open a Door, then let a re-seeing put a different one at the front before she confirms.
+  const opened: ConvState = {
+    stage: 'doors', awaitingConfirm: true,
+    collected: { identityNoun: 'Conductor', doors: ['career_cliff', 'loss'], doorsExcavated: ['career_cliff'] } as Collected,
+    stageScratch: { doors: { openedDoor: 'loss' } },
+  } as unknown as ConvState;
+
+  // The re-seeing lands first: 'vanishing' jumps to the front of the set.
+  (opened.collected as Collected).doors = ['vanishing', 'career_cliff', 'loss'] as never;
+
+  const out = applyReconnectTurn(opened, [], "yes, that's it", { text: '', replyIntent: 'done' }, RECONNECT_R2_ARC);
+  const excavated = (out.state.collected as Collected).doorsExcavated ?? [];
+
+  assert.ok(excavated.includes('loss' as never),
+    'the Door on screen must be the Door banked — otherwise it gets announced again');
+  assert.ok(!excavated.includes('vanishing' as never),
+    'and a Door she has not been asked about yet must not be marked walked');
+});
+
+test('the queue still advances normally when nothing jumps the line', () => {
+  const at: ConvState = {
+    stage: 'doors', awaitingConfirm: true,
+    collected: { identityNoun: 'Conductor', doors: ['career_cliff', 'loss'] } as Collected,
+  } as unknown as ConvState;
+  const out = applyReconnectTurn(at, [], "yes, that's it", { text: '', replyIntent: 'done' }, RECONNECT_R2_ARC);
+  const c = out.state.collected as Collected;
+  assert.deepEqual(c.doorsExcavated, ['career_cliff'], 'banks the first');
+  assert.equal(nextDoorToExcavate(c), 'loss', 'and moves to the next');
+});

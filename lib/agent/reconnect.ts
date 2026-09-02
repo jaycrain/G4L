@@ -623,14 +623,34 @@ function bankWalkedDoor(b: {
   scratch: unknown;
   doorLanguage?: { slug: string; text: string };
 }): void {
-  const scw = b.scratch as { doorWords?: string[]; doorDepth?: number; redirectChecked?: boolean };
-  const walked = nextDoorToExcavate(b.collected);
+  const scw = b.scratch as { doorWords?: string[]; doorDepth?: number; redirectChecked?: boolean; openedDoor?: DoorSlug };
+  // BANK THE DOOR WE ACTUALLY OPENED, not whichever is first unwalked now — and the difference is the double-back.
+  //
+  // Captured live on 2026-09-02 by the queue log:
+  //
+  //   bank career_cliff  → next=aging_parents
+  //   bank aging_parents → next=loss            ← "Then let's take The Loss" goes on screen
+  //   bank VANISHING     → next=loss            ← "Then let's take The Loss" goes on screen AGAIN
+  //
+  // A re-seeing had fired mid-excavation and inserted a Door at the FRONT of the set. The engine had already
+  // announced The Loss, but this function re-derived "the first unwalked Door" and got the newcomer, so the
+  // announced Door and the banked Door came apart — and the queue offered the same one twice.
+  //
+  // That is what Donna and Marie both hit. Donna, 2026-09-01: "I clicked That's It button and it kept coming
+  // back", and the Companion's own "I doubled back when we were already done." Marie: "You already asked me about
+  // The Load-Bearer. We finished it."
+  //
+  // Order is a legitimate thing for a re-seeing to change — `doors` is primary-first by convention and the truer
+  // Door should lead. The mistake was letting a display ordering re-point a walk already in progress. The opened
+  // Door is recorded when it is announced and consumed here.
+  const walked = scw.openedDoor ?? nextDoorToExcavate(b.collected);
   if (walked) {
     const words = (scw.doorWords ?? []).join('\n\n').trim();
     if (words) b.doorLanguage = { slug: walked, text: words };
     b.collected.doorsExcavated = [...(b.collected.doorsExcavated ?? []), walked];
   }
   scw.doorWords = [];
+  scw.openedDoor = undefined; // consumed
   // A FRESH DRAW-OUT BUDGET PER DOOR. Without this reset the next Door inherits a spent counter, so by Door three
   // `doorDepth` is already past DOOR_MAX_DEPTH and the engine reflects an insight before she has said anything
   // about it — the cap silently becoming a gag.
@@ -920,6 +940,7 @@ const doorsStage: StageDef = {
       const scm = b.scratch as { meaningAsked?: boolean };
       if (next) {
         b.awaitingConfirm = false;
+        (b.scratch as { openedDoor?: DoorSlug }).openedDoor = next; // what we just put on screen IS what we bank
         b.reply = receiveThen(b.modelText, nextDoorOpener(next));
       } else if (!scm.meaningAsked) {
         // EVERY DOOR WALKED → Greg's fourth question, once per excavation, before handing to the IDQ. It is about
