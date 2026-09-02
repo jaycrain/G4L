@@ -53,17 +53,43 @@ test('a pure reflection STILL gets a probe — the fix must not leave a member w
   assert.ok(withQuestion(reflection, PROBE).includes(PROBE), 'a reflection with no ask must still be asked');
 });
 
-test('no arc file declares its own withQuestion — the copy is how Reconnect fell behind', () => {
-  const files = readdirSync('lib/agent').filter((f) => f.endsWith('.ts'));
-  const offenders = files.filter((f) => {
-    if (f === 'onboarding-staged.ts') return false; // the one definition
-    const src = readFileSync(`lib/agent/${f}`, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-    return /function\s+withQuestion\s*\(/.test(src);
-  });
-  assert.deepEqual(offenders, [],
-    'import withQuestion from the kernel; a private copy is how this diverged for two rounds of fixes');
-});
+test('NO arc file re-declares ANY kernel export — withQuestion was one of forty-one', () => {
+  // GENERALISED 2026-09-02, after scoping the arc refactor and finding it was not needed.
+  //
+  // The measurement: the kernel exports 41 functions and already owns the structure; the four arcs hold 189 local
+  // functions between them and the only purposes they share are openers and closes, which SHOULD be per-arc. So
+  // withQuestion was a single point failure, not the symptom of a sprawling one — and a refactor would have been
+  // solving a problem the evidence does not support.
+  //
+  // What the evidence DOES support: nothing stopped it. Any arc could declare a local helper with a kernel name
+  // and inherit a stale copy in silence, which is what happened for two rounds of fixes. This closes that for all
+  // 41 rather than for the one we were bitten by — the whole lesson of the week is that a rule fixed at the
+  // instance leaves the next instance outside it.
+  //
+  // It starts green: there are zero shadowing declarations today.
+  const strip = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const declared = (src: string) => {
+    const out = new Set<string>();
+    for (const m of strip(src).matchAll(/^(?:export )?(?:async )?function (\w+)/gm)) out.add(m[1]!);
+    for (const m of strip(src).matchAll(/^(?:export )?const (\w+)\s*=\s*(?:async\s*)?\(/gm)) out.add(m[1]!);
+    return out;
+  };
 
+  const kernelSrc = readFileSync('lib/agent/onboarding-staged.ts', 'utf8');
+  const kernelExports = new Set<string>();
+  for (const m of strip(kernelSrc).matchAll(/^export (?:async )?function (\w+)/gm)) kernelExports.add(m[1]!);
+  for (const m of strip(kernelSrc).matchAll(/^export const (\w+)\s*=\s*(?:async\s*)?\(/gm)) kernelExports.add(m[1]!);
+  assert.ok(kernelExports.size > 20, `expected the kernel surface, found ${kernelExports.size} exports`);
+
+  const offenders: string[] = [];
+  for (const f of readdirSync('lib/agent').filter((x) => x.endsWith('.ts') && x !== 'onboarding-staged.ts')) {
+    for (const name of declared(readFileSync(`lib/agent/${f}`, 'utf8'))) {
+      if (kernelExports.has(name)) offenders.push(`${f} declares ${name}, which the kernel exports`);
+    }
+  }
+  assert.deepEqual(offenders, [],
+    'import it from the kernel — a local copy with a kernel name is how Reconnect ran two rounds of fixes behind');
+});
 // ── THE MODEL MUST NOT RANGE ACROSS DOORS IT HAS NOT WALKED ──────────────────────────────────────────────────
 //
 // Marie's Excavation, 2026-09-02. At the SECOND Door's confirm the Companion delivered a synthesis across all

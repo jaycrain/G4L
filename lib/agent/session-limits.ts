@@ -11,14 +11,24 @@
 //
 // WHY IT HAPPENED, WHICH IS THE PART THAT MATTERS. Reconnect prepends MEMBER_AGENT_SYSTEM_PROMPT — the block
 // whose own header reads "You had nothing here before and improvised, which produced warm confident answers we
-// cannot stand behind." Rewire, Rebuild and Reclaim do NOT: their six Session prompts are standalone strings. So
-// in three of the four phases the Companion runs with no authorised answers about what it is, what it can do, or
-// who to point at — and improvises exactly as that block predicted.
+// cannot stand behind." Rewire, Rebuild and Reclaim did NOT: their six Session prompts were standalone strings.
+// So in three of the four phases the Companion ran with no authorised answers about what it is, what it can do,
+// or who to point at — and improvised exactly as that block predicted.
 //
-// THIS FILE IS THE NARROW FIX, NOT THE STRUCTURAL ONE. Prepending the whole governance block to six live capture
-// prompts is a real change to the surface whose standing rule is revert-don't-patch, and it is Jay's call rather
-// than a thing to do at the end of a long day. What is here addresses the harm he actually hit: the Companion
-// stops inventing an escalation path, and says the true thing instead.
+// ── CORRECTED 2026-09-02: THAT GAP IS CLOSED, AND THIS PARAGRAPH OUTLIVED IT. ────────────────────────────────
+// Rewire, Rebuild and Reclaim now prepend MEMBER_AGENT_GOVERNED_CORE. It is MEMBER_AGENT_SYSTEM_PROMPT minus its
+// last 244 characters — the AI-disclosure trailer, excluded on purpose because it reads "first line of a member's
+// FIRST conversation, verbatim" and would have the Companion disclose itself to someone forty minutes deep who
+// was told at the front door. Every governance rule reaches all four phases: crisis routing, never diagnose, one
+// question at a time, no praise, never say our internal names, never announce the end of a unit.
+//
+// LEFT AS A CORRECTION RATHER THAN DELETED, because the history is the useful part — and because on 2026-09-02 I
+// read the paragraph above, believed it was current, and told Jay three of four phases were running ungoverned.
+// It was true when written and had been false for days. A comment describing a gap must say when the gap closed,
+// or it becomes a fact people act on. [[build-state-comes-from-the-file]]
+//
+// THIS FILE IS STILL THE NARROW FIX. What is here addresses the harm he actually hit: the Companion stops
+// inventing an escalation path, and says the true thing instead. That is independent of the prompt question.
 //
 // THE TRUE THING IS SPECIFIC. add_reclaim_item exists in onboarding, on the Reclaim List page, and in the
 // DASHBOARD Companion (checkin.ts) — but not in any Session arc. So the member genuinely can do this themselves,
