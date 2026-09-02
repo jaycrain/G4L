@@ -22,8 +22,12 @@ import { detectZone, setZone } from '../../lib/time/zone-store.ts';
 export async function recordZone(zone: string): Promise<boolean> {
   const memberId = await currentMemberId();
   if (!memberId) return false; // logged out — nothing to attach a zone to
-  await detectZone(await getDb(), memberId, zone);
-  return true;
+  // THE ANSWER COMES FROM THE WRITE, NOT FROM HAVING REACHED IT. This returned a bare `true`, so the comment
+  // directly above described a contract the code did not keep: the client took it as "recorded", set its
+  // once-per-session key, and never asked again. Every member whose first page load happened before their
+  // profile row existed therefore kept `timezone: null` permanently — the newest members, exactly as warned.
+  // Found on Donna's record the day she finished onboarding (2026-09-02). [[unrun-rules-the-defect-class]]
+  return detectZone(await getDb(), memberId, zone);
 }
 
 /** The member choosing, deliberately. This one DOES overwrite. */

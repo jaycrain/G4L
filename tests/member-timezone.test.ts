@@ -91,3 +91,54 @@ test('a logged activity with no date given lands on a real date, not NULL', asyn
   const log = await listMovementLog(db, memberId, 30);
   assert.equal(log.length, 1, 'the window read failed or excluded the row it just wrote');
 });
+
+// ── THE ANSWER THE CLIENT ACTS ON ────────────────────────────────────────────────────────────────────────────
+//
+// Found on Donna's record the day she finished onboarding (2026-09-02): `timezone: null`, which would have put
+// her first tracked week on the wrong days.
+//
+// `DetectZone` runs on every page and posts once per browser session, keeping the key ONLY if the server says a
+// zone was recorded — so the returned boolean is the whole retry contract. `recordZone` returned a bare `true`
+// because `detectZone` returned `void`, so a member whose first page load happened before their profile row
+// existed was marked done having stored nothing, and never asked again.
+//
+// The contract was written out in full in `recordZone`'s own doc comment, including the exact failure. It just
+// had no value to return. A rule that exists and does not run. [[unrun-rules-the-defect-class]]
+//
+// THE TWO ZERO-ROW CASES ARE THE POINT. `rowCount` is 0 both when there is no row to write and when a zone is
+// already set, and they need opposite answers — so this asserts on the read-back, not the write.
+
+test('detectZone answers "does this member have a zone", not "did I just write one"', async () => {
+  const { db, memberId } = await freshDb();
+
+  assert.equal(await detectZone(db, memberId, 'America/Denver'), true, 'a first detection records → stop asking');
+
+  // Already set: the update matches no rows, but the member HAS a zone. Answering false here would repost on
+  // every page load for the rest of the session, forever, for every established member.
+  assert.equal(await detectZone(db, memberId, 'Europe/London'), true, 'already recorded → stop asking');
+  assert.equal(await memberZone(db, memberId), 'America/Denver', 'and it is still not overwritten');
+});
+
+test("DONNA'S CASE: no profile row yet means keep asking, not 'done'", async () => {
+  const pg = new PGlite();
+  const db = pg as unknown as Db;
+  await applySchema(db);
+  // A member part-way through onboarding: authenticated, so there is a member id, but nothing to attach it to.
+  const orphan = '00000000-0000-4000-8000-000000000001';
+
+  assert.equal(await detectZone(db, orphan, 'America/Denver'), false,
+    'reported the zone as recorded when the update matched nothing — the client then stops asking for good');
+  assert.equal(await memberZone(db, orphan), null);
+
+  // Once the row exists, the next page load must land it. This is how her record self-heals.
+  await db.query(`insert into member_profile (member_id, display_name, email) values ($1,'D','d@grintaforlife.test')`, [orphan]);
+  assert.equal(await detectZone(db, orphan, 'America/Denver'), true, 'and the retry records it');
+  assert.equal(await memberZone(db, orphan), 'America/Denver');
+});
+
+test('a write failure keeps us asking rather than claiming success', async () => {
+  // The recoverable direction: false means try again next page. A true here would strand them on UTC silently,
+  // which is the shape that let this whole class live unnoticed.
+  const broken = { query: async () => { throw new Error('db down'); } } as unknown as Db;
+  assert.equal(await detectZone(broken, '00000000-0000-4000-8000-000000000002', 'America/Denver'), false);
+});

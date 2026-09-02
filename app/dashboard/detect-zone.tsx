@@ -21,7 +21,12 @@ export default function DetectZone() {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     if (!zone) return;
     // Keyed by zone so that crossing a timezone re-posts rather than staying quiet for the rest of the session.
-    const key = `g4l.zone.${zone}`;
+    //
+    // THE `v2` IS DELIBERATE, not tidying. Until 2026-09-02 the server answered "recorded" to a write that had
+    // stored nothing, so any tab still open from before that fix holds a key saying done while the zone is null.
+    // Bumping the namespace retires those keys, so an open tab retries once rather than staying wrong until it
+    // is closed — which for a member mid-program could be days. Costs one no-op call per member, once.
+    const key = `g4l.zone.v2.${zone}`;
     try {
       if (sessionStorage.getItem(key)) return;
     } catch {

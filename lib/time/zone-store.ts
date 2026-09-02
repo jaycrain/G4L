@@ -43,16 +43,41 @@ export async function memberZone(db: Db, memberId: string): Promise<Zone> {
  *
  * NEVER OVERWRITES an existing value. If a member set theirs deliberately, a laptop that reports something else
  * next Tuesday must not silently undo that — a setting that changes itself is not a setting.
+ *
+ * RETURNS WHETHER THIS MEMBER NOW HAS A ZONE — not whether this call wrote one. Those differ in the two cases
+ * that matter, and conflating them is what cost Donna hers:
+ *
+ *   · the profile row does not exist yet (a member part-way through onboarding) → the update matches NOTHING,
+ *     and the answer is false: ask again on the next page.
+ *   · a zone is already recorded → the update matches nothing either, and the answer is TRUE: stop asking.
+ *
+ * Reading the row back is what tells those apart. `rowCount` alone cannot: it is 0 for both.
+ *
+ * WHY THIS EXISTS AT ALL. `recordZone`'s doc comment already described this contract in full — "returns whether a
+ * zone was actually recorded… a caller that treated 'I posted once' as 'done' would then never detect them again
+ * in that browser session" — and then returned `true` unconditionally, because this function returned `void` and
+ * had nothing to report. The rule was written down and never ran. It cost the zone of exactly the members the
+ * comment names: the newest ones. Donna finished onboarding on 2026-09-02 with `timezone: null`, which would
+ * have put her first tracked week on the wrong days. [[unrun-rules-the-defect-class]]
  */
-export async function detectZone(db: Db, memberId: string, zone: string): Promise<void> {
-  if (!isValidZone(zone)) return;
+export async function detectZone(db: Db, memberId: string, zone: string): Promise<boolean> {
+  if (!isValidZone(zone)) return false;
   try {
     await db.query(
       'update member_profile set timezone = $2 where member_id = $1 and timezone is null',
       [memberId, zone],
     );
+    // The read-back, not the write, is the answer. See above.
+    const { rows } = await db.query<{ timezone: string | null }>(
+      'select timezone from member_profile where member_id = $1',
+      [memberId],
+    );
+    return !!rows[0]?.timezone;
   } catch (e) {
+    // FALSE, not a throw: the caller stays willing to try again, which is the recoverable direction. A failure
+    // here means their dates stay on UTC, and that is worth a log rather than an interrupted member.
     console.error(`detectZone failed for member=${memberId}:`, (e as Error).message);
+    return false;
   }
 }
 
