@@ -70,6 +70,7 @@ import {
   declaresThriving,
   hasGenuineLoss,
   hasReductionLanguage,
+  isMostlyHedging,
   isAcceptanceFade,
   isForwardAmbition,
   memberClosingReclaim,
@@ -2710,7 +2711,47 @@ const gapStage: StageDef = {
       // NEVER fabricate a fade: still never-strand a subtle real fade the matcher missed, but do NOT grab a corpus
       // that positively declares thriving (or is pure forward ambition) — that would manufacture a fade for a
       // genuinely-thriving member. (CAT-03; preserves the run-2 never-strand for real subtle fades.)
-      if (corpus.length >= 40 && !declaresThriving(corpus) && !isForwardAmbition(corpus)) b.collected.gap = tidyGapProse(corpus);
+      // WORTH STORING IS NOT THE SAME AS LONG ENOUGH.
+      //
+      // This was `corpus.length >= 40`, and length is the one measure that cannot tell a story from a shrug.
+      // Both of these are 45 characters:
+      //
+      //   "The restaurant closed and my mother moved in."     ← kept, correctly
+      //   "Not really sure. Hard to say. Maybe? I dunno."     ← kept, and read back to her as her fade story
+      //
+      // And because a terse real fade runs SHORTER than either, it rejected "Knee. Then the divorce." at 23 — a
+      // member's whole account of the Doors she named, dropped for being brief. Wrong in both directions at once, which is
+      // what a proxy measure does when it stands in for the thing you actually mean.
+      //
+      // TWO WAYS IN, because there are two kinds of real answer here and no single test covers both:
+      //   · a FADE SIGNAL at any length — a Door named, a loss verb, reduction language. This is what admits
+      //     "Knee. Then the divorce.", and it is the same vocabulary the fade gate itself runs on.
+      //   · otherwise, prose that is not merely hedging AND has some substance to it. This is what keeps "The
+      //     restaurant closed and my mother moved in." — a real chapter that names no Door and uses no loss verb.
+      //
+      // The length floor survives only inside the second branch, where it is doing the job it can actually do.
+      const fadeSignal = matchDoors(corpus).length > 0 || hasGenuineLoss(corpus) || hasReductionLanguage(corpus);
+      const worthStoring = fadeSignal || (!isMostlyHedging(corpus) && corpus.length >= 40);
+      if (worthStoring && !declaresThriving(corpus) && !isForwardAmbition(corpus)) b.collected.gap = tidyGapProse(corpus);
+      // AND IF IT IS NOT WORTH STORING, SHE STILL MOVES ON. This is the half the character floor was quietly
+      // doing, and dropping it traded one failure for its mirror.
+      //
+      // Advancement below is gated on `if (b.collected.gap)`, so a corpus we decline to store leaves the stage
+      // asking — and the openers rotate but converge, which the repeat guard measured at 82% similarity on the
+      // walk "I guess so / not sure / hard to say / maybe work". The old floor admitted that as her fade story;
+      // refusing it without this would instead ask her a fifth time, and a sixth.
+      //
+      // NEITHER IS ACCEPTABLE, AND THERE IS ALREADY A THIRD OPTION: the no-Door-yet path directly below, built
+      // when intake stopped turning anyone away. She is admitted at baseline with the absence recorded, which is
+      // descriptive of the record and never said back to her as a label. "Yet" is load-bearing — a Door surfacing
+      // in Reconnect is an ordinary update, not a correction.
+      if (!b.collected.gap) {
+        b.collected.doorsProposed = [];
+        b.stage = 'reclaim';
+        b.awaitingConfirm = false;
+        s.gapTurns = 0;
+        return { reply: noRepeat(b, NO_DOOR_YET_REPLY), state: beatState(b), complete: false };
+      }
     }
     // DECISION E FORK: resolve a "no obvious fade event" member from the whole gap-stage corpus.
     const gapCorpus = gapCorpusNow;

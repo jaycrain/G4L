@@ -493,7 +493,16 @@ async function main() {
       ['R3 · The Fade', reconnectR3Opening(committed) as never, (s2, h, m) => liveTurnReconnect(s2, h, m, RECONNECT_R3_ARC)],
     ];
     for (const [label, opening, arc] of legs) {
-      const r = await walkSession(label, opening, arc);
+      // EXCAVATION'S LENGTH IS SET BY HOW MANY DOORS SHE MARKED, so a fixed cap measures the wrong thing.
+      //
+      // R2 walks every marked Door one at a time, four to six turns each. A couple of Doors is ~15 turns; the whole board — which is
+      // what Greg Welk marked on 2026-09-03, rating every card as an evaluator would — is 40+ turns of
+      // entirely legitimate work. A flat 30 would report his walk as "did not close" when nothing was wrong, and
+      // a red that means nothing is how a gate stops being read. The product has no ceiling here at all (the
+      // Reconnect stages define no forceProgress), so this cap is the HARNESS's patience, not the member's limit.
+      const doorsMarked = ((committed.doors ?? []) as unknown[]).length;
+      const cap = label.startsWith('R2') ? Math.max(30, 12 + doorsMarked * 6) : 30;
+      const r = await walkSession(label, opening, arc, cap);
       sessions.push({ label, ...r });
       if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie
     }

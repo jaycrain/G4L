@@ -798,3 +798,35 @@ export function resolveReclaimConfirm(message: string, replyIntent?: ReplyIntent
   const residual = m.replace(NEGATION_PREFIX_RE, '').replace(AFFIRM_PREFIX_RE, '').replace(/[^a-z]+/gi, ' ').trim();
   return residual.split(/\s+/).filter((w) => w.length >= 3).length >= 3 ? 'change' : 'done';
 }
+
+// IS THIS A STORY, OR A SHRUG?
+//
+// The never-strand backstop measured "enough to be a fade story" as `corpus.length >= 40`, and length is the one
+// thing that cannot tell those apart. Both of these are 45 characters:
+//
+//   "The restaurant closed and my mother moved in."     ← a real chapter
+//   "Not really sure. Hard to say. Maybe? I dunno."     ← a shrug
+//
+// The floor admitted the second and — because a terse real fade runs SHORTER than either — rejected
+// "Knee. Then the divorce." at 23. It was wrong in both directions at once, which is what a proxy measure does.
+//
+// A SHORT EXPLICIT LIST, not a general heuristic — the same call `IMPERATIVE_ASK` makes, and for the same reason:
+// hedging is a small closed vocabulary, and a clever general test for "is this substantive" is how you end up
+// declining a member on eleven words (Tim Carlin, 2026-08-14). Strip the hedges; if what is left is essentially
+// nothing, it was a shrug. If anything of their own remains, it is theirs and it stands.
+const HEDGE_PHRASE =
+  /\b(i\s*(?:don'?t|do not)\s*know|i\s*dunno|no\s*idea|not\s*(?:really\s*)?sure|hard\s*to\s*say|can'?t\s*say|maybe|perhaps|i\s*guess|i\s*suppose|sort\s*of|kind\s*of|i\s*think\s*so|u+m+|u+h+)\b/gi;
+
+/**
+ * TRUE when the text is essentially hedging and nothing else.
+ *
+ * Used to decide whether a corpus is worth storing as someone's fade story — NEVER to judge a member. A false
+ * positive costs one more turn of being asked; a false negative stores "maybe, I dunno" as their account of how
+ * their life narrowed, which is what they would be read back at the confirmation card.
+ */
+export function isMostlyHedging(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return true;
+  const left = t.replace(HEDGE_PHRASE, ' ').replace(/[^a-z0-9']+/gi, ' ').trim();
+  return left.length < 12;
+}
