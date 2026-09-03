@@ -542,7 +542,24 @@ export async function reconnectTurnAction(
     const reveal = lastReveal;
     lastReveal = null; // one turn only — a stale reveal on a later turn would re-show a reading already seen
     return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals, complete: turn.complete, reveal: reveal ?? undefined };
-  } catch {
+  } catch (e) {
+    // LOUD, BECAUSE A DEAD END IS THE ONE FAILURE THE MEMBER CANNOT ROUTE AROUND.
+    //
+    // This was a bare `catch` returning the generic line with NO logging — in all four arcs, identically. Donna
+    // hit it three times in Reclaim C1 on 2026-09-03, refreshed, hit it again, and escaped only by typing
+    // something else ("can we try moving on?"). Nothing was recorded: no member, no session, no stage, no error.
+    // The only reason anyone knows it happened is that she screenshotted it.
+    //
+    // A swallowed read renders as a confident lie; a swallowed THROW renders as a wall. Same defect class, worse
+    // surface — she was stuck, and we had nothing to look at. [[swallowed-read-renders-as-truth]]
+    //
+    // NO MEMBER TEXT IN THE LOG. The length tells us whether size was the trigger; the words are hers and belong
+    // behind the wall. Stage + session + error are what actually make the next occurrence diagnosable.
+    console.error(
+      `RECONNECT turn FAILED for member=${memberId} session=${session ?? 'RECONNECT'} ` +
+      `stage=${(state as { stage?: string } | undefined)?.stage ?? 'unknown'} msgLen=${(message ?? '').length}:`,
+      e,
+    );
     return { ok: false, error: 'Something went wrong — please try again.' };
   }
 }

@@ -155,6 +155,13 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
 export const TRANSCRIPT_READABLE = [
   'donnacrain19@gmail.com',   // Donna — charter tester; walks onboarding end-to-end on every intake change.
   'dctestemail@mac.com',      // Donna's second address, used for short single-feature walks.
+  'testemail678@mac.com',     // Donna's THIRD address — the account she walked all four phases on, 2026-09-03.
+                              // Added at Jay's explicit instruction ("Add her") to diagnose the Reclaim C1 dead
+                              // end: her answer "Nothing, it all still is in play" returned "Something went
+                              // wrong" three times and survived a refresh, and the failure path logged NOTHING,
+                              // so her transcript is the only surviving evidence of what happened.
+                              // REMOVE once that is understood. She is named twice above already; a third line
+                              // should not outlive the question it was added for.
   'tim@carlin.com',           // Tim Carlin — DECLINED at intake 2026-08-14 after 13 turns. Reading it to find out
                               // whether the no-fade gate turned away a real member. REMOVE once that is answered.
   'jaycrain@mac.com',         // Jay's own charter walk, 2026-08-25 — added at his explicit request WHILE walking,
