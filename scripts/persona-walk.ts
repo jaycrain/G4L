@@ -500,8 +500,15 @@ async function main() {
       // entirely legitimate work. A flat 30 would report his walk as "did not close" when nothing was wrong, and
       // a red that means nothing is how a gate stops being read. The product has no ceiling here at all (the
       // Reconnect stages define no forceProgress), so this cap is the HARNESS's patience, not the member's limit.
-      const doorsMarked = ((committed.doors ?? []) as unknown[]).length;
-      const cap = label.startsWith('R2') ? Math.max(30, 12 + doorsMarked * 6) : 30;
+      // GENEROUS FOR R2, and read nothing to decide it — my first attempt sized this from `committed.doors`,
+      // which is the count carried out of ONBOARDING. The Doors that set the Session's length are the ones she
+      // marks on the BOARD, mid-Session, and there is no way to know them when the cap is chosen. She marked
+      // four; the cap was computed from two and reported a walk that was working as "did not close".
+      //
+      // So this is not a measurement at all — it is the harness's PATIENCE. The product has no ceiling here (the
+      // Reconnect stages define no forceProgress), and a member who marks the whole board is legitimately 40-70
+      // turns of work. A cap that can false-fail a healthy walk teaches everyone to skim the red.
+      const cap = label.startsWith('R2') ? 80 : 30;
       const r = await walkSession(label, opening, arc, cap);
       sessions.push({ label, ...r });
       if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie

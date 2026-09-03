@@ -10,6 +10,7 @@
 // Governance runs on every member turn (crisis detection -> 988 halt). The AI disclosure is the
 // verbatim first line. Voice is G4L (Member-facing) — never Jay's, never impersonating Greg.
 
+import type { BeatConfirmSet } from './beat-confirm.ts';
 import { CRISIS_RESPONSE_US, detectCrisis } from './governance.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug } from '../doors.ts';
@@ -389,7 +390,11 @@ export type GapConfirmExpectation = { kind: 'gap_confirm'; choices: { value: str
 export type BeatConfirmExpectation = { kind: 'beat_confirm'; choices: { value: string; label: string }[]; prompt?: string;
   /** Which named choice set these labels came from, so the tap can carry it back and the member's bubble
    *  shows the words that were on the button. See lib/agent/beat-confirm.ts. */
-  set?: 'default' | 'legacy' };
+  /* THE SET NAMES COME FROM THE MODULE THAT DEFINES THEM. This was a second hand-written copy of the union and
+   * it went stale the first time a set was added — 'doors' (Jay, 2026-09-03) type-errored here, in a file that
+   * has no opinion about what the sets are. beat-confirm.ts is a leaf module, so a type-only import cannot
+   * cycle. [[one-fact-many-sites]] */
+  set?: BeatConfirmSet };
 
 export type Expectation =
   | BeatConfirmExpectation

@@ -339,7 +339,7 @@ function doorMore(history: ConvMessage[]): string | null {
 // check). If it left only a question, use it whole. GRACEFUL DEGRADATION (hard rule): if it returned nothing, a
 // smaller honest reflection — NEVER a manufactured pattern.
 // Same ban, same shape as the gap confirm — ask "is that right", never "does that land".
-const DOOR_INSIGHT_CONFIRM = 'Have I got that right — or is it not quite?';
+const DOOR_INSIGHT_CONFIRM = 'Have I got that right — or not quite?'; // Jay 2026-09-03: simpler, straighter
 function reflectDoor(modelText: string): string {
   const t = (modelText ?? '').trim();
   // KEEP THE MODEL'S QUESTION ONLY IF THE CHIPS ANSWER IT. This returned the model's text untouched on any
@@ -392,7 +392,7 @@ function reflectDoor(modelText: string): string {
  * work, and this beat must not grade it.
  */
 /** What the Doors insight-confirm chips answer. Phrased as the member would, like DRIFT_CONFIRM and WINDOW_CONFIRM. */
-const DOOR_CONFIRM = 'Have I got that right?';
+const DOOR_CONFIRM = 'Have I got that right — or not quite?'; // one line for the beat, chips and prose alike
 
 const DOORS_CLOSE = (
   // TWO CORRECTIONS, both from Jay's R2 walk (2026-08-28).
@@ -830,7 +830,7 @@ const doorsStage: StageDef = {
       // It is the DEEPEST beat to leave guessing, too: this confirm sits on the Door she has just excavated, so a
       // misread "yes" reopens the most vulnerable thing she has said. The chips are an easy path, never a gate —
       // resolveConfirmCorroborated still handles anything she types, exactly as it does for drift and window.
-      b.expects = beatConfirmUnlessLeaving(b.memberMessage, DOOR_CONFIRM);
+      b.expects = beatConfirmUnlessLeaving(b.memberMessage, DOOR_CONFIRM, 'doors');
     }
   },
   confirm(b) {

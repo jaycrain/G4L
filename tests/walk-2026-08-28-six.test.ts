@@ -62,7 +62,7 @@ test('the queue card uses --grey, and --grey is actually neutral', () => {
 test('every drawout confirm in Reconnect offers chips — the Doors one was the last without', () => {
   const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8');
   for (const c of ['DOOR_CONFIRM', 'DRIFT_CONFIRM', 'WINDOW_CONFIRM']) {
-    assert.match(src, new RegExp(`beatConfirmUnlessLeaving\\(b\\.memberMessage, ${c}\\)`),
+    assert.match(src, new RegExp(`beatConfirmUnlessLeaving\\(b\\.memberMessage, ${c}[,)]`),
       `${c} must be offered as a tap — English has unlimited ways to say yes`);
   }
 });

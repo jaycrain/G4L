@@ -76,6 +76,29 @@ export const BEAT_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
  * time too many." That produced a patch for the "I just said" prefix; Jay's phrasing had no prefix and walked
  * straight through. Seventh instance. The list cannot be finished, so the gate stops being a guess.
  */
+// THE DOORS INSIGHT ASKS FOR TWO, NOT THREE (Jay, 2026-09-03).
+//
+// "Not quite right is essentially the same thing as There's more. There's more does more work — it implies for
+// the member to go ahead and write what's more."
+//
+// He is extending the reasoning already written above for the Legacy Letter, where "there's more" and "not quite
+// right" collapse into one act. At the Doors insight they collapse the same way: the Companion has just reflected
+// what her Door cost, and every reply that is not "that's it" is her adding to it — whether she is correcting the
+// reading or deepening it, what she does next is TYPE. A chip that only says "wrong" ends the sentence; a chip
+// that says "there's more" starts hers.
+//
+// THE `dispute` INTENT IS NOT REMOVED, only its button. A member who writes "no, that's not it" still resolves as
+// a dispute through the prose classifier, still gets the apology, and still keeps her Door. What changed is what
+// we OFFER, not what we can hear. [[member-words-outrank-model-guess]]
+//
+// SCOPED TO THE DOORS, deliberately. Drift and the Window share the default set and their prompts ask for the
+// third option in so many words — "or is it different?", "or not quite it yet?" — so dropping it there would
+// leave buttons that cannot answer the question on screen, which is the defect this whole thread started from.
+export const DOORS_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
+  { value: 'addition', label: 'There’s more' },
+  { value: 'done', label: 'That’s it' },
+];
+
 export const LEGACY_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
   { value: 'addition', label: 'Change a line' },
   { value: 'done', label: 'That’s mine' },
@@ -83,9 +106,10 @@ export const LEGACY_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
 
 /** Named choice sets. A tap carries WHICH set it came from, so the member's bubble always shows the label they
  *  actually tapped — never another set's word for the same intent. */
-export type BeatConfirmSet = 'default' | 'legacy';
+export type BeatConfirmSet = 'default' | 'doors' | 'legacy';
 const SETS: Record<BeatConfirmSet, readonly BeatConfirmOption[]> = {
   default: BEAT_CONFIRM_CHOICES,
+  doors: DOORS_CONFIRM_CHOICES,
   legacy: LEGACY_CONFIRM_CHOICES,
 };
 export const beatConfirmChoices = (set: BeatConfirmSet = 'default') => SETS[set];

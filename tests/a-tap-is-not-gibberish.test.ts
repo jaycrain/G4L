@@ -141,3 +141,29 @@ test('every kind in the Expectation union has a case above', () => {
   assert.deepEqual(missing, [],
     'a structured surface exists with no tap-vs-gibberish case — add one, or the next tap bug ships unnoticed');
 });
+
+// ── THE DOORS SET — TWO CHIPS, AND THE THIRD ANSWER STILL REACHABLE ──────────────────────────────────────────
+//
+// Jay, 2026-09-03: "Not quite right is essentially the same thing as There's more. There's more does more work —
+// it implies for the member to go ahead and write what's more."
+//
+// Dropping a chip is only safe if the INTENT behind it is still reachable, and that is what these assert. The
+// button is gone; the dispute is not. A member who types "no, that's not it" must still get the apology and keep
+// her Door, exactly as she did when there was a button for it.
+import { applyReconnectTurn as applyR2 } from '../lib/agent/reconnect.ts';
+
+test('doors set · the two chips produce two different turns', () => {
+  const at = (): ConvState => ({ stage: 'doors', awaitingConfirm: true, collected: COMMITTED });
+  const more = applyR2(at(), [], serializeBeatConfirm('addition', 'doors'), { text: '' }, RECONNECT_R2_ARC).reply;
+  const done = applyR2(at(), [], serializeBeatConfirm('done', 'doors'), { text: '' }, RECONNECT_R2_ARC).reply;
+  assert.notEqual(more, done, 'the two Doors chips are not being read as different answers');
+});
+
+test('THE DISPUTE SURVIVES ITS BUTTON — typed, it still reopens the Door', () => {
+  const at: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { ...COMMITTED } } as ConvState;
+  const out = applyR2(at, [], "No — that's not it at all. You've read it backwards.", { text: '' }, RECONNECT_R2_ARC);
+  assert.match(out.reply, /my mistake|help me see it/i, 'a typed dispute no longer reaches the apology');
+  // And it must NOT bank the Door: a dispute is not a completion.
+  assert.deepEqual((out.state.collected as Collected).doorsExcavated ?? [], [],
+    'a Door was marked walked on a turn where she said we had it wrong');
+});
