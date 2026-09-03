@@ -45,7 +45,3 @@ export function selectNextBeat(s: MemberBeatState): Beat | null {
   return rankBeats(eligibleBeats(s, 'in_app'), s)[0] ?? null;
 }
 
-/** Eligible cross-cutting Hardiness Beats (daily heartbeat; run across every gate). */
-export function eligibleHardiness(s: MemberBeatState): Beat[] {
-  return allBeats().filter((b) => b.source === 'hardiness_beat' && isReady(b, s));
-}

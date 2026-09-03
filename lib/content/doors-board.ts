@@ -193,8 +193,6 @@ export const BOARD_HEADER =
   "Explore each Door and mark how familiar it feels. Mark every one that resonates — most people walk through " +
   "several. There's no hierarchy; the Fade doesn't care how you got here, only that you recognize the room.";
 
-/** The "none of these" affordance. Never the word "Other" (Taxonomy Spec v2.0). */
-export const QUIET_DRIFT_PROMPT = 'None of these quite fit — it was quieter than that';
 
 const BY_SLUG = new Map(DOOR_RECOGNITION.map((d) => [d.slug, d]));
 

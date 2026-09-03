@@ -370,7 +370,20 @@ if (process.argv.includes('--json')) {
 // is a gate nobody reads — which is precisely how nine of these accumulated unnoticed. So the bar is the CURRENT
 // count: the list may shrink freely, and the build fails the moment it GROWS. Lower this number as items are
 // worked off; it should never be raised. Every increase is a new rule that exists and does not run.
-const BASELINE = 53; // 2026-08-29, after the first triage pass
+// 38 = 36 TEST-ONLY + 2 DEAD-BUT-KEPT, after the 2026-09-03 pass deleted 16 of the 18 dead exports.
+//
+// THE TWO THAT SURVIVED ARE NOT OVERSIGHTS, and this file's own rule — "WIRED or DELETED, never leave it" — is
+// why they need saying out loud:
+//   · chooseZone (app/dashboard/zone-actions.ts) — the member setting their OWN timezone. Detection now works
+//     (Donna and Greg both landed correctly on 2026-09-03), which is exactly why this matters: if a detected
+//     zone is WRONG — travel, a VPN, a laptop pinned to head office — this is the only way back, and there is
+//     no UI calling it. It should be WIRED, and deleting it would remove a member's only recourse.
+//   · DISCREPANCY (lib/outreach/config.ts) — a dial for Proactive Outreach, which is built and dark behind a
+//     flag. Its sibling DISTRESS is already on the do-not-delete list for the same reason: config for an unlit
+//     feature reads as dead and is not.
+//
+// The remaining 36 are TEST-ONLY and need judgement one at a time, not a sweep.
+const BASELINE = 38; // 2026-09-03, after the second triage pass (was 53)
 const total = dead.length + testOnly.length;
 // A behaviour violation is never ratcheted — it is a live rule that does not run, and there is no baseline for that.
 if (behaviour.length) { console.error(`\n${behaviour.length} behaviour rule(s) not holding on every path.`); process.exit(1); }

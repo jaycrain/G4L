@@ -21,7 +21,7 @@ import { doorProvenance } from './door-provenance.ts';
 import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway } from './onboarding-intent.ts';
+import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, hasAnnouncedExit } from './onboarding-intent.ts';
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
@@ -992,7 +992,19 @@ const doorsStage: StageDef = {
         // DEFERRED, NOT DROPPED. The Door is remembered and opened on their return, so the queue is not silently
         // shortened — and `openedDoor` is deliberately NOT set here, because banking a Door we never put on screen
         // is the double-back defect fixed one commit ago, rebuilt from the other end.
-        if (memberSteppingAway(b.memberMessage)) {
+        // AND THE EXIT OUTLIVES THE TURN IT WAS ANNOUNCED IN.
+        //
+        // This read `memberSteppingAway(b.memberMessage)` — the CURRENT message only — which is the guard I
+        // shipped on 2026-09-02 and which would not have fired on the run that prompted it. She announced her
+        // exit, the Companion said goodbye, and several turns of "👋" and "you too" later the engine opened a
+        // Door on her: "You're doing it again — we closed, and now you're opening another door anyway. I said
+        // I'd be back. Let me actually leave."
+        //
+        // A farewell neither announces an exit nor cancels one, and that is the whole difficulty: `isMemberContent`
+        // reads "You too." as content, so any test built on it hands the exit back after one wave. hasAnnouncedExit
+        // walks her turns backwards and lets the most recent SUBSTANTIVE one decide — derived, not stored, and no
+        // reading of what the model thinks she meant. [[stage-agreement-invariant]]
+        if (hasAnnouncedExit(b.history, b.memberMessage)) {
           (b.scratch as { deferredDoor?: DoorSlug }).deferredDoor = next;
           b.reply = b.modelText; // their goodbye is the whole turn
         } else {

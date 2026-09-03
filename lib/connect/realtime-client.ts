@@ -10,9 +10,6 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 let cached: SupabaseClient | null | undefined;
 
-export function realtimeConfigured(): boolean {
-  return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-}
 
 /** A singleton browser client, or null when Realtime isn't configured (→ caller uses polling). */
 export function getRealtimeClient(): SupabaseClient | null {

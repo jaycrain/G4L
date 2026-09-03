@@ -603,6 +603,8 @@ const GAP_FORECAST_CONFIRM_VARIANTS = [
   // All four stay answerable by the same three chips, which is the constraint this line lives under.
   'Is that the whole of it now — or is there still more?',
 ];
+
+const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 /** Pick by how many times we have already asked, so the confirm never repeats verbatim as her story unfolds. */
 function gapForecastConfirm(history: ConvMessage[]): string {
   const asked = history.filter(
@@ -611,8 +613,6 @@ function gapForecastConfirm(history: ConvMessage[]): string {
   ).length;
   return GAP_FORECAST_CONFIRM_VARIANTS[Math.min(asked, GAP_FORECAST_CONFIRM_VARIANTS.length - 1)]!;
 }
-export const GAP_FORECAST_CONFIRM = GAP_FORECAST_CONFIRM_VARIANTS[0]!; // the first, for tests/fixtures
-const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
 // parent) WITHOUT excavating Door-by-Door. Asked after each chapter until the member signals the story whole.

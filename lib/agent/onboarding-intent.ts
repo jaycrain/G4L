@@ -310,10 +310,6 @@ export function hasRevisionTail(message: string): boolean {
   return tail.split(/\s+/).filter(Boolean).length >= 4;
 }
 
-/** A plain, whole-message confirm: the predicate says yes AND there's no revision riding along. */
-export function isPlainConfirm(message: string, predicate: (m: string) => boolean): boolean {
-  return predicate(message) && !hasRevisionTail(message);
-}
 
 // ── THE COMMIT GATE: one vocabulary, every arc ────────────────────────────────────────────────────────────────
 //
@@ -829,4 +825,49 @@ export function isMostlyHedging(text: string): boolean {
   if (!t) return true;
   const left = t.replace(HEDGE_PHRASE, ' ').replace(/[^a-z0-9']+/gi, ' ').trim();
   return left.length < 12;
+}
+
+// IS SHE STILL LEAVING? — the half `memberSteppingAway` cannot answer.
+//
+// That predicate reads ONE message, which is right for what it was built for (suppressing chips on the way out)
+// and wrong for anything that outlives the turn. The gate, 2026-09-02: she announced her exit, the Companion said
+// goodbye, and five turns of "👋" / "you too" later the engine opened a new Door on her. Her words: "You're doing
+// it again — we closed, and now you're opening another door anyway. I said I'd be back. Let me actually leave."
+//
+// The guard shipped that day reads the current message, so it would NOT have fired there. This is the missing
+// half, and it is the item held open overnight because the naive fix is the dangerous one: inferring "she has
+// re-engaged" from the model's read of her prose is what got stage-agreement reverted for reciting a member's
+// protest back to her as a goal.
+//
+// DERIVED, NOT STORED — the rule `expectsForResume` already sets out. Walk her turns backwards; the most recent
+// SUBSTANTIVE one decides. A farewell is transparent: it neither announces an exit nor cancels one, which is the
+// whole point, because "you too" is what people say on the way out and `isMemberContent` calls it content.
+const FAREWELL_PHRASE =
+  /\b(see (?:you|ya)(?: (?:next time|soon|later|tomorrow|then))?|talk (?:soon|later|tomorrow)|take care|good ?night|nighty?|bye+|byebye|later|you too|same to you|thanks?(?: you)?|cheers|ok(?:ay)?|sure|next time)\b|[\u{1F44B}\u{1F642}\u{1F44D}]/giu;
+
+/** TRUE when a turn is nothing but a sign-off. Same short-explicit-list idiom as isMostlyHedging, same reason. */
+export function isMostlyFarewell(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return true;
+  const left = t.replace(FAREWELL_PHRASE, ' ').replace(/[^a-z0-9']+/gi, ' ').trim();
+  return left.length < 12;
+}
+
+/**
+ * Has she said she is leaving, and not come back to the work since?
+ *
+ * SUPPRESSION ONLY, like memberSteppingAway itself: this never advances a stage, never stores anything, and never
+ * ends a Session. It withholds the opening of NEW work. A false positive costs her one beat she could have had
+ * and is recoverable next turn by saying anything real; a false negative is a Door opened on someone who has
+ * twice asked to go.
+ */
+export function hasAnnouncedExit(history: { role: string; text: string }[], current: string): boolean {
+  const said = [...history.filter((h) => h.role === 'member').map((h) => h.text), current];
+  for (let i = said.length - 1; i >= 0; i--) {
+    const t = (said[i] ?? '').trim();
+    if (!t) continue;
+    if (memberSteppingAway(t)) return true;      // the most recent real signal is an exit
+    if (!isMostlyFarewell(t)) return false;      // she said something of her own since → she is back
+  }
+  return false;
 }

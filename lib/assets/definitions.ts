@@ -21,9 +21,6 @@ export const ASSET_NAMES: Record<string, string> = {
 };
 
 const VERSION = '0.1-draft';
-export function versionFor(_code: string): string {
-  return VERSION;
-}
 
 // Generic placeholder protocol for any asset without bespoke content yet.
 function defaultDefinition(code: string): AssetDefinition {

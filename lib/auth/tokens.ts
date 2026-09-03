@@ -78,10 +78,3 @@ export async function consumeToken(db: Db, purpose: TokenPurpose, token: string)
   return r ? { email: r.email, memberId: r.member_id } : null;
 }
 
-/** Constant-time compare for any token echoed back to us. Exported so callers never hand-roll it. */
-export function tokensEqual(a: string, b: string): boolean {
-  const ab = Buffer.from(a ?? '', 'utf8');
-  const bb = Buffer.from(b ?? '', 'utf8');
-  if (ab.length !== bb.length) return false;
-  return timingSafeEqual(ab, bb);
-}

@@ -10,11 +10,6 @@ import { nextBeat, completeBeat, type ServedBeat } from '../../lib/beats/store.t
 import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
-export async function loadNextBeatAction(memberId: string): Promise<ServedBeat | null> {
-  if (!(await authorizeMember(memberId))) return null;
-  const db = (await getDb()) as unknown as Db;
-  return nextBeat(db, memberId);
-}
 
 export type CloseBeatResult = { ok: boolean; next: ServedBeat | null; reclaimed: boolean };
 

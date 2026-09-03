@@ -121,8 +121,6 @@ export async function quietDriftClaim(db: Db, memberId: string): Promise<Date | 
   return rows[0]?.quiet_drift_claimed_at ?? null;
 }
 
-/** Every Door slug, board order applied by the caller — exported so a surface never hand-lists the taxonomy. */
-export const ALL_DOOR_SLUGS: readonly DoorSlug[] = DOORS.map((d) => d.slug);
 
 // ---------------------------------------------------------------------------------------------------------------
 // THE WIRE FORMAT — one serializer, one parser, defined together.

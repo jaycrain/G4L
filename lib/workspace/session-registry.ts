@@ -23,14 +23,6 @@ export const CANVAS_FOR_TYPE: Record<SessionType, CanvasKind> = {
   F: 'plan', // a plan assembles toward its completeness contract, member-confirmed
 };
 
-export const TYPE_LABEL: Record<SessionType, string> = {
-  A: 'draw-out artifact',
-  B: 'administered instrument',
-  C: 'week-long practice',
-  D: 'routing / inferred',
-  E: 'ceremony',
-  F: 'coach',
-};
 
 export type Phase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export type SessionKind = 'session' | 'checkpoint';

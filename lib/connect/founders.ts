@@ -13,7 +13,6 @@
 // Resolved by email rather than a hardcoded uuid so the same code works against prod, a fresh local db and CI.
 
 export const FOUNDERS_EMAIL = 'founders@system.grintaforlife.internal';
-export const FOUNDERS_DISPLAY_NAME = 'The Founders';
 
 type Queryable = { query: <T = unknown>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }> };
 

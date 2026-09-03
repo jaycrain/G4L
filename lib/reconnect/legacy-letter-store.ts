@@ -117,11 +117,3 @@ export async function shareLegacyLine(db: Db, memberId: string, line: string): P
   return { ok: true };
 }
 
-/** Mark that they have re-opened it — the moment the letter becomes a measuring stick rather than a document. */
-export async function markLegacyOpened(db: Db, memberId: string): Promise<void> {
-  try {
-    await db.query(`update legacy_letter set opened_at = now() where member_id = $1 and opened_at is null`, [memberId]);
-  } catch (e) {
-    console.warn('legacy_letter opened_at write failed (harmless):', (e as Error)?.message);
-  }
-}

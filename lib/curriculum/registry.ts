@@ -243,9 +243,6 @@ export const PHASE_BADGE_COLOR: Record<Exclude<BadgePhase, 'journey'>, string> =
   rebuild: '#919536', // olive
   reclaim: '#EC6233', // orange
 };
-// Journey / cross-cutting = the bullseye: a radial gradient of all four phases (same as the ring).
-export const BULLSEYE_GRADIENT =
-  'radial-gradient(circle, #EC6233 0 28%, #919536 28% 52%, #3B9495 52% 76%, #374F63 76% 100%)';
 
 // The two cross-cutting keeps live outside a single phase — they carry the whole Journey.
 const JOURNEY_BADGE_IDS = new Set(['goal-reclaimed', 'reclaim-capstone']);

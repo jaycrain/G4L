@@ -41,41 +41,6 @@ export type Grinta = {
 // (Slice 4 + the Greg-fold settle the operational definitions, so the label↔math gap is known debt).
 export type GrintaComponent = { key: 'consistency' | 'recovery' | 'reach'; label: string; fill: number; threshold: number; passed: boolean; story: string; gloss?: string };
 
-export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaComponent[] {
-  const threshold = 70; // provisional pass-line
-  const pct = (x: number) => Math.round(clamp01(x) * 100);
-  const consistency = pct(g.daysActive / g.windowDays);
-  // Recovery: are they clipping back in? Holding/rising vs the prior window reads as recovery.
-  const recovery = g.prevDaysActive === 0 ? consistency : pct(g.daysActive / Math.max(g.prevDaysActive, g.daysActive || 1));
-  const reach = pct(reclaimMoving / 3); // provisional scale toward "a few goals in motion"
-  return [
-    {
-      key: 'consistency',
-      label: 'Commitment',
-      fill: consistency,
-      threshold,
-      passed: consistency >= threshold,
-      story: g.daysActive ? `Shown up ${g.daysActive} of the last ${g.windowDays} days.` : 'A fresh window — one rep gets it moving.',
-    },
-    {
-      key: 'reach',
-      label: 'Control',
-      fill: reach,
-      threshold,
-      passed: reach >= threshold,
-      story: reclaimMoving > 0 ? `${reclaimMoving} goal${reclaimMoving === 1 ? '' : 's'} moving toward reclaimed.` : 'No goal moving yet — pick one to push.',
-      gloss: 'The next call is yours.',
-    },
-    {
-      key: 'recovery',
-      label: 'Challenge',
-      fill: recovery,
-      threshold,
-      passed: recovery >= threshold,
-      story: g.daysActive >= g.prevDaysActive ? 'Clipping back in — no miss left to recover from.' : 'A lighter stretch; the move now is clipping back in.',
-    },
-  ];
-}
 
 /** Reflective, never a grade. */
 export function grintaLine(daysActive: number, windowDays: number, identityNoun: string | null): string {
