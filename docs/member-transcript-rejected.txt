@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 0515666f · 2026-09-03)
+# Strings EXCLUDED from the member transcript (app @ c445e746 · 2026-09-03)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -399,7 +399,7 @@
 [lib/agent/rewire.ts] ?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i
 [lib/agent/rewire.ts] ?t write|did not write|not (my|mine|what i (wrote|said))|isn
 [lib/agent/rewire.ts] ?s| did| does)?\s+(that|this|it)\s+com|that
-[lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
+[lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${W3_REFRAME_TWEAK_ASK}
 [lib/agent/rewire.ts] You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${W3_REFRAME_PROMPT}
 [lib/agent/rewire.ts] Triggers: ${triggers.join('; ')}
 [lib/agent/rewire.ts] Redirect — ${c.w3Redirect!.trim()}
@@ -699,7 +699,6 @@
 [lib/curriculum/registry.ts] reclaim:transition
 [lib/curriculum/registry.ts] Grinta
 [lib/curriculum/registry.ts] checkpoint:reclaim:passed
-[lib/curriculum/registry.ts] radial-gradient(circle, #EC6233 0 28%, #919536 28% 52%, #3B9495 52% 76%, #374F63 76% 100%)
 [lib/curriculum/registry.ts] checkpoint:
 [lib/curriculum/registry.ts] reclaim:transition
 [lib/curriculum/registry.ts] Daily
