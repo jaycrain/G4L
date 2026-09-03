@@ -557,7 +557,12 @@ const B2_POINTS = [
     // asserting an elapsed time the app cannot know (she may have left and come back), and asking her to compare
     // today's feeling against one she never recorded. Its job is only to hand the turn back after a didactic
     // point; it does not need to claim anything about her.
-    then: 'Which one would you want to get better at first?',
+    // AND IT MUST NOT BE THE NEXT POINT'S QUESTION. My 9/3 replacement for the "ten minutes ago" line asked
+    // "Which one would you want to get better at first?" — all but identical to the point below, in the very beat
+    // Donna had just reported repeat-questions in. Fixing one line by duplicating its neighbour.
+    //
+    // This point's job is that these are SKILLS, not traits. So the question belongs to that idea, not to choosing.
+    then: 'Had you thought of them as skills before?',
   },
   {
     id: 'weakness-is-information',

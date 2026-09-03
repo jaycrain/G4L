@@ -127,10 +127,19 @@ test('a didactic point never arrives two-in-a-breath, and always hands the floor
   // stacks points is a lecture, which is the one thing didactic latitude must not become.
   for (const t of walk()) {
     if (!/quality to it|A lot of people find/i.test(t.reply)) continue;
+    // ASSERTS THE RULE, NOT A BUBBLE COUNT. This required exactly two bubbles, which was a proxy for "one point,
+    // then the hand-back" — and it broke on 2026-09-03 when the teaching turn started RECEIVING her answer before
+    // teaching (Donna: "left her hanging"; the point used to discard what she had just said). A receipt does not
+    // stack a point, so the count was measuring the wrong thing.
+    //
+    // Changed the assertion because the behaviour changed, and it must not be a weakening: counting POINTS is
+    // strictly tighter than counting bubbles — two points in one turn now fails whether or not a receipt is there.
     const bubbles = t.reply.split(SEP);
-    assert.equal(bubbles.length, 2, 'exactly one point, then the hand-back');
-    assert.match(bubbles[1]!, /\?$/, 'the beat ends by returning the turn to them');
-    assert.ok(bubbles[0]!.split(/[.!?]\s/).length <= 3, 'a point is at most three sentences');
+    const points = bubbles.filter((x) => /quality to it|A lot of people find/i.test(x));
+    assert.equal(points.length, 1, 'exactly one didactic point per turn — two is a lecture');
+    assert.match(bubbles[bubbles.length - 1]!, /\?$/, 'the beat ends by returning the turn to them');
+    assert.ok(points[0]!.split(/[.!?]\s/).length <= 3, 'a point is at most three sentences');
+    assert.ok(bubbles.length <= 3, 'at most: her receipt, the point, the hand-back');
   }
 });
 

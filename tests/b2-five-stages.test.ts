@@ -88,9 +88,14 @@ test('none of Greg’s THREE FORBIDDEN formulations can be produced by the autho
 test('a didactic point never arrives two-in-a-breath, and always hands the floor back', () => {
   for (const t of walk()) {
     if (!/personality traits|isn't a flaw/i.test(t.reply)) continue;
+    // COUNTS POINTS, NOT BUBBLES — see the note on the same test in b1-five-stages. The teaching turn now receives
+    // her answer before teaching (Donna, 2026-09-03, on THIS Session: "left her hanging"), so a receipt bubble is
+    // legitimate. Counting points is the tighter check: two in one turn fails either way.
     const bubbles = t.reply.split(SEP);
-    assert.equal(bubbles.length, 2, 'exactly one point, then the hand-back');
-    assert.match(bubbles[1]!, /\?$/, 'B2-53 · every didactic turn ends with a question');
+    const points = bubbles.filter((x) => /personality traits|isn't a flaw/i.test(x));
+    assert.equal(points.length, 1, 'exactly one didactic point per turn — two is a lecture');
+    assert.match(bubbles[bubbles.length - 1]!, /\?$/, 'B2-53 · every didactic turn ends with a question');
+    assert.ok(bubbles.length <= 3, 'at most: her receipt, the point, the hand-back');
   }
 });
 

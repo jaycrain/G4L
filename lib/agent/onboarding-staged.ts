@@ -2296,8 +2296,18 @@ export function didacticStage(cfg: DidacticConfig): StageDef {
     }
     sc.shared = [...shared, next.id];
     sc.offered = true;
+    // RECEIVE HER ANSWER FIRST — the rule this function already keeps at BOTH its exits and broke in its middle.
+    //
+    // This emitted the scripted point alone and threw `b.modelText` away, so the turn where she had just answered
+    // a question was the one turn that did not acknowledge her. Donna, 2026-09-03, on B2: "Left her hanging", and
+    // "said there were two things, shared only one; shared the second only when prompted, and it was mixed in."
+    // Both descriptions are this line: her answer vanished, and the next point then arrived looking unbidden.
+    //
+    // W-35, receive-before-you-move, is stated at the two handOff branches above. The teaching path never got it —
+    // the same one-fact-two-sites shape, inside a single function. [[one-fact-many-sites]]
+    //
     // The point, then the floor handed straight back. Greg's rule and ours agree here: it is still their Session.
-    b.reply = `${next.text}${BEAT_SEP}${next.then}`;
+    b.reply = receiveThen(b.modelText, `${next.text}${BEAT_SEP}${next.then}`);
   };
   return {
     id: cfg.id,
