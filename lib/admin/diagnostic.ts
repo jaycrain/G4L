@@ -571,3 +571,43 @@ async function jsonbShape(db: Db, memberId: string): Promise<Record<string, unkn
   }
   return out;
 }
+
+/**
+ * A MEMBER'S SESSION CONVERSATIONS — the turn-by-turn of Reconnect, Rewire, Rebuild and Reclaim.
+ *
+ * WHY THIS EXISTS. Until 2026-09-03 the only readable transcript was an IN-FLIGHT ONBOARDING, so once someone
+ * finished intake their words became unreachable to an operator entirely. Donna hit a hard dead end in Reclaim C1
+ * that day — "Something went wrong", three times, surviving a refresh — and between this gap and a bare `catch`
+ * that logged nothing, there was no evidence anywhere of what she had actually met. The state was inspectable;
+ * the conversation was not. Jay: "extend it to read arc Sessions, that's why we're testing."
+ *
+ * SAME BAR AS THE ONBOARDING READER, not a lower one. `.test` fixtures always; a real address only by name, with
+ * a reason on the line and a removal condition. This is the hardest part of somebody's life, told to a product on
+ * the promise that it was safe to be honest — see the note above TRANSCRIPT_READABLE, which governs both.
+ *
+ * GATED ON THE MEMBER'S OWN EMAIL. The onboarding reader was passed the operator's SEARCH TERM, so asking about
+ * `q=donna` checked whether the literal string "donna" was on the allowlist. It failed safe, but it was answering
+ * a different question than the one it appeared to; a permission check has to be evaluated against the subject.
+ */
+export async function arcTranscripts(
+  db: Db,
+  memberId: string,
+  email: string,
+  arc?: string,
+): Promise<{ ok: true; sessions: { arc: string; updatedAt: unknown; messages: unknown }[] } | { ok: false; reason: string }> {
+  if (!isTranscriptReadable(email)) return { ok: false, reason: 'transcripts are readable only for named accounts' };
+  try {
+    const { rows } = await db.query<{ arc: string; updated_at: unknown; messages: unknown }>(
+      arc
+        ? 'select arc, updated_at, messages from arc_session where member_id = $1 and arc = $2 order by updated_at'
+        : 'select arc, updated_at, messages from arc_session where member_id = $1 order by updated_at',
+      arc ? [memberId, arc] : [memberId],
+    );
+    return { ok: true, sessions: rows.map((r) => ({ arc: r.arc, updatedAt: r.updated_at, messages: r.messages })) };
+  } catch (e) {
+    // LOGGED, never swallowed into an empty list — "she has no Sessions" and "the read failed" must not look the
+    // same, which is the fault this whole diagnostic exists to avoid. [[swallowed-read-renders-as-truth]]
+    console.error(`arcTranscripts FAILED for member=${memberId}:`, (e as Error).message);
+    return { ok: false, reason: 'could not read the Session transcripts' };
+  }
+}

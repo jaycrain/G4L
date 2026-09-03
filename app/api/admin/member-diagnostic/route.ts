@@ -7,6 +7,7 @@ import {
   runMemberDiagnostic,
   findInFlightOnboarding,
   inFlightTranscript,
+  arcTranscripts,
   isSpecificEnough,
   DIAGNOSTIC_MIN_QUERY,
 } from '../../../../lib/admin/diagnostic.ts';
@@ -56,7 +57,10 @@ export async function GET(req: Request): Promise<Response> {
   // it gates on the purge allowlist, so a real member's conversation is not reachable here by any argument).
   // Opt-in rather than part of the default report, for the same reason the full record requires naming the
   // member: reading someone's words has to be a decision, never a side effect of a lookup.
-  if (url.searchParams.get('transcript') === '1') {
+  // ?transcript=1 — IN-FLIGHT ONLY, and only when there is no member row to name. A prospect who stalled mid-intake
+  // has no member_profile, so `named` below can never resolve them and this is their one path. Once someone IS a
+  // member, the read happens after resolution so the gate can be evaluated against THEIR address — see below.
+  if (url.searchParams.get('transcript') === '1' && !matches.length) {
     const t = await inFlightTranscript(db, q);
     return NextResponse.json({ query: q, transcript: t });
   }
@@ -94,6 +98,31 @@ export async function GET(req: Request): Promise<Response> {
     memberId: named.memberId,
     surface: 'diagnostic_api',
   });
+
+  // ?transcript=1 FOR A NAMED MEMBER — their Session conversations, and the onboarding one if it is still live.
+  //
+  // TWO FAULTS FIXED HERE TOGETHER (2026-09-03), and they were the same fault twice:
+  //
+  //   1. THE GATE READ THE SEARCH TERM. `inFlightTranscript(db, q)` was passed the operator's query, so asking
+  //      about `q=donna` checked whether the literal string "donna" was allowlisted. It failed SAFE, which is
+  //      why nobody noticed — but it was answering a different question than it appeared to. A permission check
+  //      has to be evaluated against the subject, and now it is: `named.email`.
+  //
+  //   2. IT RETURNED BEFORE THE AUDIT. The branch sat above recordMemberAccess, so reading a member's own words
+  //      — the most sensitive thing this endpoint can do — was the ONE read that left no trace. Now it happens
+  //      after, and a transcript read is logged like any other opening of a record.
+  //
+  // Arc Sessions were unreadable at all until today: once someone finished intake their conversation became
+  // unreachable, so a dead end inside a Session left state we could inspect and words we could not. Jay: "extend
+  // it to read arc Sessions, that's why we're testing."
+  if (url.searchParams.get('transcript') === '1') {
+    const arc = url.searchParams.get('arc')?.trim() || undefined;
+    const [onboarding, sessions] = await Promise.all([
+      inFlightTranscript(db, named.email),
+      arcTranscripts(db, named.memberId, named.email, arc),
+    ]);
+    return NextResponse.json({ query: q, member: named.memberId, onboarding, sessions });
+  }
   const report = await runMemberDiagnostic(db, named.memberId);
   return NextResponse.json({ query: q, matchCount: matches.length, matches, inFlight, reportFor: named, report });
 }
