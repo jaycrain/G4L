@@ -218,7 +218,21 @@ const affirmStage: StageDef = {
     }
     // A reaction mid-beat ("That's me", "nice") is not a line and is not a decline either — skip storing it and
     // keep going, rather than closing the session out from under work they haven't finished.
-    if (!isMemberContent(line)) {
+    // AND A REMARK ABOUT THE CONVERSATION IS NOT A TRUE LINE EITHER.
+    //
+    // `isMemberContent` asks "did she say something substantive"; it cannot ask "is this about her life or about
+    // us." So when a truncated turn left her looking at half a sentence, her reply — "I notice you cut off
+    // mid-sentence there. What are you asking me?" — passed, and was committed as one of her true lines. W3 then
+    // offered it back: "your true line for a bad day. Here's one you already wrote."
+    //
+    // THE GUARD ALREADY EXISTED, IN THIS FILE. The W2 image harvest runs `isConversationalMeta` and `isAboutTheApp`
+    // for exactly this reason, four hundred lines below. The W1 harvest never got them, and W1 is where the lines
+    // that survive into every later Session are made. Sixth instance this week of a rule that runs at one site.
+    // [[one-fact-many-sites]]
+    //
+    // A true line is a keeper she is handed back at her worst moment. Storing our own conversational wreckage
+    // there and calling it hers is the thing this beat must never do. [[their-own-words-back]]
+    if (!isMemberContent(line) || isConversationalMeta(line) || isAboutTheApp(line)) {
       b.reply = (b.modelText ?? '').trim() || W1_AFFIRM_ACK;
       return;
     }
@@ -377,7 +391,21 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
   ];
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
-    max_tokens: 300,
+    // 600, NOT 300 — the member was shown half a sentence (2026-09-02, the Rewire gate's first full run):
+    //
+    //   COMPANION: …That one has the supper club in it. The friend you haven't called. …
+    //              So — what's the true
+    //   MARIE:     I notice you cut off mid-sentence there. What are you asking me?
+    //
+    // W1's heaviest beat is NAME THE CAMPAIGN, which reflects all five domains back at once and then asks for the
+    // true line. It is the longest turn in the Session by design, and 300 tokens could not hold it. Every other
+    // conversational arc already had more room — onboarding 600, W2 and W3 400 — so this was the outlier, in the
+    // one Session nothing had ever walked end to end.
+    //
+    // A cap can always be hit, and a fragment must never reach a member on ANY arc. Trimming a truncated response
+    // back to its last complete sentence is the general fix; it is NOT this, and it is written down rather than
+    // left implied.
+    max_tokens: 600,
     // CACHED PREFIX / VOLATILE SUFFIX. The governed core plus this Session's own instructions are byte-identical
     // on every turn, so they go in the FIRST system block with the breakpoint on it; the member's context, the
     // stage note and any carry-forward change per turn and go in a SECOND block after it. Caching is a prefix
@@ -952,8 +980,28 @@ function disputesReframe(msg: string): boolean {
 }
 // CAT-34: they AGREED and asked for a tweak ("yes, but say it shorter"). Not a dispute — don't apologise — and not
 // a new line. Invite the words so we keep THEIR phrasing rather than committing the version they just amended.
-function w3ReframeTweak(c: Collected): string {
-  return `Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}`;
+// AND IT DOES NOT RE-QUOTE THE LINE SHE JUST AMENDED — the dispute branch's twin, missed when that one was fixed
+// three hours earlier on the same evening. [[one-fact-many-sites]]
+//
+// The gate, next run (2026-09-02):
+//
+//   COMPANION: …here's one you already wrote: "Marie the chef still exists — she just doesn't have a kitchen…"
+//   MARIE:     That one's close but it's not quite right anymore… Something more like: "I still know how to feed
+//              myself, not just everyone else."
+//   COMPANION: Good — let's get it exactly how you'd say it.
+//              …here's one you already wrote: "Marie the chef still exists — she just doesn't have a kitchen…"
+//   MARIE:     You already asked me that. I just answered it.
+//
+// Both branches called `reframeFallback`, so both could only answer "that's not right" by saying it again. Fixing
+// the dispute path alone left the identical failure one `if` below it.
+//
+// STILL A KNOWN GAP, AND A NARROWER ONE: she had already written the new line in that message, and the beat asks
+// for it a second time. Taking it would mean extracting a quoted line from a sentence that also contains her
+// reasoning — real work, and not work to do at speed on the beat that stores what she is handed on her worst day.
+// One extra turn is the cost; a paragraph of reasoning committed as her true line is what rushing it costs.
+const W3_REFRAME_TWEAK_ASK = 'Give me the line in your exact words.';
+function w3ReframeTweak(): string {
+  return `Good — let's get it exactly how you'd say it.${BEAT_SEP}${W3_REFRAME_TWEAK_ASK}`;
 }
 // THE APOLOGY MUST NOT BE FOLLOWED BY THE SAME QUOTE.
 //
@@ -1108,7 +1156,7 @@ const protocolStage: StageDef = {
       // "yes, but say it shorter" as their true line). Requires BOTH signals so a real line containing "but"
       // ("I'm not broken but I'm tired") is still taken verbatim.
       if (W3_CONFIRM_OFFER_RE.test(msg.trim().replace(/[.,!?]+$/, '')) && hasRevisionTail(msg)) {
-        b.reply = w3ReframeTweak(b.collected);
+        b.reply = w3ReframeTweak();
         return;
       }
       // No line on the table AND nothing in what they wrote — re-offer rather than keep a reaction as their bad-day

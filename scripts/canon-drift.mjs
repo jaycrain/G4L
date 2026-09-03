@@ -15,6 +15,7 @@
 // The commit is what makes a tester's report identify a build, and it is the thing that silently moves.
 
 import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 
 const url = (process.argv[2] ?? 'https://g4l-ten.vercel.app').replace(/\/$/, '');
 
@@ -43,13 +44,43 @@ if (!liveVersion || !liveCommit) {
 
 const short = (c) => c.slice(0, 7);
 const versionOk = liveVersion === canonVersion;
-const commitOk = short(liveCommit) === short(canonCommit);
+
+// PUBLISHING CANON MOVES THE COMMIT, AND THAT IS NOT DRIFT.
+//
+// `publish-canon` writes docs/canon/<version>/ and commits it, so the moment that commit deploys, the live build
+// is one ahead of the hash inside the bundle — which a bundle can never contain, since it would have to know its
+// own hash. Strict comparison therefore fails immediately after every correct publish.
+//
+// This check told me exactly that within an hour of being written (2026-09-02, Greg mid-walk on v3.7.6 · 72b8a3c
+// against canon's 0515666 — the same code). A gate that cries wolf gets skipped, and this file's whole purpose is
+// to still be trusted the day it is right. The gate's own comments say so about the fit estimator and the
+// green-light banner; it would have been a poor joke to repeat it here.
+//
+// So: compare the APP, not the hash. If everything between the two commits is under docs/, the member-facing
+// build is identical and there is nothing to report.
+const APP_IRRELEVANT = /^docs\//;
+function onlyDocsBetween(a, b) {
+  try {
+    const out = execSync(`git diff --name-only ${a} ${b}`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    const files = out.split('\n').map((f) => f.trim()).filter(Boolean);
+    // No files → identical trees. Unknown commit → git throws and we fall through to strict, which is the safe
+    // direction: an unverifiable difference is reported rather than waved through.
+    return files.length > 0 && files.every((f) => APP_IRRELEVANT.test(f));
+  } catch {
+    return false;
+  }
+}
+const sameCommit = short(liveCommit) === short(canonCommit);
+const docsOnly = !sameCommit && onlyDocsBetween(canonCommit, liveCommit);
+const commitOk = sameCommit || docsOnly;
 
 console.log(`live  ${liveVersion} · ${short(liveCommit)}   (${url})`);
 console.log(`canon ${canonVersion} · ${short(canonCommit)}   (docs/canon/LATEST)`);
 
 if (versionOk && commitOk) {
-  console.log('\n✓ the live build is the one the published bundle describes');
+  console.log(docsOnly
+    ? '\n✓ the live build is the one the published bundle describes (commit differs by docs/ only — the canon commit itself)'
+    : '\n✓ the live build is the one the published bundle describes');
   process.exit(0);
 }
 
