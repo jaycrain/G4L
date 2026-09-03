@@ -15,6 +15,14 @@ import {
   liveTurnRewire, liveTurnRewireW2, liveTurnRewireW3, liveTurnRewireCheckpoint,
   rewireOpening, rewireW2Opening, rewireW3Opening, rewireCheckpointOpening, rewireEnabled,
 } from '../lib/agent/rewire.ts';
+import {
+  liveTurnRebuildB1, liveTurnRebuildB2, liveTurnRebuildB3, liveTurnRebuildCheckpoint,
+  rebuildB1Opening, rebuildB2Opening, rebuildB3Opening, rebuildCheckpointOpening, rebuildEnabled,
+} from '../lib/agent/rebuild.ts';
+import {
+  liveTurnReclaimRefine, liveTurnReclaimC2, liveTurnReclaimC3, liveTurnReclaimCheckpoint,
+  reclaimC1Opening, reclaimC2Opening, reclaimC3Opening, reclaimCheckpointOpening, reclaimEnabled,
+} from '../lib/agent/reclaim.ts';
 import { serializeBeatConfirm, type BeatConfirmIntent } from '../lib/agent/beat-confirm.ts';
 import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
 import type { Collected } from '../lib/agent/onboarding.ts';
@@ -485,6 +493,7 @@ async function main() {
   const sessions: { label: string; complete: boolean; turns: number; replies: string[]; endState?: ConvState }[] = [];
   // Carried out of the Rewire chain so a missing hand-forward fails the run rather than printing and scrolling by.
   const rewireChainGaps: string[] = [];
+  const reclaimChainGaps: string[] = [];
   const committed = (state.collected ?? {}) as Collected;
   if (state.stage === 'complete' || (state as { complete?: boolean }).complete || committed.identityNoun || committed.identitySkipped) {
     const legs: [string, { reply: string; state: ConvState; expects?: Expectation }, SessionTurn][] = [
@@ -508,7 +517,10 @@ async function main() {
       // So this is not a measurement at all — it is the harness's PATIENCE. The product has no ceiling here (the
       // Reconnect stages define no forceProgress), and a member who marks the whole board is legitimately 40-70
       // turns of work. A cap that can false-fail a healthy walk teaches everyone to skim the red.
-      const cap = label.startsWith('R2') ? 80 : 30;
+      // THE CAP IS PATIENCE, AND IT HAS TO CLEAR THE INSTRUMENT. B2 administers 24 items one per turn, so it
+      // CANNOT close in 30 and the gate reported a working Session as failed — the same mistake the R2 cap made,
+      // one phase over. A red that means nothing is how a gate stops being read.
+      const cap = label.startsWith('R2') ? 80 : 60;
       const r = await walkSession(label, opening, arc, cap);
       sessions.push({ label, ...r });
       if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie
@@ -565,6 +577,70 @@ async function main() {
       // SAY SO. A leg skipped in silence reads exactly like a leg that passed.
       console.log('\n[rewire] SKIPPED — REWIRE is not staged in this environment, so the Rewire leg did not run.');
     }
+
+    // ── REBUILD, then RECLAIM ────────────────────────────────────────────────────────────────────────────────
+    //
+    // ADDED 2026-09-03, and the reason is the whole argument for this harness. Donna walked all four phases in a
+    // day and reported eight findings; the walk stopped at Rewire, so every one of them had to be read off a
+    // screenshot. Two were diagnosable from the code, two needed a transcript that had been deleted, and the rest
+    // waited on a recurrence. The Rewire leg written the night before had found a governance breach on its FIRST
+    // run — in a Session nothing had ever walked. Same gap, one phase further on.
+    if (sessions.every((x) => x.complete) && rebuildEnabled()) {
+      const b1 = await walkSession('B1 · What\'s Your Why', rebuildB1Opening() as never,
+        (s2, h, m) => liveTurnRebuildB1(s2, h, m));
+      sessions.push({ label: 'B1 · What\'s Your Why', ...b1 });
+
+      if (b1.complete) {
+        const b2 = await walkSession('B2 · Strengths & Weaknesses', rebuildB2Opening() as never,
+          (s2, h, m) => liveTurnRebuildB2(s2, h, m));
+        sessions.push({ label: 'B2 · Strengths & Weaknesses', ...b2 });
+
+        if (b2.complete) {
+          const b3 = await walkSession('B3 · The Lifestyle Pilot', rebuildB3Opening() as never,
+            (s2, h, m) => liveTurnRebuildB3(s2, h, m));
+          sessions.push({ label: 'B3 · The Lifestyle Pilot', ...b3 });
+
+          if (b3.complete) {
+            const cp = await walkSession('B · Checkpoint', rebuildCheckpointOpening() as never,
+              (s2, h, m) => liveTurnRebuildCheckpoint(s2, h, m), 30, 'ceremony');
+            sessions.push({ label: 'B · Checkpoint', ...cp });
+          }
+        }
+      }
+    } else if (sessions.every((x) => x.complete) && !rebuildEnabled()) {
+      console.log('\n[rebuild] SKIPPED — REBUILD is not staged in this environment, so the Rebuild leg did not run.');
+    }
+
+    if (sessions.every((x) => x.complete) && reclaimEnabled()) {
+      // C1 OPENS ON HER OWN LIST, which is the point of the Session and the beat where Donna hit a hard dead end
+      // on 2026-09-03 — "Something went wrong", three times, surviving a refresh. A fixture list would walk a
+      // Session she never had; her committed list is what the real action loads.
+      const list = committed.reclaimList ?? [];
+      if (!list.length) reclaimChainGaps.push('C1 opened with an EMPTY Reclaim List — the re-read has nothing to re-read');
+      const c1 = await walkSession('C1 · Looking Forward', reclaimC1Opening(list) as never,
+        (s2, h, m) => liveTurnReclaimRefine(s2, h, m));
+      sessions.push({ label: 'C1 · Looking Forward', ...c1 });
+
+      if (c1.complete) {
+        const c2 = await walkSession('C2 · Bigger World Audit', reclaimC2Opening() as never,
+          (s2, h, m) => liveTurnReclaimC2(s2, h, m));
+        sessions.push({ label: 'C2 · Bigger World Audit', ...c2 });
+
+        if (c2.complete) {
+          const c3 = await walkSession('C3 · Quality Days', reclaimC3Opening() as never,
+            (s2, h, m) => liveTurnReclaimC3(s2, h, m));
+          sessions.push({ label: 'C3 · Quality Days', ...c3 });
+
+          if (c3.complete) {
+            const cp = await walkSession('C · Checkpoint', reclaimCheckpointOpening() as never,
+              (s2, h, m) => liveTurnReclaimCheckpoint(s2, h, m), 30, 'ceremony');
+            sessions.push({ label: 'C · Checkpoint', ...cp });
+          }
+        }
+      }
+    } else if (sessions.every((x) => x.complete) && !reclaimEnabled()) {
+      console.log('\n[reclaim] SKIPPED — RECLAIM is not staged in this environment, so the Reclaim leg did not run.');
+    }
   }
 
   // COVERAGE. A surface that never appeared is not a pass — it is an untested path, and saying so is the whole
@@ -574,7 +650,7 @@ async function main() {
   // reports EVERY reason it failed instead of the first. A gate you have to run four times to see four problems
   // is a gate people stop running.
   const failures: string[] = [];
-  failures.push(...rewireChainGaps);
+  failures.push(...rewireChainGaps, ...reclaimChainGaps);
 
   console.log('\n=== SURFACE COVERAGE ===');
   const missing: string[] = [];
