@@ -182,8 +182,17 @@ const whyEatingStage: StageDef = administeredStage({
 
 // Greg's sample phrasing, close to verbatim, each handing the floor straight back. The `then` line is the rail:
 // a didactic point that does not end by returning the turn is a lecture with a question mark.
+// NO OFFER — SERVE IT. The same fix as B2_TEACH_OPEN below, and it should have been made in the same breath.
+//
+// Donna's 8/31 note asked for the phrase gone "from ALL assessments." B2 said "if you want THEM" and was fixed;
+// this said "if you want IT" and was not, because the fix matched her quoted string rather than the thing she
+// asked for. She walked Rebuild on 9/3, met it again, and wrote: "Should not say 'if you want it'. Remove that
+// phrase and just share the info." The same note, a third time.
+//
+// The prompt rule had the identical fault — it bans "if you want them" BY NAME, so the singular sailed past both
+// the rule and the sweep. A guard written from an example catches the example. [[one-fact-many-sites]]
 const B1_TEACH_OPEN =
-  "That's the twelve. Before we close it out — one thing worth knowing about what you just rated, if you want it.";
+  "That's the twelve. Before we close it out — one thing worth knowing about what you just rated.";
 const B1_POINTS = [
   {
     id: 'quality-vs-amount',
@@ -543,7 +552,12 @@ const B2_POINTS = [
     id: 'skills-not-traits',
     // B2-56, verbatim.
     text: "One thing that's useful to know: these aren't personality traits. They're skills. And skills can be developed.",
-    then: 'Does any of them feel more learnable than it did ten minutes ago?',
+    // NO CLOCK, AND NOTHING TO COMPARE AGAINST (Donna, 2026-09-03: "remove it, or change it to a different
+    // question. Reads as off."). This asked whether they feel more learnable "than it did ten minutes ago" —
+    // asserting an elapsed time the app cannot know (she may have left and come back), and asking her to compare
+    // today's feeling against one she never recorded. Its job is only to hand the turn back after a didactic
+    // point; it does not need to claim anything about her.
+    then: 'Which one would you want to get better at first?',
   },
   {
     id: 'weakness-is-information',

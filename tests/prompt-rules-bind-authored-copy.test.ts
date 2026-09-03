@@ -22,7 +22,12 @@ import { MEMBER_AGENT_SYSTEM_PROMPT } from '../lib/agent/system-prompt.ts';
 
 /** Phrases the system prompt forbids, each paired with the prompt text that proves the rule is still live. */
 const BOUND = [
-  { banned: /\bif you want them\b/i, provenInPrompt: /NEVER "IF YOU WANT THEM\."/ },
+  // WIDENED 2026-09-03, from Donna's third report of the same note. This entry banned "if you want THEM" and the
+  // prompt named that one string — so "if you want IT" passed the rule, the test AND the sweep, and shipped in
+  // the B1 assessment close. Her 8/31 ask was "remove that phrase from ALL assessments"; we removed the
+  // inflection she happened to quote. A rule enumerated by instance always has the next instance outside it.
+  // The positional form (trailing hedge vs leading conditional) is enforced in an-offer-is-not-a-hedge.test.ts.
+  { banned: /\bif you want (?:it|them)\b/i, provenInPrompt: /NEVER "IF YOU WANT IT\/THEM\."/ },
   { banned: /\bif you'?re interested\b/i, provenInPrompt: /if you'?re interested/ },
   { banned: /\bno (right or )?wrong answers\b/i, provenInPrompt: /no wrong answers/ },
   { banned: /\bnot a (test|grade|score|judgment)\b/i, provenInPrompt: /"not a score", "not a grade", "not a test"/ },

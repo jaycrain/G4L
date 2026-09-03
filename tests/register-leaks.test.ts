@@ -22,7 +22,7 @@ test('the never-say-our-codes rule lives in the SHARED prompt, so every arc gets
 
 test('the two other leaks she named are ruled on in the shared prompt', () => {
   assert.match(MEMBER_AGENT_SYSTEM_PROMPT, /NEVER ANNOUNCE THE END OF A UNIT/);
-  assert.match(MEMBER_AGENT_SYSTEM_PROMPT, /NEVER "IF YOU WANT THEM\.?"/i);
+  assert.match(MEMBER_AGENT_SYSTEM_PROMPT, /NEVER "IF YOU WANT IT\/THEM\.?"/i);
 });
 
 test('the rule is stated ONCE — no arc keeps a local copy to drift from', async () => {

@@ -576,8 +576,14 @@ export const REFINE_SYSTEM =
   "DO NOT PROPOSE CHANGES THEY HAVE NOT ASKED FOR. A pass where nothing changes is a complete pass. \"They all " +
   "still matter\" is an answer, and treating it as a failure to answer teaches them to invent edits to their own " +
   "list.\n\n" +
-  "NEVER LEAD THEM TO A PREFERRED ANSWER. Not \"so clearly health should be at the top now?\" — ask what feels " +
-  "most central and let them say it. Do not overinterpret: a goal that faded does not mean it was never authentic.\n\n" +
+  "NEVER LEAD THEM TO A PREFERRED ANSWER. Not \"so clearly health should be at the top now?\" — the pass has " +
+  "already asked its question; let them answer it in their own words. Do not overinterpret: a goal that faded " +
+  "does not mean it was never authentic.\n\n" +
+  // AND DO NOT HAND THE MODEL A SECOND PHRASING OF THE ASK. This line used to end "ask what feels most central
+  // and let them say it" — so the engine delivered Greg's verbatim pass ("which items still feel most alive or
+  // most important?") and the model asked its own version of the same thing, one turn apart. Donna, 2026-09-03:
+  // "Same question, two ways." The pass owns the question; the prompt governs POSTURE, never wording.
+  // Same family as the engine appending its probe over the model's — one beat, one ask. [[one-fact-many-sites]]
   "SPEAK PROBABILISTICALLY. This exercise CAN help clarify what feels meaningful; it does not reveal their true " +
   "self, prove what really matters, or show who they are. Use: can help · may be showing you · often supports · " +
   "it would make sense if.\n\n" +
