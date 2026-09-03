@@ -955,8 +955,28 @@ function disputesReframe(msg: string): boolean {
 function w3ReframeTweak(c: Collected): string {
   return `Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}`;
 }
-function w3ReframeRecover(c: Collected): string {
-  return `You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}`;
+// THE APOLOGY MUST NOT BE FOLLOWED BY THE SAME QUOTE.
+//
+// This called `reframeFallback`, which offers `w3TrueLines[0]` — the very line she had just rejected. The recovery
+// was therefore structurally guaranteed to repeat the thing it was apologising for, and it did, three times, in
+// the first Rewire gate run (2026-09-02):
+//
+//   COMPANION: …here's one you already wrote: "…" — want that as your bad-day line?
+//   MARIE:     That's not mine — I never said that. Where is that from?
+//   COMPANION: You're right — that wasn't your line… …here's one you already wrote: "…"
+//   MARIE:     You're doing it again — that quote still isn't mine.
+//   COMPANION: You're right — that wasn't your line… …here's one you already wrote: "…"
+//   MARIE:     You've apologized twice and then used the same false quote a third time.
+//
+// The call site's own comment says reframeFallback "never claims words they didn't write." It cannot keep that
+// promise — it quotes whatever W1 captured, and a bad capture is precisely the case this branch exists for.
+//
+// SO THE RECOVERY STOPS OFFERING STORED LINES ALTOGETHER. Not "offer the next one": she has just told us our
+// record of her words is wrong, and answering that by reaching into the same record is how a two-line list
+// becomes two apologies. Asking her to write it is the ordinary path for this beat anyway, and it is the only
+// version that cannot loop. [[member-words-outrank-model-guess]] [[their-own-words-back]]
+function w3ReframeRecover(): string {
+  return `You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${W3_REFRAME_PROMPT}`;
 }
 // The finished protocol → one recovery_move keeper: the trigger(s) + Redirect + Reframe + Restart, their own words.
 function composeProtocol(c: Collected): string {
@@ -1072,7 +1092,16 @@ const protocolStage: StageDef = {
       // Contract 2 (advance): a dispute is not a new line and not a completion — recover and STAY (#13b). Never harvest
       // the dispute, never skip Restart.
       if (disputesReframe(msg)) {
-        b.reply = w3ReframeRecover(b.collected);
+        // AND THE LINE SHE REJECTED IS GONE FROM HER RECORD, not just skipped this turn. It was captured as one of
+        // her true lines in W1; she has now said plainly that she never wrote it. Leaving it in `w3TrueLines`
+        // means composeProtocol can still stamp it into her saved False Start Protocol — the artifact she keeps —
+        // and a later beat can still quote it back. Her word on what she said outranks our capture of it.
+        const offered = firstTrueLine(b.collected);
+        if (offered) {
+          b.collected.w3TrueLines = (b.collected.w3TrueLines ?? [])
+            .filter((l) => (l ?? '').trim() && (l ?? '').trim() !== offered);
+        }
+        b.reply = w3ReframeRecover();
         return;
       }
       // CAT-34: agreement WITH a revision is neither a reuse (drops their change) nor a new line (would store
