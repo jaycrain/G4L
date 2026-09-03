@@ -5,6 +5,7 @@
 
 import type { Db } from '../db/schema.ts';
 import type { ConvState, ConvMessage } from './onboarding.ts';
+import { isTranscriptReadable } from '../admin/diagnostic.ts';
 
 export type ArcName = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export type ArcSession = { state: ConvState; messages: ConvMessage[] };
@@ -49,8 +50,47 @@ export async function loadArcSession(db: Db, memberId: string, arc: ArcName, ses
   return { state, messages: Array.isArray(messages) ? messages : [] };
 }
 
+/**
+ * A FINISHED SESSION IS CLEARED — except for testers, whose transcript is RETAINED (Jay, 2026-09-03: "yes,
+ * testers only").
+ *
+ * WHY. This row is a resume buffer, and deleting it on completion is right: the member's words are the most
+ * sensitive thing the product holds, and everything we actually need from a Session — the Doors, the true lines,
+ * the keepers, the readings — has already been extracted into its own record by the time we get here.
+ *
+ * But it means a FINISHED Session leaves no account of what was said. Donna hit a hard dead end in Reclaim C1 on
+ * 2026-09-03 ("Something went wrong", three times, surviving a refresh) and by the time anyone looked, her
+ * conversation had been deleted as she completed the Session. Her state was inspectable; her words were gone. The
+ * only surviving evidence was a screenshot she happened to take.
+ *
+ * SCOPED TO THE ALLOWLIST, which is the whole reason this is safe to do at all. The same list that governs
+ * reading a transcript now governs keeping one — people who know they are testing, named individually, with a
+ * reason on the line. Every real member's row is still deleted on completion, exactly as before. The rule did not
+ * change; the set it applies to did. See TRANSCRIPT_READABLE.
+ *
+ * RENAMED, NOT FLAGGED, so this needs no migration and no new column. A retained row is keyed `closed:<arc>:<ts>`,
+ * which no live path can match: `loadArcSession` looks up an exact key, and `inFlightArcPhase` — the one query
+ * that scans — excludes the prefix explicitly. The timestamp keeps a second walk of the same Session from
+ * colliding with the first.
+ */
 export async function clearArcSession(db: Db, memberId: string, arc: ArcName, session?: string): Promise<void> {
-  await db.query('delete from arc_session where member_id=$1 and arc=$2', [memberId, storageKey(arc, session)]);
+  const key = storageKey(arc, session);
+  try {
+    const { rows } = await db.query<{ email: string }>('select email from member_profile where member_id=$1', [memberId]);
+    if (isTranscriptReadable(rows[0]?.email ?? '')) {
+      await db.query(
+        `update arc_session set arc = 'closed:' || arc || ':' || extract(epoch from now())::bigint
+          where member_id=$1 and arc=$2`,
+        [memberId, key],
+      );
+      return;
+    }
+  } catch (e) {
+    // A FAILURE HERE FALLS THROUGH TO THE DELETE, which is the privacy-preserving direction: if we cannot
+    // establish that someone is a tester, we do not keep their conversation. Logged so it is not silent.
+    console.error(`clearArcSession: could not check retention for member=${memberId}, deleting:`, (e as Error).message);
+  }
+  await db.query('delete from arc_session where member_id=$1 and arc=$2', [memberId, key]);
 }
 
 /** The member's in-flight arc PHASE (most-recently-updated), or null. A non-null result means a session is mid-way and
@@ -58,7 +98,10 @@ export async function clearArcSession(db: Db, memberId: string, arc: ArcName, se
  *  left off" state (which compares against a phase, so we strip any `:session` suffix). Framework-free (pglite-testable). */
 export async function latestArcSession(db: Db, memberId: string): Promise<ArcName | null> {
   const { rows } = await db.query<{ arc: string }>(
-    'select arc from arc_session where member_id=$1 order by updated_at desc limit 1',
+    // EXCLUDE RETAINED TRANSCRIPTS. A tester's finished Session is kept under a `closed:` key (see
+    // clearArcSession); this is the only query that scans rather than looking up an exact key, so without
+    // this a walker who FINISHED everything would show as mid-Session on their own dashboard.
+    "select arc from arc_session where member_id=$1 and arc not like 'closed:%' order by updated_at desc limit 1",
     [memberId],
   );
   const key = rows[0]?.arc;
