@@ -1,8 +1,7 @@
-# Strings EXCLUDED from the member transcript (app @ c94669b8 · 2026-09-02)
+# Strings EXCLUDED from the member transcript (app @ 0515666f · 2026-09-03)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
-[lib/agent/onboarding-staged.ts] “”‘’(\[\-—\s]+/,
 [lib/agent/onboarding-staged.ts] p.trim() || i
 [lib/agent/onboarding-staged.ts] ${leads[b.history.length % leads.length]} ${text}
 [lib/agent/onboarding-staged.ts] ?m|i
@@ -401,7 +400,7 @@
 [lib/agent/rewire.ts] ?t write|did not write|not (my|mine|what i (wrote|said))|isn
 [lib/agent/rewire.ts] ?s| did| does)?\s+(that|this|it)\s+com|that
 [lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
-[lib/agent/rewire.ts] You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}
+[lib/agent/rewire.ts] You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${W3_REFRAME_PROMPT}
 [lib/agent/rewire.ts] Triggers: ${triggers.join('; ')}
 [lib/agent/rewire.ts] Redirect — ${c.w3Redirect!.trim()}
 [lib/agent/rewire.ts] Reframe — “${c.w3Reframe!.trim()}”
