@@ -11,10 +11,14 @@ import {
   liveTurnReconnect, reconnectR1Opening, reconnectOpening, reconnectR3Opening,
   RECONNECT_R1_ARC, RECONNECT_R2_ARC, RECONNECT_R3_ARC,
 } from '../lib/agent/reconnect.ts';
+import {
+  liveTurnRewire, liveTurnRewireW2, liveTurnRewireW3, liveTurnRewireCheckpoint,
+  rewireOpening, rewireW2Opening, rewireW3Opening, rewireCheckpointOpening, rewireEnabled,
+} from '../lib/agent/rewire.ts';
 import { serializeBeatConfirm, type BeatConfirmIntent } from '../lib/agent/beat-confirm.ts';
 import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
 import type { Collected } from '../lib/agent/onboarding.ts';
-import type { ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Turn } from '../lib/agent/onboarding.ts';
 import { memberDisplay, looksLikeMachineLine } from '../lib/agent/member-display.ts';
 
 // WHAT THE PERSONA SEES MUST BE WHAT A MEMBER SEES — bubbles split, and a structured turn shown as the LABEL that
@@ -359,13 +363,30 @@ async function submitDoorsBoard(
   });
 }
 
-/** Walk one Reconnect Session to completion, tapping every structured surface the way the real client does. */
+/** One Session's turn, however its arc happens to be wired. Reconnect takes an arc argument, Rewire takes a
+ *  carry-forward string, and the Checkpoint is synchronous because it is administered rather than modelled — so
+ *  the walker takes a CALLBACK rather than knowing any of that. Generalised on 2026-09-02 to add the Rewire leg;
+ *  the alternative was a second copy of this loop, and a second copy is how the tap rule went stale. */
+type SessionTurn = (state: ConvState, history: ConvMessage[], msg: string) => Promise<Turn> | Turn;
+
+/** Walk one Session to completion, tapping every structured surface the way the real client does. */
 async function walkSession(
   label: string,
   opening: { reply: string; state: ConvState; expects?: Expectation },
-  arc: Parameters<typeof liveTurnReconnect>[3],
+  take: SessionTurn,
   cap = 30,
-): Promise<{ complete: boolean; turns: number; replies: string[] }> {
+  // A STAGE THAT IS ITSELF THE ENDING. Not every Session finishes by setting `complete`. The Rewire Checkpoint
+  // LANDS on 'ceremony' — a terminal holding stage whose own comment says "the reveal is a full-screen overlay
+  // the chat fires on stage === 'ceremony'". The engine holds there on purpose, re-emitting one line, because in
+  // the real client the member is looking at "See where that landed →", not a text box.
+  //
+  // The first Rewire gate run reported this as a hard loop: Marie typed at it eleven times and counted out loud.
+  // It was the harness, not the product — a walker that only knew about `complete` could not see an ending the
+  // client raises. Recording it here rather than "fixing" a Session that was behaving exactly as designed, and
+  // as documented. A harness that cannot do what a member does manufactures failures as readily as it misses
+  // them. [[eval-harness-must-tap-not-type]]
+  endsAtStage?: string,
+): Promise<{ complete: boolean; turns: number; replies: string[]; endState: ConvState }> {
   console.log(`\n\n════════ ${label} ════════`);
   const history: ConvMessage[] = [{ role: 'agent', text: opening.reply }];
   const replies: string[] = [opening.reply];
@@ -392,20 +413,24 @@ async function walkSession(
     console.log(`\n${PERSONA.name.toUpperCase()}${via}:`, msg);
     let turn;
     try {
-      turn = await liveTurnReconnect(state, history, msg, arc);
+      turn = await take(state, history, msg);
     } catch (e) {
-      console.log('  [liveTurnReconnect error]', (e as Error).message);
+      console.log(`  [${label} turn error]`, (e as Error).message);
       break;
     }
     history.push({ role: 'member', text: msg }, { role: 'agent', text: turn.reply });
     replies.push(turn.reply);
     state = turn.state as ConvState;
     expects = (turn as { expects?: Expectation }).expects;
-    complete = !!turn.complete;
+    complete = !!turn.complete
+      || (!!endsAtStage && (turn.state as ConvState)?.stage === endsAtStage);
     console.log('\nCOMPANION:', readable(turn.reply));
+    if (complete && !turn.complete) console.log(`  [reached '${endsAtStage}' — the client raises the reveal here]`);
   }
   console.log(`\n──── ${label}: ${complete ? 'closed' : 'DID NOT CLOSE'} in ${replies.length - 1} turns ────`);
-  return { complete, turns: replies.length - 1, replies };
+  // endState so a later Session can open on what this one PRODUCED — the W1 true lines, the W2 image — rather
+  // than on a fixture. Proving a Session runs is not proving its inputs arrive.
+  return { complete, turns: replies.length - 1, replies, endState: state };
 }
 
 async function main() {
@@ -457,18 +482,72 @@ async function main() {
   // The handoff is where every previous harness stopped. onboarding's `collected` IS what the real action loads
   // (loadReconnectCaptures → reconnectR1Opening), so the walk continues on her own captured intake rather than a
   // fixture — which is the only version that can catch a fault in what onboarding actually handed forward.
-  const sessions: { label: string; complete: boolean; turns: number; replies: string[] }[] = [];
+  const sessions: { label: string; complete: boolean; turns: number; replies: string[]; endState?: ConvState }[] = [];
+  // Carried out of the Rewire chain so a missing hand-forward fails the run rather than printing and scrolling by.
+  const rewireChainGaps: string[] = [];
   const committed = (state.collected ?? {}) as Collected;
   if (state.stage === 'complete' || (state as { complete?: boolean }).complete || committed.identityNoun || committed.identitySkipped) {
-    const legs: [string, { reply: string; state: ConvState; expects?: Expectation }, Parameters<typeof liveTurnReconnect>[3]][] = [
-      ['R1 · The Distance', reconnectR1Opening(committed) as never, RECONNECT_R1_ARC],
-      ['R2 · Excavation', reconnectOpening(committed) as never, RECONNECT_R2_ARC],
-      ['R3 · The Fade', reconnectR3Opening(committed) as never, RECONNECT_R3_ARC],
+    const legs: [string, { reply: string; state: ConvState; expects?: Expectation }, SessionTurn][] = [
+      ['R1 · The Distance', reconnectR1Opening(committed) as never, (s2, h, m) => liveTurnReconnect(s2, h, m, RECONNECT_R1_ARC)],
+      ['R2 · Excavation', reconnectOpening(committed) as never, (s2, h, m) => liveTurnReconnect(s2, h, m, RECONNECT_R2_ARC)],
+      ['R3 · The Fade', reconnectR3Opening(committed) as never, (s2, h, m) => liveTurnReconnect(s2, h, m, RECONNECT_R3_ARC)],
     ];
     for (const [label, opening, arc] of legs) {
       const r = await walkSession(label, opening, arc);
       sessions.push({ label, ...r });
       if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie
+    }
+
+    // ── AND ON INTO REWIRE, because that is the next screen a member sees ─────────────────────────────────────
+    //
+    // Added 2026-09-02, the afternoon Donna finished Reconnect. The gate stopped at R3 — so every fix that day
+    // came out of a surface it covered, and the one she was about to enter had never been walked end to end by
+    // anything. That asymmetry was the risk, not any particular bug.
+    //
+    // THE CHAIN IS THE POINT, exactly as it is for the onboarding→Reconnect handoff. W3 opens holding the true
+    // lines from W1 and the image from W2; a fixture would prove the Session runs and prove nothing about whether
+    // its inputs arrive. Offline those come from `pendingHarvest` rather than the Playbook table the real action
+    // reads — the closest honest equivalent here, and named as an approximation rather than passed off as one.
+    if (sessions.every((x) => x.complete) && rewireEnabled()) {
+      const harvestOf = (st: ConvState, kind: string): string[] =>
+        ((st as { pendingHarvest?: { kind?: string; payloadRef?: string }[] }).pendingHarvest ?? [])
+          .filter((h) => h.kind === kind)
+          .map((h) => (h.payloadRef ?? '').trim())
+          .filter(Boolean);
+
+      const w1 = await walkSession('W1 · Disinformation Audit', rewireOpening(committed) as never,
+        (s2, h, m) => liveTurnRewire(s2, h, m));
+      sessions.push({ label: 'W1 · Disinformation Audit', ...w1 });
+
+      if (w1.complete) {
+        const w2 = await walkSession('W2 · Visualization Workshop', rewireW2Opening(committed) as never,
+          (s2, h, m) => liveTurnRewireW2(s2, h, m));
+        sessions.push({ label: 'W2 · Visualization Workshop', ...w2 });
+
+        if (w2.complete) {
+          // What W1 and W2 actually produced, carried the way the member's own records carry it.
+          const trueLines = harvestOf(w1.endState, 'affirmation');
+          const image = harvestOf(w2.endState, 'image')[0] ?? harvestOf(w2.endState, 'affirmation')[0];
+          console.log(`\n[rewire-chain] true lines from W1: ${trueLines.length} · image from W2: ${image ? 'yes' : 'NONE'}`);
+          if (!trueLines.length) rewireChainGaps.push('W3 opened with NO true lines from W1 — the Reframe cannot quote her back to herself');
+          if (!image) rewireChainGaps.push('W3 opened with NO image from W2 — the Restart has no picture to send her back to');
+
+          const w3 = await walkSession('W3 · False Start Protocol',
+            rewireW3Opening({ trueLines, image, reclaimList: committed.reclaimList ?? [], identityNoun: committed.identityNoun }) as never,
+            (s2, h, m) => liveTurnRewireW3(s2, h, m));
+          sessions.push({ label: 'W3 · False Start Protocol', ...w3 });
+
+          if (w3.complete) {
+            // ADMINISTERED, so it is synchronous and takes no model call — the walker does not need to know that.
+            const cp = await walkSession('W · Checkpoint', rewireCheckpointOpening() as never,
+              (s2, h, m) => liveTurnRewireCheckpoint(s2, h, m), 30, 'ceremony');
+            sessions.push({ label: 'W · Checkpoint', ...cp });
+          }
+        }
+      }
+    } else if (sessions.every((x) => x.complete) && !rewireEnabled()) {
+      // SAY SO. A leg skipped in silence reads exactly like a leg that passed.
+      console.log('\n[rewire] SKIPPED — REWIRE is not staged in this environment, so the Rewire leg did not run.');
     }
   }
 
@@ -479,6 +558,7 @@ async function main() {
   // reports EVERY reason it failed instead of the first. A gate you have to run four times to see four problems
   // is a gate people stop running.
   const failures: string[] = [];
+  failures.push(...rewireChainGaps);
 
   console.log('\n=== SURFACE COVERAGE ===');
   const missing: string[] = [];
@@ -517,10 +597,28 @@ async function main() {
   // — as one invitation with its elaboration, and Jay has walked it and kept it. Counting '?' cannot tell that
   // from two asks, so the first reply is excluded on purpose. If the opening is ever WRONG that is a copy
   // decision, not something this check should keep reporting until we learn to skim it.
-  const stacked = everyReply.slice(1).filter((r) => r.split(BEAT_SEP).some((b: string) => {
+  // REPORT THE OFFENDING BUBBLE, NOT THE WHOLE TURN. It used to print `readable(reply)` with newlines joined by
+  // " / ", so a flagged turn showed as several bubbles run together — which reads exactly like the detector is
+  // counting ACROSS bubbles when it is not. On 2026-09-02 that cost a wrong diagnosis: I read three real stacking
+  // hits as false positives and told Jay his authored copy was at fault. The check was right and its printout
+  // was lying about it. A finding you cannot act on from the report is half a finding.
+  // TWO AUTHORED LINES JAY HAS RULED ON (2026-09-02: "leave the copy alone"). Both are a question followed by an
+  // elaborating restatement rather than two different asks, and both are marked COPY: final, Jay-approved in the
+  // source. Named here as ACCEPTED rather than softening the detector: any NEW stacked bubble — and every
+  // model-generated one, which is what Donna actually reported — still fails the run.
+  //
+  // Matched on a distinctive fragment, not the whole string, so a later copy edit does not silently re-arm them.
+  // If either line is ever rewritten, this list is where to come.
+  const ACCEPTED_STACKED = [
+    'Now look at yourself there',                 // W2_IMAGE[1] — "How do you look? How do you feel, standing in it?"
+    "Slips aren't random — they have triggers",   // W3 trigger ask, restated with examples
+  ];
+  const stackedBubble = (r: string): string | null => r.split(BEAT_SEP).find((b: string) => {
+    if (ACCEPTED_STACKED.some((a) => b.includes(a))) return false;
     const q = b.replace(/\?\s+Or\b[^?]{0,60}\?/gi, '?').split('?').length - 1;
     return q >= 2;
-  }));
+  }) ?? null;
+  const stacked = everyReply.slice(1).map(stackedBubble).filter((b): b is string => b !== null);
   const seen = new Map<string, number>();
   for (const r of everyReply) for (const b of r.split(BEAT_SEP)) {
     const k = b.trim();
@@ -537,7 +635,7 @@ async function main() {
   console.log('\n=== INVARIANTS (Donna, 2026-09-01) ===');
   if (stacked.length) failures.push(`${stacked.length} turn(s) carried two questions in one bubble`);
   console.log(`  ${stacked.length ? '✗' : '✓'} two questions in one bubble: ${stacked.length}`);
-  for (const r of stacked.slice(0, 3)) console.log('      ' + readable(r).replace(/\n/g, ' / ').slice(0, 150));
+  for (const r of stacked.slice(0, 3)) console.log('      ' + r.trim().replace(/\s+/g, ' ').slice(0, 200));
   if (repeated.length) failures.push(`${repeated.length} bubble(s) repeated verbatim`);
   console.log(`  ${repeated.length ? '✗' : '✓'} a bubble repeated verbatim: ${repeated.length}`);
   for (const [k, n] of repeated.slice(0, 3)) console.log(`      ${n}× ${k.slice(0, 130)}`);

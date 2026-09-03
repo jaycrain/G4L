@@ -173,7 +173,25 @@ export function endsOnImperativeAsk(text: string): boolean {
 // SUPPRESSION ONLY, so the failure directions are not symmetric: reading a ruling as open costs a member one tap
 // on a beat where the composer is still there, and reading an open question as a ruling is what she reported four
 // times in one walk. Same asymmetry that governs memberSteppingAway.
-const WH_OPENER = /^(who|whose|whom|what|when|where|why|how|which)\b/i;
+// A WH-WORD ANYWHERE IN THE QUESTION, not one anchored at its start — and both halves of that cost a real miss.
+//
+// The first version of this rule tested that the paragraph ENDED on '?' and that the question STARTED with a
+// wh-word. The gate caught what both miss, on the same evening it shipped:
+//
+//   "So let me ask it straight. Beyond the hours and the logistics — what's the thing you've lost that you miss
+//    the most? Not the biggest on paper. The one you feel when you let yourself feel it."
+//
+// The question is real and wide open. It does not end the paragraph (a declarative coda follows), and it does not
+// begin with the wh-word (an adverbial clause comes first). Chips were attached to it exactly as before.
+//
+// `withQuestion` already holds the right contract one screen up — `lastPara.includes('?')`, never "ends with" —
+// and its comment says why: "the model routinely asks its question and then adds an invitation coda in the same
+// breath." I wrote this rule saying I was reusing that contract and then did not. [[one-fact-many-sites]]
+//
+// Containment rather than position also drops the grammar to something that cannot be gamed by clause order. The
+// polar rulings this must preserve carry no wh-word at all — "Have I got that right", "Does that name it", "Is
+// that the one worth chasing" — so their absence is the signal, and it survives any amount of prefixing.
+const WH_ANYWHERE = /\b(who|whose|whom|what|what's|when|where|why|how|which)\b/i;
 
 /** Does this turn end on a question the beat-confirm chips cannot answer? Pure, paragraph-scoped — same contract
  *  as withQuestion, which learned the hard way that a trailing-character window misreads a long coda. */
@@ -184,11 +202,12 @@ export function endsOnOpenQuestion(text: string): boolean {
   const lastBubble = t.split(BEAT_SEP).map((s) => s.trim()).filter(Boolean).pop() ?? t;
   if (endsOnImperativeAsk(lastBubble)) return true;
   const lastPara = lastBubble.split(/\n\s*\n/).pop()?.trim() ?? lastBubble;
-  if (!/\?\s*$/.test(lastPara)) return false; // ends on a statement — the chips are the only ask, which is right
-  const sentences = sentencesOf(lastPara).filter((s) => s.trim());
-  const question = (sentences[sentences.length - 1] ?? lastPara).trim()
-    .replace(/^["'“”‘’(\[\-—\s]+/, ''); // strip a leading quote or dash so the opener is the first real word
-  return WH_OPENER.test(question);
+  if (!lastPara.includes('?')) return false; // no question at all — the chips are the only ask, which is right
+  // THE LAST QUESTION IN THE PARAGRAPH is the one she is answering; a coda after it does not change that, and an
+  // earlier question does not outrank it.
+  const asked = sentencesOf(lastPara).filter((s) => s.includes('?'));
+  const question = asked[asked.length - 1] ?? lastPara;
+  return WH_ANYWHERE.test(question);
 }
 
 export function receiptOnly(modelText: string | undefined): string {

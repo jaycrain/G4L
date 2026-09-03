@@ -20,9 +20,13 @@
 // 8/27 ("didn't take yes for an answer"), and removing them returns the most vulnerable beat in R2 to classifying
 // free-text assent — five patches of history and no ending. The chips are right; where they were attached was not.
 //
-// GRAMMAR, NOT MEANING — the fixtures below are the five real beats he approved the rule against. The test is
-// whether the three answers FIT the final question, which is decided by its opening word, not by judging the
-// model's prose. Judging prose is what got stage-agreement reverted. [[stage-agreement-invariant]]
+// GRAMMAR, NOT MEANING — the fixtures below are the real beats the rule was approved against. The test is whether
+// the three answers FIT the final question: a question carrying a wh-word cannot be answered by "That's it", and a
+// polar ruling carries none. Never a judgement of what the prose MEANS — judging prose is what got stage-agreement
+// reverted for reciting a member's protest back to her as a goal. [[stage-agreement-invariant]]
+//
+// It tested the question's OPENING WORD for about an hour. The gate found the shape that breaks — a wh-word behind
+// an adverbial clause — the same evening, and the fixture is in the list below.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,6 +40,11 @@ const HERS = 'A plan that would take you to and through retirement. You\'d alrea
 test('THE FIVE BEATS — every question Donna met, ruled the way Jay approved', () => {
   const OPEN = [
     HERS,
+    // THE ONE THE FIRST VERSION OF THIS RULE MISSED, verbatim from the gate the evening it shipped. The question
+    // is wide open, does NOT end the paragraph (a declarative coda follows), and does NOT begin with the wh-word
+    // (an adverbial clause comes first). Chips were attached to it exactly as before the fix.
+    'So let me ask it straight. Beyond the hours and the logistics — what\'s the thing you\'ve lost that you miss '
+      + 'the most? Not the biggest on paper. The one you feel when you let yourself feel it.',
     'What does recognizing these Doors change about how you see your own Fade?',
     'Tell me what that day was actually like.', // an imperative ask — open for the same reason
   ];
