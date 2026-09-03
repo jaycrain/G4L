@@ -383,7 +383,9 @@ if (process.argv.includes('--json')) {
 //     feature reads as dead and is not.
 //
 // The remaining 36 are TEST-ONLY and need judgement one at a time, not a sweep.
-const BASELINE = 38; // 2026-09-03, after the second triage pass (was 53)
+// 37 after wiring beatConfirmDisplay, which had been written, tested and never called from anywhere a member
+// could see — her tapped label was rendered from the DEFAULT chip set whatever set she actually tapped.
+const BASELINE = 37; // 2026-09-03, after the second triage pass (was 53)
 const total = dead.length + testOnly.length;
 // A behaviour violation is never ratcheted — it is a live rule that does not run, and there is no baseline for that.
 if (behaviour.length) { console.error(`\n${behaviour.length} behaviour rule(s) not holding on every path.`); process.exit(1); }
@@ -391,5 +393,9 @@ if (total > BASELINE) {
   console.error(`\nRATCHET: ${total} unrun exports, up from the ${BASELINE} baseline. Something new was added that nothing calls.`);
   process.exit(1);
 }
-if (total < BASELINE) console.log(`Below baseline (${total} < ${BASELINE}) — lower BASELINE in this file to lock the gain in.\n`);
+// STDERR, NOT STDOUT — this line is a congratulation, and on stdout it CORRUPTS the JSON report that
+// tests/the-checker-sees-behaviour.test.ts parses. So every time someone wired or deleted an unrun export, the
+// suite failed with "Unexpected non-whitespace character after JSON" and the only way to make it pass was to
+// lower a number. Improving the codebase broke the build, and told you nothing about why. Twice in one night.
+if (total < BASELINE) console.error(`Below baseline (${total} < ${BASELINE}) — lower BASELINE in this file to lock the gain in.\n`);
 process.exit(0);

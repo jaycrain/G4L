@@ -33,7 +33,7 @@
 // never summarises, interprets, or improves on a choice she made.
 
 import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice } from './gap-confirm-choice.ts';
-import { BEAT_CONFIRM_CHOICES, parseBeatConfirm } from './beat-confirm.ts';
+import { beatConfirmDisplay } from './beat-confirm.ts';
 import { parseBoardSubmission } from '../reconnect/doors-board-claim.ts';
 
 /** Bare sentinels — a whole message that is one instruction word. */
@@ -67,11 +67,20 @@ const FORMATS: { id: string; display: (t: string) => string | null }[] = [
     // the marker, which is the whole point of this file: the fourth leak reached Jay's permanent record because a
     // format shipped before its display rule.
     id: '[beat-confirm]',
-    display: (t) => {
-      const intent = parseBeatConfirm(t);
-      if (!intent) return null;
-      return BEAT_CONFIRM_CHOICES.find((c) => c.value === intent)?.label ?? null;
-    },
+    // AND IT READS THE SET SHE TAPPED FROM, not the default one.
+    //
+    // This looked the label up in BEAT_CONFIRM_CHOICES regardless of the `set:` token on the wire, so every named
+    // set rendered in the DEFAULT set's words. A member taps "That's mine" on the Legacy Letter she just wrote —
+    // the one beat whose labels were chosen deliberately, because it "never asks whether the letter is GOOD" —
+    // and her bubble said "That's it". Her own words, in her own bubble, replaced by ours.
+    //
+    // It reaches past the screen: memberDisplay is what the STORED transcript keeps, so it is also what the
+    // Companion reads back, what a replay fixture reconstructs from, and what she can be shown.
+    //
+    // `beatConfirmDisplay` does exactly this and has since the sets were introduced — written, tested, and never
+    // called from anywhere a member could see. Another rule that exists and does not run, and the one that had
+    // been wrong the longest. [[one-fact-many-sites]] [[their-own-words-back]]
+    display: (t) => beatConfirmDisplay(t),
   },
   {
     // The Doors board carries a dozen facts — slugs, ratings, first, biggest, still-open. There is no honest way to

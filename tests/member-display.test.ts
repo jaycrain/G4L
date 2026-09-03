@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { memberDisplay, looksLikeMachineLine, handledFormats } from '../lib/agent/member-display.ts';
+import { serializeBeatConfirm, beatConfirmChoices } from '../lib/agent/beat-confirm.ts';
 import { serializeBoardSubmission } from '../lib/reconnect/doors-board-claim.ts';
 import { serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
 
@@ -107,4 +108,38 @@ test('every machine format declared in the source has a member-facing display', 
     'these machine formats would print raw into a member\'s chat bubble.\n'
     + 'Add a FORMATS entry in lib/agent/member-display.ts saying what the member sees:\n  '
     + unmapped.join('\n  '));
+});
+
+// HER BUBBLE SHOWS THE WORDS THAT WERE ON THE BUTTON SHE PRESSED.
+//
+// This file's own rule, stated at the top: a display line "either comes from the same array the chips are built
+// from (so a wording change moves both and they cannot drift), or it names the ACT she performed". The
+// beat-confirm entry broke the first half — it read the DEFAULT set no matter which set the tap came from.
+//
+// The cost lands on the one beat whose labels were chosen most carefully. She writes a letter to herself a year
+// out, taps "That's mine", and her bubble said "That's it" — a set of words we picked, standing where hers should
+// be. And memberDisplay is what the stored transcript keeps, so it is also what the Companion reads back to her.
+//
+// beatConfirmDisplay had done this correctly since the sets existed, and nothing called it.
+test('every named set renders in ITS OWN words, not the default set’s', () => {
+  const cases: [string, string, string][] = [
+    ['legacy', 'done', 'That’s mine'],
+    ['legacy', 'addition', 'Change a line'],
+    ['doors', 'addition', 'There’s more'],
+    ['ruling', 'dispute', 'Not quite right'],
+    ['default', 'done', 'That’s it'],
+  ];
+  for (const [set, intent, label] of cases) {
+    const shown = memberDisplay(serializeBeatConfirm(intent as never, set as never));
+    assert.equal(shown, label, `a ${set} tap rendered as "${shown}" — she never saw that word`);
+  }
+});
+
+test('and no wire string survives into the bubble for any set', () => {
+  for (const set of ['default', 'doors', 'ruling', 'legacy']) {
+    for (const intent of beatConfirmChoices(set as never).map((c) => c.value)) {
+      const shown = memberDisplay(serializeBeatConfirm(intent as never, set as never));
+      assert.ok(!looksLikeMachineLine(shown), `machine syntax reached her bubble: ${shown}`);
+    }
+  }
 });

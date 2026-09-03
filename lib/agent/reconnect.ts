@@ -1139,7 +1139,7 @@ const driftStage: StageDef = {
       if (reflected) {
         b.reply = reflected;
         b.awaitingConfirm = true;
-        b.expects = beatConfirmUnlessLeaving(b.memberMessage, DRIFT_CONFIRM);
+        b.expects = beatConfirmUnlessLeaving(b.memberMessage, DRIFT_CONFIRM, 'ruling');
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;
@@ -1297,7 +1297,7 @@ const windowStage: StageDef = {
         b.awaitingConfirm = true;
         // THE RULING, AS A TAP. The prompt rides on the chips rather than being written into the Companion's turn,
         // so a model that closed its own beat is not contradicted by a question it did not ask.
-        b.expects = beatConfirmUnlessLeaving(b.memberMessage, WINDOW_CONFIRM);
+        b.expects = beatConfirmUnlessLeaving(b.memberMessage, WINDOW_CONFIRM, 'ruling');
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;

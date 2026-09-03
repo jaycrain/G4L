@@ -150,7 +150,7 @@ test('every kind in the Expectation union has a case above', () => {
 // Dropping a chip is only safe if the INTENT behind it is still reachable, and that is what these assert. The
 // button is gone; the dispute is not. A member who types "no, that's not it" must still get the apology and keep
 // her Door, exactly as she did when there was a button for it.
-import { applyReconnectTurn as applyR2 } from '../lib/agent/reconnect.ts';
+import { applyReconnectTurn as applyR2, RECONNECT_R3_ARC } from '../lib/agent/reconnect.ts';
 
 test('doors set · the two chips produce two different turns', () => {
   const at = (): ConvState => ({ stage: 'doors', awaitingConfirm: true, collected: COMMITTED });
@@ -166,4 +166,27 @@ test('THE DISPUTE SURVIVES ITS BUTTON — typed, it still reopens the Door', () 
   // And it must NOT bank the Door: a dispute is not a completion.
   assert.deepEqual((out.state.collected as Collected).doorsExcavated ?? [], [],
     'a Door was marked walked on a turn where she said we had it wrong');
+});
+
+// ── THE RULING SET — drift and the Window ────────────────────────────────────────────────────────────────────
+//
+// Two chips at every beat (Jay, 2026-09-03: "reducing it to two boxes simplifies things for Members"), but the
+// PAIR differs by what the beat asks. These two name and select rather than reflect a cost, so the second chip is
+// the correction, not "There's more" — and their prompts are unchanged because they already ask for this pair.
+test('ruling set · That’s it and Not quite right produce different turns', () => {
+  const at = (): ConvState => ({ stage: 'drift', awaitingConfirm: true, collected: { ...COMMITTED } } as ConvState);
+  const done = applyR2(at(), [], serializeBeatConfirm('done', 'ruling'), { text: '' }, RECONNECT_R3_ARC).reply;
+  const nope = applyR2(at(), [], serializeBeatConfirm('dispute', 'ruling'), { text: '' }, RECONNECT_R3_ARC).reply;
+  assert.notEqual(done, nope, 'the two ruling chips are not being read as different answers');
+});
+
+test('EVERY BEAT NOW OFFERS EXACTLY TWO — and none offers a chip its prompt does not ask for', () => {
+  // The invariant behind the whole change. A third chip creeping back, or a pair landing on the wrong beat, is
+  // the defect Donna reported: buttons that cannot answer the question on screen.
+  const src = readFileSync(new URL('../lib/agent/beat-confirm.ts', import.meta.url), 'utf8');
+  for (const set of ['DOORS_CONFIRM_CHOICES', 'RULING_CONFIRM_CHOICES', 'LEGACY_CONFIRM_CHOICES']) {
+    const block = src.slice(src.indexOf(`export const ${set}`), src.indexOf('];', src.indexOf(`export const ${set}`)));
+    const n = (block.match(/value:/g) ?? []).length;
+    assert.equal(n, 2, `${set} offers ${n} chips — the member-facing rule is two`);
+  }
 });

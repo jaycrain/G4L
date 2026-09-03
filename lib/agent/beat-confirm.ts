@@ -99,6 +99,29 @@ export const DOORS_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
   { value: 'done', label: 'That’s it' },
 ];
 
+// A RULING ON OUR READING — two chips, and the pair differs from the Doors on purpose (Jay, 2026-09-03).
+//
+// "Reducing it to two boxes simplifies things for Members." The rule is two everywhere; WHICH two is set by what
+// the beat asks, and that is not the same question at every beat.
+//
+// The Doors insight reflects what a Door COST her, so everything that is not "that's it" is her adding to it and
+// the second chip is "There's more" — it starts her sentence.
+//
+// Drift NAMES her fade and the Window PICKS one moment out of several. If the name is wrong, "There's more" is an
+// awkward way to say "that is not what it is"; if it is the wrong moment, it does not say "pick another". So the
+// second chip here is the correction, and the prompts stay EXACTLY as authored — "or is it different?", "or not
+// quite it yet?" — because they already ask for precisely this pair.
+//
+// Forcing one pair onto all three would have put buttons under a question they cannot answer, which is the defect
+// this whole set of changes began with (Donna, 2026-09-02).
+//
+// `addition` is not removed, only its button: a member with more to add types it, and the handlers still resolve
+// it. At these two beats she is ruling on our reading rather than continuing her story.
+export const RULING_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
+  { value: 'done', label: 'That’s it' },
+  { value: 'dispute', label: 'Not quite right' },
+];
+
 export const LEGACY_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
   { value: 'addition', label: 'Change a line' },
   { value: 'done', label: 'That’s mine' },
@@ -106,10 +129,11 @@ export const LEGACY_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
 
 /** Named choice sets. A tap carries WHICH set it came from, so the member's bubble always shows the label they
  *  actually tapped — never another set's word for the same intent. */
-export type BeatConfirmSet = 'default' | 'doors' | 'legacy';
+export type BeatConfirmSet = 'default' | 'doors' | 'ruling' | 'legacy';
 const SETS: Record<BeatConfirmSet, readonly BeatConfirmOption[]> = {
   default: BEAT_CONFIRM_CHOICES,
   doors: DOORS_CONFIRM_CHOICES,
+  ruling: RULING_CONFIRM_CHOICES,
   legacy: LEGACY_CONFIRM_CHOICES,
 };
 export const beatConfirmChoices = (set: BeatConfirmSet = 'default') => SETS[set];
