@@ -61,7 +61,9 @@ test('the queue card uses --grey, and --grey is actually neutral', () => {
 // ── 5 · the Doors confirm is a tap, like drift and window ─────────────────────────────────────────────────────
 test('every drawout confirm in Reconnect offers chips — the Doors one was the last without', () => {
   const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8');
-  for (const c of ['DOOR_CONFIRM', 'DRIFT_CONFIRM', 'WINDOW_CONFIRM']) {
+  // DOOR_CONFIRM became a ROTATED value (2026-09-04) — the Doors ask varies per Door, so the site passes
+  // `ask` rather than a constant. The invariant is unchanged: every drawout confirm offers chips.
+  for (const c of ['ask', 'DRIFT_CONFIRM', 'WINDOW_CONFIRM']) {
     assert.match(src, new RegExp(`beatConfirmUnlessLeaving\\(b\\.memberMessage, ${c}[,)]`),
       `${c} must be offered as a tap — English has unlimited ways to say yes`);
   }

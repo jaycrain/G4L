@@ -340,8 +340,36 @@ function doorMore(history: ConvMessage[]): string | null {
 // check). If it left only a question, use it whole. GRACEFUL DEGRADATION (hard rule): if it returned nothing, a
 // smaller honest reflection — NEVER a manufactured pattern.
 // Same ban, same shape as the gap confirm — ask "is that right", never "does that land".
-const DOOR_INSIGHT_CONFIRM = 'Have I got that right — or not quite?'; // Jay 2026-09-03: simpler, straighter
-function reflectDoor(modelText: string): string {
+// THE ASK ROTATES, AND IT IS SAID ONCE.
+//
+// Jennifer, 2026-09-04: "Repetition of 'have I got that right, or not quite?' Probably could add variation of
+// that phrase." She had marked most of the board, and this beat runs once per Door.
+//
+// TWO SEPARATE REPETITIONS, and the second was mine from the day before. Unifying DOOR_CONFIRM with this line so
+// the beat "says one line, chips and prose alike" meant the member saw the SAME SENTENCE TWICE IN ONE TURN —
+// once closing the reply, once as the label above the buttons. Rotating without fixing that would have shipped
+// three variants, each still doubled.
+//
+// So: the chips carry the ask (which is the design — "the prompt rides on the chips, so the model's words are
+// never contradicted by a question it did not ask"), and the reply appends it ONLY when there are no chips to
+// carry it. And it varies per Door, cycling rather than clamping, because a full board against three variants
+// would otherwise repeat from the third Door on.
+const DOOR_CONFIRM_VARIANTS = [
+  'Have I got that right — or not quite?',
+  'Is that it — or is there more?',
+  'Have I read that right, or have I bent it?',
+] as const;
+/** Every variant, for detecting how many have already been asked. Derived, so a new variant cannot be missed. */
+const DOOR_CONFIRM_RE = new RegExp(
+  DOOR_CONFIRM_VARIANTS.map((v) => v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i',
+);
+function doorConfirmAsk(history: ConvMessage[]): string {
+  const asked = history.filter((h) => h.role === 'agent' && DOOR_CONFIRM_RE.test(h.text)).length;
+  return DOOR_CONFIRM_VARIANTS[asked % DOOR_CONFIRM_VARIANTS.length]!;
+}
+/** The first variant — for tests and fixtures that need a stable string. */
+const DOOR_INSIGHT_CONFIRM = DOOR_CONFIRM_VARIANTS[0]!;
+function reflectDoor(modelText: string, ask: string = DOOR_INSIGHT_CONFIRM, spokenAsk = true): string {
   const t = (modelText ?? '').trim();
   // KEEP THE MODEL'S QUESTION ONLY IF THE CHIPS ANSWER IT. This returned the model's text untouched on any
   // trailing '?', and the caller attached the confirm chips regardless — so "When did you first feel it?" was
@@ -351,8 +379,8 @@ function reflectDoor(modelText: string): string {
   // the model was still probing and we have to move. Its ask is then stripped and ours replaces it — what
   // reflectGap does one beat over, for the reason its comment gives: "her three options must answer the question
   // actually on screen."
-  if (t && /\?\s*$/.test(t)) return endsOnOpenQuestion(t) ? receiveThen(t, DOOR_INSIGHT_CONFIRM) : t;
-  if (t) return `${t}\n\n${DOOR_INSIGHT_CONFIRM}`;
+  if (t && /\?\s*$/.test(t)) return endsOnOpenQuestion(t) ? receiveThen(t, ask) : t;
+  if (t) return spokenAsk ? `${t}\n\n${ask}` : t;
   return `Tell me more about how it actually went.`;
 }
 // GREG'S FOURTH REFLECTION QUESTION, finally built (2026-08-27).
@@ -819,7 +847,10 @@ const doorsStage: StageDef = {
     if (!advance) {
       b.reply = heldDrawout(b.modelText, b.model.depthReady, doorMore(b.history));
     } else {
-      b.reply = reflectDoor(b.modelText);
+      // ONE ASK PER TURN, and the chips and the prose cannot disagree because they are the same value.
+      const ask = doorConfirmAsk(b.history);
+      const chips = beatConfirmUnlessLeaving(b.memberMessage, ask, 'doors');
+      b.reply = reflectDoor(b.modelText, ask, !chips); // chips carry it; speak it only when they are withheld
       b.awaitingConfirm = true;
       // THE DOORS CONFIRM GETS THE SAME TAP DRIFT AND WINDOW ALREADY HAD (Donna, 2026-08-27: "didn't take yes for
       // an answer and it only went through one of the Doors") — her count elided; the guard forbids hardcoding it.
@@ -831,7 +862,7 @@ const doorsStage: StageDef = {
       // It is the DEEPEST beat to leave guessing, too: this confirm sits on the Door she has just excavated, so a
       // misread "yes" reopens the most vulnerable thing she has said. The chips are an easy path, never a gate —
       // resolveConfirmCorroborated still handles anything she types, exactly as it does for drift and window.
-      b.expects = beatConfirmUnlessLeaving(b.memberMessage, DOOR_CONFIRM, 'doors');
+      b.expects = chips;
     }
   },
   confirm(b) {

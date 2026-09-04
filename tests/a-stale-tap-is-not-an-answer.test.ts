@@ -139,13 +139,25 @@ test('ordinary prose is never mistaken for a tap', () => {
 // read this note.
 test('every site offering beat-confirm chips also sets awaitingConfirm', () => {
   const src = readFileSync(new URL('../lib/agent/reconnect.ts', import.meta.url), 'utf8').split('\n');
-  const sites = src.flatMap((line, i) => /b\.expects = beatConfirm/.test(line) ? [i] : []);
+  // FINDS THE CALLS, not one assignment spelling. This matched `b.expects = beatConfirm…`, so it went blind the
+  // moment a site computed the expectation into a variable first (2026-09-04, when the Doors ask had to be shared
+  // between the chips and the reply). A guard that knows one way of writing something is the defect it guards.
+  // A CALL SITE OPERATES ON A BEAT. Requiring `b.` on the line distinguishes the five real sites from the
+  // helper's own body, which also names the function and is not an offer. Matching the call alone caught the
+  // definition; matching one assignment spelling went blind when a site used a variable. Both were the same
+  // mistake — a scan that knows one shape.
+  const sites = src.flatMap((line, i) =>
+    /beatConfirm(?:UnlessLeaving|Expectation)\(/.test(line) && /\bb\./.test(line) ? [i] : []);
   assert.ok(sites.length >= 5, `expected the five known offer sites, found ${sites.length}`);
 
   for (const i of sites) {
-    // Scan back to the nearest decision about the flag. `= true` before `= false` means this branch is a gate.
+    // SCAN THE BRANCH, NOT JUST BACKWARDS. This looked only UP from the offer, which assumed the flag is always
+    // set before the chips are built. On 2026-09-04 the Doors site had to compute the expectation first (the ask
+    // is shared between the chips and the reply), so `b.awaitingConfirm = true` moved one line BELOW it and the
+    // guard reported a correct site as broken. The invariant is that the same branch sets the flag — the order
+    // inside it was never the rule.
     let verdict: string | null = null;
-    for (let j = i; j > i - 40 && j >= 0; j--) {
+    for (const j of [...Array(40).keys()].flatMap((d) => [i - d, i + d]).filter((x) => x >= 0 && x < src.length)) {
       const m = src[j]!.match(/b\.awaitingConfirm = (true|false)/);
       if (m) { verdict = m[1]!; break; }
     }
