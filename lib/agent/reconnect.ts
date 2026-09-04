@@ -12,7 +12,7 @@
 //    and versioned — so this increment is purely additive: it writes nothing.
 
 import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
-import { isConversationalMeta } from './conversational-meta.ts';
+import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -22,7 +22,7 @@ import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { SESSION_LIMITS } from './session-limits.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, hasAnnouncedExit } from './onboarding-intent.ts';
+import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, hasAnnouncedExit, asksToMoveOn } from './onboarding-intent.ts';
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
@@ -870,7 +870,12 @@ const doorsStage: StageDef = {
     // HER WORDS FOR THE DOOR BEING WALKED, accumulated verbatim on scratch and handed to the action when that Door
     // closes. Never a model paraphrase, and never written mid-Door — a Door she is still talking about has not
     // been excavated yet, and stamping it would end the walk early on the record while she is still walking it.
-    if (isKeeperMaterial(b.memberMessage)) {
+    // AND A REQUEST TO MOVE ON IS NOT WHAT SHE SAID ABOUT THE DOOR. Jennifer's stored words for The Empty Nest
+    // were "We have already done that door. Please move to the third session." and "Please move to the last
+    // session of Reconnect." — her attempts to escape, filed as her account of a Door she never discussed. The
+    // same guard the gap capture already runs, at a site that never got it. [[one-fact-many-sites]]
+    if (isKeeperMaterial(b.memberMessage) && !isConversationalMeta(b.memberMessage)
+      && !isAboutTheApp(b.memberMessage) && !asksToMoveOn(b.memberMessage)) {
       const scw = b.scratch as { doorWords?: string[] };
       scw.doorWords = [...(scw.doorWords ?? []), b.memberMessage.trim()];
     }

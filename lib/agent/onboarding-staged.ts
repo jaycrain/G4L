@@ -3669,7 +3669,16 @@ export function runArcTurn(
   // turns) or the absolute ONBOARDING_HARD_CEILING — never on length alone. It delegates to the CURRENT stage's
   // forceProgress, which either returns a terminal Turn or mutates + falls through.
   const memberTurns = history.filter((h) => h.role === 'member').length + 1;
-  if (!b.awaitingConfirm && (b.idleTurns >= ONBOARDING_IDLE_LIMIT || memberTurns >= ONBOARDING_HARD_CEILING)) {
+  // THE ABSOLUTE CEILING OUTRANKS A PENDING CONFIRM. Jennifer, 2026-09-04, at 132 turns: stage `doors`,
+  // awaitingConfirm TRUE, asking in plain words to be moved on — "Please move to the last session of Reconnect."
+  //
+  // The escape shipped hours earlier did not fire for her, because this line required `!awaitingConfirm`. A
+  // member waiting at a gate is exactly the trap: the gate is what she cannot get past. Gating the rescue on
+  // "not currently gated" excluded the only state that needed rescuing.
+  //
+  // The IDLE limit keeps that guard — a confirm legitimately waits, and three quiet turns at a gate is patience,
+  // not a stall. The HARD CEILING does not: past it, something is wrong whatever the beat thinks it is doing.
+  if (memberTurns >= ONBOARDING_HARD_CEILING || (!b.awaitingConfirm && b.idleTurns >= ONBOARDING_IDLE_LIMIT)) {
     const forced = stageDef?.forceProgress?.(b);
     if (forced) return forced;
   }

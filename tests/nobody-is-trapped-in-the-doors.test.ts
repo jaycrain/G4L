@@ -63,3 +63,36 @@ test('IT DOES NOT FIRE ON AN ORDINARY TURN — this is a ceiling, not a nudge', 
   assert.doesNotMatch(out.reply, /stuck on my end/i, 'the escape fired on a healthy turn');
   assert.deepEqual((out.state.collected as Collected).doorsExcavated ?? [], [], 'and it must not bank a Door she is still walking');
 });
+
+test('HER ACTUAL STATE: the ceiling fires even while a confirm is pending', () => {
+  // The escape shipped hours earlier did NOT reach her, and this is why. It required `!awaitingConfirm`, and she
+  // was parked AT a confirm — 132 turns, asking in plain words: "Please move to the last session of Reconnect."
+  // Gating the rescue on "not currently gated" excluded the only state that needed rescuing.
+  const st: ConvState = {
+    stage: 'doors', awaitingConfirm: true,
+    collected: {
+      identityNoun: 'Athlete', boardDone: true,
+      doors: ['grind', 'body', 'aging_parents', 'diagnosis', 'loss', 'career_cliff', 'load_bearer', 'full_house', 'empty_nest', 'autopilot'],
+      doorsExcavated: ['grind', 'body', 'aging_parents', 'diagnosis', 'loss', 'career_cliff', 'load_bearer', 'full_house'],
+    } as Collected,
+    stageScratch: { doors: { doorDepth: 3, openedDoor: 'empty_nest' } },
+  } as unknown as ConvState;
+
+  const out = applyReconnectTurn(st, longWalk, 'Please move to the last session of Reconnect.', { text: '' }, RECONNECT_R2_ARC);
+  assert.match(out.reply, /stuck on my end/i, 'the ceiling still did not fire at a pending confirm');
+  assert.equal(((out.state.collected as Collected).doorsExcavated ?? []).length, 9, 'the open Door must be banked and the queue moved');
+});
+
+test("her PROTESTS are not banked as her words for the Door", () => {
+  // Her stored words for The Empty Nest were "We have already done that door. Please move to the third session."
+  // and "Please move to the last session of Reconnect." — her attempts to escape, filed as her account of a Door
+  // she never discussed. Those go to the Companion afterwards as what she said.
+  const st: ConvState = {
+    stage: 'doors', awaitingConfirm: false,
+    collected: { identityNoun: 'Athlete', boardDone: true, doors: ['empty_nest', 'autopilot'], doorsExcavated: [] } as Collected,
+    stageScratch: { doors: { doorDepth: 1, openedDoor: 'empty_nest' } },
+  } as unknown as ConvState;
+  const out = applyReconnectTurn(st, [{ role: 'agent', text: 'Take me into it.' }], 'We have already done that door. Please move to the third session.', { text: 'Say more.' }, RECONNECT_R2_ARC);
+  const words = ((out.state.stageScratch?.doors ?? {}) as { doorWords?: string[] }).doorWords ?? [];
+  assert.deepEqual(words, [], `a request to move on was stored as her words for the Door: ${JSON.stringify(words)}`);
+});

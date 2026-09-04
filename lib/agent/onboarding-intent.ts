@@ -259,7 +259,37 @@ export function memberWantsToAdvance(message: string): boolean {
   // as a wish to move on would end the Door work on a member who asked to keep going.
   const tap = parseBeatConfirm(message);
   if (tap) return tap === 'done';
-  return memberSignalsGapComplete(message) || memberDeflecting(message);
+  return memberSignalsGapComplete(message) || memberDeflecting(message) || asksToMoveOn(message);
+}
+
+// SHE ASKED, IN PLAIN WORDS, AND NOTHING HEARD HER.
+//
+// Jennifer, 2026-09-04, across four turns of a Session she could not leave:
+//
+//   "We have already done that door.  Please move to the third session."
+//   "Please move to the last session of Reconnect."
+//   "We have already discussed Full House."
+//   "Don't see the letter yet."   "Please show me the letter."
+//
+// `memberWantsToAdvance` composed "the gap story is complete" and "deflecting", and an explicit REQUEST TO BE
+// MOVED ON is neither. So the Independence Guarantee — she sets the depth and can stop any time — had no way to
+// hear the clearest possible statement of it: a direct instruction, repeated, in her own words.
+//
+// That is upstream of every escape hatch. A ceiling that rescues her at turn 132 is a worse product than a beat
+// that listens at turn 4.
+//
+// THE ASYMMETRY SETTLES THE WIDTH. A false positive advances a Door she had more to say about — recoverable, and
+// the very next turn offers "There's more". A false negative is this: a member typing "please move on" four times
+// into a Session that will not let her. So it errs toward hearing her.
+//
+// NAVIGATION ONLY, never content. "We already did that door" is about the SESSION; "we already lost the house" is
+// about her life, and the pattern below cannot match it. [[member-words-outrank-model-guess]]
+const ASKS_TO_MOVE_ON_RE =
+  /\b(?:(?:please |can we |could we |let'?s |i'?d like to )?(?:move|skip|jump|go) (?:on|ahead|forward|to the (?:next|last|third|final|second)\b)|next session|move to the (?:next|last|third|final) session|skip (?:this|that|it|ahead)|we(?:'?ve| have)? already (?:did|done|discussed|covered|been through)\b)/i;
+
+/** An explicit request to leave this beat — about the SESSION, not about her life. */
+export function asksToMoveOn(message: string): boolean {
+  return ASKS_TO_MOVE_ON_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
 // ONE "the member is closing the Reclaim List" signal — consolidates the close shapes (wrap, whole, and the
