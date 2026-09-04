@@ -710,6 +710,20 @@ async function main() {
   const ACCEPTED_STACKED = [
     'Now look at yourself there',                 // W2_IMAGE[1] — "How do you look? How do you feel, standing in it?"
     "Slips aren't random — they have triggers",   // W3 trigger ask, restated with examples
+    // C2's Q3, all four domains (Jay, 2026-09-04). BOTH halves are Greg's, verbatim — the instrument stores them
+    // as `gap` and the sub-issue ask, and the commit that added them is "the reflection half Greg specified and we
+    // never built". It is ONE question with a named follow-on, and the chips answer the follow-on directly:
+    //
+    //   "What feels like the biggest gap between the social life you have and the social life you want?
+    //    Any specific issue or relationship that you want to focus on?"   [Spouse] [Children] [Friend] [Coworker]
+    //
+    // Not the shape Donna reported. Hers was "When did you first feel it?" with buttons answering a DIFFERENT
+    // question — the engine talking over the model. Here the buttons answer the second clause, and splitting the
+    // clauses would add a turn per domain to a Session that already runs past forty.
+    'biggest difference between where you are now and where you want to be physically',
+    'most out of alignment between your current self and your desired self',
+    'biggest gap between the social life you have and the social life you want',
+    'most missing right now between where you are and where you want to be in your outlook',
   ];
   const stackedBubble = (r: string): string | null => r.split(BEAT_SEP).find((b: string) => {
     if (ACCEPTED_STACKED.some((a) => b.includes(a))) return false;
@@ -717,12 +731,41 @@ async function main() {
     return q >= 2;
   }) ?? null;
   const stacked = everyReply.slice(1).map(stackedBubble).filter((b): b is string => b !== null);
-  const seen = new Map<string, number>();
-  for (const r of everyReply) for (const b of r.split(BEAT_SEP)) {
-    const k = b.trim();
-    if (k.length > 40) seen.set(k, (seen.get(k) ?? 0) + 1);
+  // WITHIN A SESSION, NOT ACROSS THE PROGRAM — the rule this measures is Donna's, and hers was about one
+  // conversation: "I clicked That's It button and it kept coming back."
+  //
+  // Run across all fourteen Sessions it reported three legitimate refrains as defects. The Checkpoint asks "What
+  // feels different now than when you started?" once at EACH phase boundary — that recurrence is what a Checkpoint
+  // IS. "That's the read — let me show you what you just built" lands once in B1 and once in B2. A member meets
+  // each of those once per Session, weeks apart, and would have to be shown a transcript of the whole program to
+  // notice they rhyme.
+  //
+  // Scoped properly it still catches the real one: B1's opening frame fires TWICE INSIDE B1, which is Donna's
+  // "odd sequencing" and is parked for Greg because the repair reorders his instrument.
+  //
+  // Cross-Session recurrence is still PRINTED, because a refrain becoming a tic is a judgement someone should be
+  // able to make — it is just not a build failure. [[existence-is-not-the-assertion]]
+  const perSession: { label: string; replies: string[] }[] = [
+    { label: 'onboarding', replies: onboardingReplies },
+    ...sessions.map((x) => ({ label: x.label, replies: x.replies })),
+  ];
+  const repeated: [string, number][] = [];
+  for (const s of perSession) {
+    const seen = new Map<string, number>();
+    for (const r of s.replies) for (const b of r.split(BEAT_SEP)) {
+      const k = b.trim();
+      if (k.length > 40) seen.set(k, (seen.get(k) ?? 0) + 1);
+    }
+    for (const [k, n] of seen) if (n > 1) repeated.push([`${s.label} — ${k}`, n]);
   }
-  const repeated = [...seen.entries()].filter(([, n]) => n > 1);
+  // Informational: the same authored line landing once in several Sessions.
+  const acrossSessions = new Map<string, Set<string>>();
+  for (const s of perSession) {
+    for (const b of new Set(s.replies.flatMap((r) => r.split(BEAT_SEP).map((x) => x.trim())))) {
+      if (b.length > 40) acrossSessions.set(b, (acrossSessions.get(b) ?? new Set()).add(s.label));
+    }
+  }
+  const refrains = [...acrossSessions.entries()].filter(([, where]) => where.size > 1);
 
   console.log('\n=== RECONNECT ===');
   for (const x of sessions) {
@@ -736,7 +779,11 @@ async function main() {
   for (const r of stacked.slice(0, 3)) console.log('      ' + r.trim().replace(/\s+/g, ' ').slice(0, 200));
   if (repeated.length) failures.push(`${repeated.length} bubble(s) repeated verbatim`);
   console.log(`  ${repeated.length ? '✗' : '✓'} a bubble repeated verbatim: ${repeated.length}`);
-  for (const [k, n] of repeated.slice(0, 3)) console.log(`      ${n}× ${k.slice(0, 130)}`);
+  for (const [k, n] of repeated.slice(0, 3)) console.log(`      ${n}× ${k.slice(0, 150)}`);
+  if (refrains.length) {
+    console.log(`  · ${refrains.length} authored line(s) recur ACROSS Sessions — informational, not a failure:`);
+    for (const [k, where] of refrains.slice(0, 3)) console.log(`      ${[...where].join(' + ')} — ${k.slice(0, 100)}`);
+  }
   // ── THE VERDICT ─────────────────────────────────────────────────────────────────────────────────────────────
   // Exit code is the whole point of a gate. `npm run gate` before anyone walks: a non-zero here means a member
   // would have met one of the things Donna and Marie met, and the run says which.
