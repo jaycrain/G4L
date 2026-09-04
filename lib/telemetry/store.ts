@@ -29,6 +29,20 @@ export type EventKind =
   // diagnosis was guesswork. meta carries the thrown message and, when a named derivation failed, which one.
   // An event, not a log, because the question is "has this been happening" and a log cannot answer that.
   | 'context_degraded'
+  // THE TWO HALVES OF A BADGE, WHICH ARE NOT THE SAME FACT.
+  //
+  // `badge_earned` fires where the row is written (earnBadge — the one writer). `badge_shown` fires from the
+  // CLIENT when the reveal actually mounts on her screen — deliberately NOT where the server puts a badge into a
+  // payload, because "we sent it" is precisely the claim that was false on 2026-09-04: Jennifer's ceremony said
+  // "You earned a new badge!" over a badge that did not exist, and would not until she came back.
+  //
+  // Donna asked "was I getting a notification at all?" after 15 badges, and nothing in the product could answer
+  // her — for herself or for anyone else. A walk can only ever sample one badge, once, for one member. These two
+  // kinds make "earned but never seen" a query. meta carries { badgeId, surface }; device + display ride along
+  // for free from logEvent, so a reveal that fails only on a phone, or only in the installed PWA, is visible
+  // without having to ask anyone for a screenshot.
+  | 'badge_earned'
+  | 'badge_shown'
   | 'page_view';
 
 export type LogOpts = { surface?: string | null; ref?: string | null; step?: number | null; meta?: Record<string, unknown> };

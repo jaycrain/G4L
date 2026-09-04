@@ -244,7 +244,20 @@ const REPORT_SQL = `select jsonb_build_object(
        'body', case when length(p.body) > 600 then left(p.body, 600) || '...[truncated]' else p.body end)
      order by p.section, p.sort_order), '[]')
      from playbook_entry p where p.member_id = $1),
-  'badges', (select coalesce(jsonb_agg(to_jsonb(b) order by b.earned_at), '[]') from badge_earned b where b.member_id = $1),
+  -- EARNED, AND WHETHER SHE EVER SAW IT. Donna's "was I getting a notification at all?" was unanswerable for
+  -- 15 badges; shown_count / first_shown_at are the answer, and a badge with shown_count 0 is the exact shape
+  -- to look for. Joined on the ref COLUMN, never on meta->>'badgeId': prod stores jsonb double-encoded, so a
+  -- meta predicate matches nothing and does it silently. [[jsonb-string-kills-sql-predicates]]
+  -- (No backticks in this comment — the whole query is a JS template literal and one would end it.)
+  'badges', (select coalesce(jsonb_agg(jsonb_build_object(
+       'badge_id', b.badge_id, 'earned_at', b.earned_at,
+       'shown_count', (select count(*) from member_event e
+                        where e.member_id = $1 and e.kind = 'badge_shown' and e.ref = b.badge_id),
+       'first_shown_at', (select min(e.created_at) from member_event e
+                        where e.member_id = $1 and e.kind = 'badge_shown' and e.ref = b.badge_id),
+       'shown_on', (select coalesce(jsonb_agg(distinct e.surface), '[]') from member_event e
+                        where e.member_id = $1 and e.kind = 'badge_shown' and e.ref = b.badge_id))
+     order by b.earned_at), '[]') from badge_earned b where b.member_id = $1),
   'rebuild_readings', jsonb_build_object(
      'motivation',      (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from motivation_reading x      where x.member_id = $1),
      'self_management', (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from self_management_reading x where x.member_id = $1),

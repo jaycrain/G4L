@@ -262,7 +262,13 @@ export async function earnBadge(db: Db, memberId: string, badgeId: string): Prom
      on conflict (member_id, badge_id) do nothing returning badge_id`,
     [memberId, badgeId],
   );
-  return rows.length > 0;
+  const newlyEarned = rows.length > 0;
+  // Tagged AFTER the insert, never inside it, and only on a genuine first earn. A metric written into a save
+  // path took Quality-Day logging down once; the badge must land whether or not the telemetry does.
+  if (newlyEarned) {
+    await logEvent(db, memberId, 'badge_earned', { ref: badgeId, meta: { badgeId } }).catch(() => {});
+  }
+  return newlyEarned;
 }
 
 // --- Phase gates ---
