@@ -178,6 +178,8 @@ export type Collected = {
   doorsExcavated?: DoorSlug[];
   /** Doors the member TAPPED on the board — her own structured statement, never rewritten by a model re-seeing. */
   doorsMarked?: DoorSlug[];
+  /** R2-34: her correction to the cumulative-pattern summary, verbatim. Greg's member_correction. */
+  doorsPatternCorrection?: string;
   /**
    * ONBOARDING ONLY — Doors we have INFERRED and not yet put to her. Propose → confirm → commit, the same contract
    * as every other thing we touch about a member.

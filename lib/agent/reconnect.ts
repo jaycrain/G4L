@@ -20,6 +20,7 @@ import { nextFollowUp } from './follow-up.ts';
 import { doorProvenance } from './door-provenance.ts';
 import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
+import { isMemberContent } from './member-turn.ts';
 import { SESSION_LIMITS } from './session-limits.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, hasAnnouncedExit, asksToMoveOn } from './onboarding-intent.ts';
@@ -226,7 +227,24 @@ export async function loadReconnectCaptures(db: Db, memberId: string): Promise<C
 // recall. Model-judged depth (reflect_door) bounded by a FLOOR/CAP; the insight is OFFERED as a check they can
 // reject (precise-and-humble); and on thin material it degrades gracefully — never a manufactured pattern.
 
-const DOOR_MIN_DEPTH = 2; // never reflect an insight before this many real drawing-out exchanges (no insight w/o material)
+// ONE SUBSTANTIVE ANSWER IS MATERIAL (Greg's R2-32, adopted 2026-09-04 with Jay).
+//
+// This was 2, which MANDATED a second drawing-out exchange on every Door however complete her first answer was.
+// Greg's spec makes that turn CONDITIONAL: "If the Member is too global, ask for one more layer of specificity"
+// — testable as "a vague reply triggers EXACTLY ONE specificity follow-up." And R2-16 sets the posture: "guide
+// mode, not full coach." A floor that refuses to reflect until she has spoken twice is a coach move.
+//
+// The judgement did not move to the engine; it moved BACK to the model, which is where Decision T put it. The
+// model still signals when a Door is genuinely excavated and will ask again when she was global — it simply is
+// no longer forbidden from reflecting a Door she answered well the first time.
+//
+// WHY IT MATTERS AT SCALE, and it is the whole of Jennifer's experience: at 2 this cost every Door an extra
+// exchange. Across a full board that is the difference between roughly twenty-five turns and fifty-five.
+//
+// WHAT IS NOT CHANGING: the walk itself. R2-33 requires drawing out what each Door meant in her life and
+// reflecting it back — "not an immediate next door" — and Donna and Jennifer both named that as the best part of
+// the product. The walk is the spec; only the mandatory second turn was ours.
+const DOOR_MIN_DEPTH = 1;
 const DOOR_MAX_DEPTH = 5; // anti-loop cap
 
 // Ensure the turn ends on a forward question (same helper as the onboarding kernel — kept local to avoid exporting).
@@ -450,6 +468,12 @@ const DOORS_CLOSE = (
 // SAID WHEN THE ENGINE HAS TO BREAK A LOOP FOR HER. It names the fault as ours and moves — it does not apologise
 // at length, and it does not ask her to rephrase, because rephrasing is what she has already been doing.
 const STUCK_ACK = "That got stuck on my end — not on you. Let's keep going.";
+
+// R2-34's ask. "Does that capture the shape of your Fade?" is Greg's own example phrasing; the chips are the
+// ruling pair, because this is her ruling on OUR reading of her set — exactly the drift/window shape.
+const DOORS_PATTERN_ASK = 'Does that capture the shape of your Fade?';
+/** A bare "no" to the pattern — invite the shape in her own words rather than defending ours. Asked once. */
+const DOORS_PATTERN_REOPEN = "Then I've got the shape wrong. Say it the way it actually runs.";
 
 const DOORS_MEANING_Q =
   `Last thing on this, and it's the one that matters most: what does recognizing these Doors change about how ` +
@@ -1020,6 +1044,36 @@ const doorsStage: StageDef = {
     // Prose stays the fallback, exactly as it is for the other three: the chips are an easy path, never a gate.
     const intent = parseBeatConfirm(b.memberMessage)
       ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right'); // dispute | addition | done
+
+    // R2-34's SECOND HALF — "confirm OR CORRECT the pattern", and the correction is stored.
+    //
+    // Without this a dispute here would fall into the Door-reopen path below and answer "the pattern is wrong"
+    // by reopening a single Door — the wrong unit entirely. The pattern is about the SET, so a correction to it
+    // is her words about the whole shape, and Greg's data model has a field for exactly that (member_correction).
+    const scp = b.scratch as { patternAsked?: boolean; patternSettled?: boolean; meaningAsked?: boolean };
+    if (scp.patternAsked && !scp.patternSettled) {
+      if (intent === 'done') {
+        scp.patternSettled = true;
+        scp.meaningAsked = true;
+        b.awaitingConfirm = false;
+        b.reply = receiveThen(b.modelText, DOORS_MEANING_Q);
+        return;
+      }
+      // Not confirmed → her correction IS the pattern. Take it verbatim, do not argue, and move on the same turn:
+      // asking her to say it twice is how a correction beat becomes another loop.
+      if (isMemberContent(b.memberMessage) && !asksToMoveOn(b.memberMessage)) {
+        b.collected.doorsPatternCorrection = b.memberMessage.trim();
+        scp.patternSettled = true;
+        scp.meaningAsked = true;
+        b.awaitingConfirm = false;
+        b.reply = receiveThen(b.modelText, DOORS_MEANING_Q);
+        return;
+      }
+      b.awaitingConfirm = false;
+      b.reply = DOORS_PATTERN_REOPEN; // a bare "no" — invite the shape in her words, once
+      return;
+    }
+
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DOOR; // they rejected the insight — take it, don't defend it
@@ -1111,6 +1165,24 @@ const doorsStage: StageDef = {
             ? receipt
             : receiveThen(b.modelText, nextDoorOpener(next));
         }
+      } else if (!(scm as { patternAsked?: boolean }).patternAsked && (b.collected.doorsExcavated?.length ?? 0) >= 2) {
+        // TWO OR MORE, because Greg's requirement is the CUMULATIVE pattern ACROSS doors — "a summary of the
+        // cumulative pattern across doors". One Door has no pattern across doors, and summarising it back would
+        // repeat the insight she confirmed one turn earlier, which is the repetition three testers have already
+        // reported in other forms.
+        // R2-34 — THE PATTERN, BEFORE THE CLOSURE QUESTIONS. Missing entirely until 2026-09-04.
+        //
+        // Greg: "Generate a summary of the cumulative pattern across doors / Use the Member's own language / Ask
+        // the Member to confirm or correct the pattern." It belongs between the last Door and the first temporal
+        // question, and it is the PAYOFF for having walked them all — the moment the separate Doors become one
+        // shape. Without it the member finishes ten excavations and is asked a closing question as though the
+        // set had never been assembled.
+        //
+        // The model writes it, in her words, from the Doors just walked; the engine owns the ask and the gate.
+        (scm as { patternAsked?: boolean }).patternAsked = true;
+        b.awaitingConfirm = true;
+        b.reply = receiveThen(b.modelText, DOORS_PATTERN_ASK);
+        b.expects = beatConfirmUnlessLeaving(b.memberMessage, DOORS_PATTERN_ASK, 'ruling');
       } else if (!scm.meaningAsked) {
         // EVERY DOOR WALKED → Greg's fourth question, once per excavation, before handing to the IDQ. It is about
         // the SET, which is why it waits for the last Door: asking what naming them changes while four are still
@@ -2379,6 +2451,12 @@ export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string
       'story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), ' +
       'offered — never asserted — and only when the material earns it. Once they confirm the insight, accept it and ' +
       'let the beat move — do not reflect it again or ask a further question.\n\n' +
+      'WHEN EVERY DOOR IS WALKED, the engine asks you for one last thing before the closing questions: the ' +
+      'CUMULATIVE PATTERN across the Doors, in THEIR words — what the set adds up to that no single Door showed. ' +
+      'Greg\'s shape: "Looking at your ratings, you walked through the Autopilot Door and the Social Door — both ' +
+      'very relevant. The Relationship Door is somewhat relevant." Name the pattern, do not grade it, and do not ' +
+      'ask a question of your own — the engine asks whether it captures the shape of their Fade. This is the ' +
+      'payoff for having walked them all: the moment separate Doors become one shape.\n\n' +
       'ONE DOOR AT A TIME, AND ONLY THE ONE IN FRONT OF YOU. Their whole marked set is in your context above, and ' +
       'the engine opens those Doors one at a time, in order. Do NOT name, summarize, or draw a thread across Doors ' +
       'that have not been opened yet. When you do, the engine opens the next one on schedule and the member reads ' +
