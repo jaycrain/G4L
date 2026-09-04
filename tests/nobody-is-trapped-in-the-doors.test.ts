@@ -96,3 +96,30 @@ test("her PROTESTS are not banked as her words for the Door", () => {
   const words = ((out.state.stageScratch?.doors ?? {}) as { doorWords?: string[] }).doorWords ?? [];
   assert.deepEqual(words, [], `a request to move on was stored as her words for the Door: ${JSON.stringify(words)}`);
 });
+
+test('THE RESCUE IS A ONE-SHOT, not a mode — it cannot march her through the queue', () => {
+  // `memberTurns >= HARD_CEILING` is a THRESHOLD, not an edge: past it, every later turn re-fires. The gate caught
+  // this on a HEALTHY walk — "That got stuck on my end" three times, in the three Sessions that legitimately ran
+  // long (R2 at 32 turns, C1 at 32, C2 at 42). A member doing exactly what Excavation asks was being told the
+  // Companion had got stuck when it had not.
+  //
+  // My first bound was per-DOOR and did nothing, because the rescue ADVANCES the Door: the next turn is a new
+  // Door, so it fired again and walked the whole queue one per turn — the exact "cannot rush a member through"
+  // failure its own comment claimed to prevent.
+  const long: ConvMessage[] = Array.from({ length: 80 }, (_, i) => (i % 2
+    ? { role: 'agent' as const, text: 'Go on.' }
+    : { role: 'member' as const, text: 'It changed the mornings.' }));
+  let st: ConvState = {
+    stage: 'doors', awaitingConfirm: false,
+    collected: { identityNoun: 'Athlete', boardDone: true, doors: ['body', 'loss', 'grind'], doorsExcavated: [] } as Collected,
+    stageScratch: { doors: { doorDepth: 2, openedDoor: 'body' } },
+  } as unknown as ConvState;
+
+  let fires = 0;
+  for (let i = 0; i < 5; i++) {
+    const out = applyReconnectTurn(st, long, 'It really did take the mornings from me.', { text: 'Say more.' }, RECONNECT_R2_ARC);
+    if (/stuck on my end/i.test(out.reply)) fires += 1;
+    st = out.state;
+  }
+  assert.equal(fires, 1, `the rescue fired ${fires} times — it is a one-shot, and repeating it rushes her through her own Doors`);
+});

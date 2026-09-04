@@ -761,7 +761,26 @@ const doorsStage: StageDef = {
   // next one opens. If not, the meaning question closes the beat. It never re-emits the turn that trapped her,
   // and it never ends the Session on her behalf. [[completeness-never-touches-drawout]]
   forceProgress(b) {
-    const sc = b.scratch as { meaningAsked?: boolean; openedDoor?: DoorSlug; forcedTurn?: boolean };
+    const sc = b.scratch as { meaningAsked?: boolean; openedDoor?: DoorSlug; forcedTurn?: boolean; rescued?: boolean };
+    // ONCE PER DOOR, NOT ONCE PER TURN PAST THE CEILING.
+    //
+    // `memberTurns >= HARD_CEILING` is a THRESHOLD, not an edge: past it, every later turn re-fires. The gate
+    // caught this immediately — "That got stuck on my end" three times in one healthy walk, in the three Sessions
+    // that legitimately ran long (R2 at 32 turns, C1 at 32, C2 at 42). A member doing exactly what Excavation
+    // asks — walking several Doors — was being told the Companion had got stuck when it had not.
+    //
+    // Rescuing someone once per Door is the honest shape: if this Door is still open next turn the escape has not
+    // worked and something else is wrong; if it moved, there is nothing to rescue. It also cannot rush a member
+    // through a queue, which the per-turn version would have done to anyone with a full board.
+    // ONCE PER SESSION. My first attempt bounded it per DOOR, which does nothing: the rescue advances the Door,
+    // so the next turn is a new Door and it fires again — marching through the whole queue one per turn, which is
+    // precisely the "cannot rush a member through" failure the comment above claims to prevent. The gate showed
+    // four consecutive rescues on a walk that was working.
+    //
+    // A rescue is a one-shot, not a mode. If a member is still stuck after being moved once, that is a DIFFERENT
+    // fault and it should be found rather than papered over by rescuing her again every turn.
+    if (sc.rescued) return undefined;
+    sc.rescued = true;
     sc.forcedTurn = true; // gather must not overwrite the escape it is being rescued from
     bankWalkedDoor(b);
     const next = nextDoorToExcavate(b.collected);
