@@ -76,7 +76,10 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
         body: 'The ones people name most often are loss, a shrinking social world, a role that absorbs everything, caregiving, autopilot — research documents these as reliable disrupters of routine and self-concept, often long after the event. Whichever are yours, naming them places it in a recognized pattern rather than leaving it as private drift.' },
       { head: 'A story you can work with beats a fog you are inside',
         body: 'People tend to move through life change more steadily when they can put it in order — what came first, what shaped you most, what is still going on. That sequence turns a pile of circumstances into something with a shape.' },
-      { head: 'Naming what happened to you does not hand away your agency',
+      // "agency" → "control over what comes next" (Jennifer flagged it as abstract; Cowork + Jay, 2026-09-04).
+      // The replacement gives the noun an OBJECT where "agency" stood alone, and hands off into the shame /
+      // responsibility line below instead of stopping short of it.
+      { head: 'Naming what happened to you does not hand away your control over what comes next',
         body: 'Blaming yourself for everything tends toward shame; blaming circumstances entirely tends toward helplessness. Holding both — a real cause, and what you are still choosing — tends to support more durable motivation than either on its own.' },
       { head: 'Which doors matter more than that you drifted',
         body: 'Identity loss is rarely felt as one undifferentiated thing; it erodes in specific places. Knowing which ones gives you a different and more usable starting point than knowing only that something went.' },
