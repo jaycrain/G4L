@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 9376d289 · 2026-09-03)
+# Strings EXCLUDED from the member transcript (app @ aa4597b1 · 2026-09-04)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
