@@ -91,7 +91,6 @@ lib/connect/agent.ts
 lib/connect/rooms.ts
 lib/connect/seed.ts
 lib/connect/write.ts
-lib/content/explore.ts
 lib/content/retention.ts
 lib/curriculum/badge-glyphs.tsx
 lib/curriculum/crossing.ts

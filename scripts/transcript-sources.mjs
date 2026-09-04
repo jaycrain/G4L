@@ -97,6 +97,12 @@ export const SECTIONS = [
       'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
+  // "EXPLORE THE SCIENCE" — tier 3, one tap below the summary above, and it was invisible to canon until
+  // 2026-09-04. Cowork found two defects in it by WALKING the app (a grammar error, and a list of common Doors
+  // that read as the member's own assignment because it renders under "Your Doors: …"). Neither could have been
+  // caught by reading the transcript, because none of this file was in it — and CHANGES.md duly reported
+  // "0 added · 0 removed" for the release that fixed them. Authored, member-read, quotable: it belongs here.
+  { title: 'Explore the Science (tier 3 — the evidence behind a Session)', files: ['lib/content/explore.ts'] },
   // WHERE IT LIVES — the line at every Session close naming what she made and where it went. Authored, and read
   // at the end of all thirteen Sessions, so it is quotable and belongs in canon.
   { title: 'The Session close — where it lives', files: ['lib/content/where-it-lives.ts'] },

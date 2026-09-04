@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 484c4ef6 · 2026-09-04)
+# Strings EXCLUDED from the member transcript (app @ 5de235ea · 2026-09-04)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -631,6 +631,9 @@
 [app/quality-day/quality-day-log.tsx] What was most missing ${when}?
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
+[lib/content/explore.ts] A gap you can name is one you can work on
+[lib/content/explore.ts] Working out why is different from noticing that
+[lib/content/explore.ts] Writing turns longing into something you can act on
 [lib/practice/grid.ts] activityStatus
 [lib/practice/grid.ts] dietStatus
 [lib/practice/grid.ts] select label from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = 'logged'

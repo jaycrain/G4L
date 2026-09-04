@@ -1,0 +1,150 @@
+# CHANGES — authored copy, v3.8.4 (since v3.8.3)
+
+App @ `5de235ea`. 137 added · 0 removed, out of 1563 authored strings.
+
+**This is the reconciliation list.** A line that appears in both ADDED and REMOVED in a similar form is an
+edit, not a pair of separate changes — read them together.
+
+## Added (137)
+
+- Why looking honestly at the distance comes first
+- Research suggests people are moved more by a specific distance than a vague sense of having slipped. Locating it — this area, this far — turns a feeling into something you can act on.
+- Seeing clearly comes before feeling better
+- This does not try to cheer you up first. Turning attention on yourself as something to observe tends to surface where you have drifted from your own standards, and that recognition is what makes the rest of the work aim somewhere real.
+- Rating areas separately beats one overall verdict
+- A single judgment about yourself tends to be blunt and hard to use. Research suggests a more differentiated picture — steady here, thin there — is both more accurate and easier to act on than a global sense of how you are doing.
+- You are measured against yourself, not a chart
+- The reference point is the fuller version of you that you still remember, not an average or a norm. That comparison tends to land harder, because you are not falling short of a standard — you are at a distance from something you can still feel.
+- This is about who you are, not only what you do
+- People sustain effort longer when it connects to who they are or are becoming. Naming the identity part of the gap early is what lets later work be about closing a distance from yourself, rather than a list of tasks.
+- Knowing where you actually stand makes the rest aim true
+- Research suggests people regulate themselves better when they can say honestly where they are. Setting goals before that tends to produce effort pointed at the wrong thing.
+- Why naming how it happened changes what you can do about it
+- The circumstances that cause this are known, and common
+- The ones people name most often are loss, a shrinking social world, a role that absorbs everything, caregiving, autopilot — research documents these as reliable disrupters of routine and self-concept, often long after the event. Whichever are yours, naming them places it in a recognized pattern rather than leaving it as private drift.
+- A story you can work with beats a fog you are inside
+- People tend to move through life change more steadily when they can put it in order — what came first, what shaped you most, what is still going on. That sequence turns a pile of circumstances into something with a shape.
+- Naming what happened to you does not hand away your agency
+- Blaming yourself for everything tends toward shame; blaming circumstances entirely tends toward helplessness. Holding both — a real cause, and what you are still choosing — tends to support more durable motivation than either on its own.
+- Which doors matter more than that you drifted
+- Identity loss is rarely felt as one undifferentiated thing; it erodes in specific places. Knowing which ones gives you a different and more usable starting point than knowing only that something went.
+- Finding it is a shared pattern takes the weight out of it
+- When people learn others walked through the same doors, they tend to stop reading their own pattern as a personal defect. That does not remove responsibility for what comes next, but it lowers the shame that usually stops people engaging at all.
+- Knowing a problem exists is not the same as having worked out where it came from. The slower version tends to stay available to you later, as something to steer by, in a way that a passing realisation does not.
+- Why an honest mirror and a direction belong in the same activity
+- Drift is patterned, not random
+- The Fade rarely arrives as one event. It shows up through repeated, individually reasonable choices that move the baseline — and research suggests people steer better against a pattern they can see than against a general sense of slipping.
+- Aiming at a person works better than aiming at an outcome
+- A picture of who you want to become tends to organize effort more durably than a target you want to hit. It makes the work about becoming someone rather than completing tasks.
+- The closer that future person feels, the more you will do for them
+- When a future self feels like a stranger, present comfort usually wins. Writing to and about the person you are becoming tends to close that distance — which matters for anything that costs effort now and pays later.
+- Past, present and direction work better as one thread
+- Motivation tends to weaken when your own story feels fragmented. Putting how you drifted, where you are, and where you are going into one arc makes the effort feel like it belongs to something.
+- Research suggests that putting difficult things and personal aims into words improves clarity and emotional processing. A letter asks for honesty in a way that a plan does not.
+- Looking back and looking forward correct each other
+- Dwelling only on the past risks rumination; imagining only the future risks fantasy. Holding both tends to be steadier than either, and it is what turns recognition into a direction.
+- Why the reasonable-sounding lines are the ones that cost you
+- You respond to the meaning, not the fact
+- A skipped walk can be "I needed a break" or "I am slipping into something." Same fact, different consequence — and over time those readings shape how much effort you are willing to spend.
+- You can hear a hard truth without collapsing under it
+- Health information that touches identity often triggers defensiveness or avoidance. Research suggests people take it in better when their sense of worth is intact — so building the stronger lines first is what makes the honest look survivable.
+- "It is too late" is the one that does the damage
+- Many of these lines carry a claim that nothing you do matters. Replacing them tends to restore the sense that effort is worth spending, which is what people need to keep spending it.
+- You are rehearsing the answer before you need it
+- Change often breaks down in the moment, where a comforting rationalisation arrives before any action does. Having a truer line ready is a way of preparing for that moment rather than meeting it cold.
+- Why a vivid picture pulls harder than a stated goal
+- A picture carries more than a description
+- Imagining something in detail lets you simulate it rather than merely name it, and research suggests that tends to carry more emotional force than an abstract goal. It makes the destination feel worth the walk.
+- Aiming at a person, not an outcome
+- A future self acts like a guidepost: it organizes attention and makes effort read as becoming someone rather than finishing a task. That tends to feel more personal and less mechanical.
+- The closer that future feels, the more it is worth to you now
+- When the future self feels distant, present comfort usually wins. Returning to what you have already named and making it more concrete is how that distance narrows.
+- A clear direction makes a hard stretch bearable
+- Knowing where you are going tends to reduce discouragement, because a difficult period reads as part of a path rather than as random. That steadies you as much as it motivates you.
+- Why what you do after a slip decides more than the slip
+- The recovery matters more than the lapse
+- Setbacks are ordinary in change. Research suggests what predicts the outcome is the reading: treated as temporary and workable, people tend to re-engage; treated as proof of failure, they tend to stop.
+- A gap between the urge and the response
+- Noticing stress, craving or discouragement as things happening — rather than as instructions — creates a small space to choose in. That space is where most of the useful decisions get made.
+- Catching drift while it is still small
+- Monitoring yourself is an active skill, not a passive one. Picking up the early signals and using them as a prompt to re-aim keeps a slip from becoming the new pattern.
+- Contempt makes coming back harder
+- Harsh self-judgment tends to increase avoidance, which makes re-entry harder still. Meeting a lapse with honesty and perspective does not excuse it — it makes recovering from it more likely.
+- Why the reason you are doing this decides how long you last
+- Why you want it matters more than how much
+- Motivation can be strong and still be anxious, pressured or short-lived. Research suggests what endures is motivation tied to enjoyment, meaning or a sense of self — reasons that are life-giving rather than corrective.
+- "I have to" can become "this is mine"
+- Nobody needs to start out loving exercise or vegetables. What tends to matter is whether the behavior can be connected to your own values and goals over time, which is a shift you can actually make.
+- A strong reason usually touches three things
+- Motivation tends to hold when something feels chosen rather than imposed, when you can get better at it, and when it connects to people you care about. A real "why" often has all three in it somewhere.
+- A reason has to outlast the discomfort
+- Early on, moving more and eating better often cost something before they give anything back. A reason tied to what you actually value is what bridges that stretch.
+- Why this is a set of skills, not a question of willpower
+- These are skills, and skills can be built
+- Research consistently finds people do better when they can watch themselves, plan ahead, handle obstacles and adjust after a setback. Those are learnable capacities, not character traits you either have or lack.
+- Different skills matter at different points
+- Change unfolds over time rather than all at once, and what helps you get ready is not what carries you through action or keeps you steady afterwards. That is why the skills are grouped rather than listed flat.
+- Getting ready, taking action, staying consistent
+- The three groups do different jobs: building confidence and clearing barriers; assessing, planning and coping; then monitoring, support and recovering from lapses. Knowing which group is thin tells you where to put the practice.
+- Knowing where you stand before you plan
+- Effective change usually starts from an accurate read of your own strengths and limits. That read is what makes the goals, routines and support you choose next fit you rather than someone else.
+- The skills that matter most after motivation fades
+- Change is rarely linear — lapses, competing demands and friction are normal. What often separates a temporary disruption from stopping altogether is whether the maintenance skills are there.
+- Why a week of watching teaches more than a month of resolving
+- Watching a thing tends to change it
+- Self-monitoring is among the most reliable tools in behavior change. Tracking something raises your awareness of it, and that awareness alone often shifts what you choose next.
+- Plan, watch, adjust
+- Change strengthens when you can compare what you meant to do with what happened and adapt. The plan sets the target and the week supplies the feedback — which makes this more than a diary.
+- A plan that survives a normal week, not your best one
+- People follow through more when a behavior is specific — what, when, where, and what you will do if conditions are imperfect. Naming the smaller backup version in advance is what keeps an ordinary week from ending it.
+- Resetting instead of quitting
+- Disruption, stress and low-energy days are part of it. Noticing what contributed to a false start and what happened next builds the habit of returning, which matters more than a clean run.
+- Food and movement pull on each other
+- Health behaviors cluster: energy, sleep, mood and routine are not separate systems. Watching both at once tends to show you how they actually interact rather than how you assume they do.
+- You usually need a clearer picture, not more force
+- The instinct after a bad stretch is to try harder. Often what helps more is an accurate read of your own routines and decision points, so the next plan is built on real patterns rather than guesses.
+- Why a widening life is its own kind of progress
+- Staying engaged beats narrowing to avoid
+- People tend to do better when they can stay in contact with what matters and tolerate discomfort, rather than shrinking life to avoid difficulty. It is not optimism — it is range.
+- Moving toward, not only away
+- A life organized mostly around reducing threat tends to get smaller over time. Avoidance is not always wrong, but a healthier direction usually includes moving toward something, not only away from pain.
+- Growth shows up as possibility, not just relief
+- People often flourish when their sense of what is possible expands — learning, exploring, reconnecting, entering parts of life that had closed. That expansion is worth noticing in its own right.
+- Good stretches widen what you are willing to try
+- Research suggests positive states broaden attention and openness, which supports more exploratory behavior, which builds resources over time. The point is not forced positivity but noticing when the range is widening.
+- A future worth having pulls harder than one that merely hurts less
+- Being able to see a path forward, and to believe a fuller life is available, tends to support sustained effort. That is a different fuel from wanting the pain to stop.
+- Living larger counts, even on an average day
+- Improvement is often better read in participation than in mood. You can feel unremarkable and still be showing up more, trying more, connecting more — and that is real progress.
+- Why watching your days is the same move that builds fitness
+- Watch the process, and the product follows
+- Tracking a behavior does not itself produce fitness or wellness. It strengthens the daily patterns that produce them — which is why the day, not the outcome, is what gets tracked here.
+- Healthy days are the process; wellness is the product
+- Wellness shows up as well-being, outlook and satisfaction with life. Tracking Quality Days means monitoring the process that, kept up, tends to lead there.
+- Wellness is a pattern, not a mood
+- It is not the absence of illness or a good day emotionally. It tends to be a state built by recurring behavior across the physical, mental and social parts of life — which makes it something you can influence.
+- A good day has parts you can name
+- Energy, outlook, function, connection, a sense of purpose. Naming which were present makes a vague sense of "that was a good one" into something you can deliberately repeat.
+- Quality days and a quality life build each other
+- Good days accumulate into a life shaped around them, and a life shaped that way tends to produce more of them. Research on upward spirals describes this loop, and it works in both directions.
+- The same attention that builds fitness, aimed at living
+- In the Lifestyle Pilot you watched movement and eating to build health. This is the identical move, applied to the wider question of how you actually want to live.
+- Why revisiting your list is the work
+- Goals you actually chose hold up longer
+- Research suggests people stay with goals that fit their own values and sense of self, and drift from ones carried out of pressure, guilt, or comparison with someone else. A goal that is yours has a much better chance of surviving a hard week.
+- Who you think you are shapes what feels possible
+- What you want gets filtered through how you see yourself. As that understanding shifts — and three phases of this work tend to shift it — the same goal can move from central to beside the point, or the reverse.
+- Sorting the list is what makes it usable
+- Clear, ranked goals tend to work better than a long flat list of good intentions. Most lists start out diffuse and a little competing. Choosing one deliberately is how it becomes something you can act on.
+- Changing a goal is a skill, not a retreat
+- Revising what you are aiming at is part of steering, not evidence you failed at the first version. It usually reflects a sharper read on what is meaningful and what is realistic.
+- Goals get better when experience informs them
+- A goal built on what you have actually noticed about your habits and your patterns tends to be sturdier than one built on how you hoped things would go. You have several weeks of that evidence now.
+- The parts of a life are not separate
+- Change tends to hold better when what you learn in one area feeds the others, rather than sitting in its own box. Looking at the whole list at once is how those connections surface.
+- Your Checkpoint
+- Your Threshold
+
+## Removed (0)
+
+_none_
