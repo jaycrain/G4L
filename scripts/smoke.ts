@@ -79,13 +79,30 @@ try {
   await page.fill('#email', email);
   await page.fill('#password', password);
   await page.click('button[type="submit"]');
-  try {
-    await page.waitForFunction(() => location.pathname.startsWith('/dashboard/'), null, { timeout: 20000 });
-  } catch {
+  // ONE RETRY ON THE DASHBOARD WAIT, AND IT ANNOUNCES ITSELF.
+  //
+  // The warm-up above pays the cold start for /login. It CANNOT warm the dashboard route — that function is only
+  // reached by logging in, and this is the failure that actually happened first ("login did not reach dashboard").
+  // So the one cold path the test cannot avoid gets exactly one retry.
+  //
+  // PRINTED EVERY TIME IT FIRES, on a passing run as loudly as a failing one. A silent retry is how a check starts
+  // lying: it would turn a site that is genuinely slow to log people in into a green tick. If this line shows up
+  // often, the retry is not the fix and the login path is the problem. [[existence-is-not-the-assertion]]
+  const reachedDashboard = async (ms: number) =>
+    page.waitForFunction(() => location.pathname.startsWith('/dashboard/'), null, { timeout: ms })
+      .then(() => true).catch(() => false);
+  if (!(await reachedDashboard(20000))) {
+    const stillOnLogin = new URL(page.url()).pathname.startsWith('/login');
     const err = (await page.locator('.error').first().textContent().catch(() => null))?.trim();
-    throw new Error(
-      `login did not reach dashboard (still at ${new URL(page.url()).pathname})${err ? ` — form error: "${err}"` : ''}`,
-    );
+    if (!stillOnLogin || err) {
+      throw new Error(`login did not reach dashboard (still at ${new URL(page.url()).pathname})${err ? ` — form error: "${err}"` : ''}`);
+    }
+    console.log('  ! login did not land in 20s and is being RETRIED once — a cold dashboard function, or a real slowdown');
+    await page.click('button[type="submit"]').catch(() => null);
+    if (!(await reachedDashboard(20000))) {
+      throw new Error(`login did not reach dashboard after a retry (still at ${new URL(page.url()).pathname}) — this is not a cold start`);
+    }
+    console.log('  ! the retry landed. If you are seeing this line regularly, fix the login path, not this test.');
   }
   const url = page.url();
   const memberId = url.match(/\/dashboard\/([0-9a-f-]+)/i)?.[1];
