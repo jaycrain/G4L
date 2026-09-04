@@ -26,7 +26,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, h
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, withQuestion, endsOnOpenQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, receiptOnly, withQuestion, endsOnOpenQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -1041,7 +1041,26 @@ const doorsStage: StageDef = {
           b.reply = b.modelText; // their goodbye is the whole turn
         } else {
           (b.scratch as { openedDoor?: DoorSlug }).openedDoor = next; // what we just put on screen IS what we bank
-          b.reply = receiveThen(b.modelText, nextDoorOpener(next));
+          // DO NOT OPEN A DOOR THE MODEL HAS ALREADY OPENED.
+          //
+          // Jennifer, 2026-09-04, two consecutive Companion messages:
+          //
+          //   "That one's drawn out. Let me take it in. NEXT IS THE AGING PARENTS. Not the label — take me back
+          //    to how it actually went with your dad."
+          //   "THEN LET'S TAKE THE AGING PARENTS. Same thing — not the label, what actually happened."
+          //
+          // The model announced the next Door in its own prose; the engine appended its scripted opener for the
+          // SAME Door. Same shape as the engine stacking its probe over the model's question, and the same rule
+          // settles it: one ask per turn, and the model's own words are not something to talk over.
+          //
+          // DETERMINISTIC — it asks whether the receipt already NAMES that Door, never what the model meant.
+          // Reading intent from prose is the inference that got stage-agreement reverted.
+          // [[drawout-rhythm-model-owns-questions]]
+          const receipt = receiptOnly(b.modelText);
+          const nextName = DOORS.find((d) => d.slug === next)?.displayName ?? '';
+          b.reply = nextName && receipt.toLowerCase().includes(nextName.toLowerCase())
+            ? receipt
+            : receiveThen(b.modelText, nextDoorOpener(next));
         }
       } else if (!scm.meaningAsked) {
         // EVERY DOOR WALKED → Greg's fourth question, once per excavation, before handing to the IDQ. It is about
