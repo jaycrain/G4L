@@ -49,6 +49,24 @@ try {
   //    interacting — deterministic, no arbitrary sleeps.
   //  - Soft navigation: on success the form does a client-side router.push (no 'load' event fires),
   //    so we wait on the in-browser pathname. A rendered form error (e.g. bad credential) throws.
+  // WARM THE DEPLOYMENT FIRST, AND SAY HOW LONG IT TOOK.
+  //
+  // This test failed twice on 2026-09-04 and passed on both re-runs — once on the hydration wait, once reaching
+  // the dashboard. Both times it ran seconds after a deploy, against a serverless function that had never been
+  // invoked. Warm, the same page answers in about a quarter of a second.
+  //
+  // So the check was measuring whether the platform was warm, not whether the product works — and the honest cost
+  // is not the red: it is that I re-ran it twice instead of fixing it, which is exactly how a check stops being
+  // read. [[greenlight-deploy-gate]]
+  //
+  // NOT LONGER TIMEOUTS. Inflating them would hide a genuinely slow build, which is a thing we would want to see.
+  // One discarded request pays the cold start, and the duration is PRINTED so an unusually slow one is still
+  // visible rather than absorbed.
+  const warmStart = Date.now();
+  await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 }).catch(() => null);
+  const warmMs = Date.now() - warmStart;
+  console.log(`  · warm-up ${warmMs}ms${warmMs > 3000 ? '  (COLD START — the first real request would have paid this)' : ''}`);
+
   await open('/login');
   await page.waitForFunction(
     () => {
