@@ -20,6 +20,7 @@ import { nextFollowUp } from './follow-up.ts';
 import { doorProvenance } from './door-provenance.ts';
 import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
+import { SESSION_LIMITS } from './session-limits.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, hasAnnouncedExit } from './onboarding-intent.ts';
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
@@ -2172,6 +2173,16 @@ export function reconnectContext(c: Collected, doorsAtEntry?: readonly DoorSlug[
 // canonical Door and propose a re-seeing with a valid to_slug (the engine only commits canonical, distinct swaps).
 const DOOR_CATALOG = DOORS.map((d) => `  - ${d.displayName} (${d.slug}): ${d.descriptor}`).join('\n');
 
+// SESSION_LIMITS REACHES THE FOURTH ARC. Rebuild, Rewire and Reclaim have carried these rules since they were
+// written; Reconnect never did — so "never promise that anyone will act on something later" has never applied to
+// the Doors, which is the longest Session in the product and the one two testers have now spent an hour inside.
+//
+// Jennifer, 2026-09-04, mid-Excavation at 113 messages: "Would like to see the letter you mentioned drafting."
+// The authored mention of the Legacy Letter had been REMOVED from this Session the day before, for Donna, who hit
+// the same thing. The copy fix held; the model simply said it itself, because nothing here told it not to.
+//
+// That is the lesson worth keeping: deleting a line from the script does not stop the model saying the line. A
+// behaviour needs a rule, and the rule needs to reach every arc. [[one-fact-many-sites]]
 const RECONNECT_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 
 OPERATING MOMENT: Reconnect — the DOORS EXCAVATION (Recognition).
@@ -2244,7 +2255,7 @@ the first mention; never on thin material) — and reflect that insight, in thei
 insight reflect-confirm, call member_reply to classify their reply (done / more / dispute). Never narrate the tools.
 
 Reflect first, then exactly ONE question per turn. Never diagnose, label, or pathologize. This is a place it is safe
-to be honest with yourself.`;
+to be honest with yourself.${SESSION_LIMITS}`;
 
 export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string {
   // Their Window answer, handed to the model so prompt 1 is never re-asked. Lives on ConvState (like driftPayload),
