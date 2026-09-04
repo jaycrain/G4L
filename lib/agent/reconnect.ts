@@ -447,6 +447,10 @@ const DOORS_CLOSE = (
   "Who you are, and you can change them any time. Next comes the Drift Quiz."
 );
 
+// SAID WHEN THE ENGINE HAS TO BREAK A LOOP FOR HER. It names the fault as ours and moves — it does not apologise
+// at length, and it does not ask her to rephrase, because rephrasing is what she has already been doing.
+const STUCK_ACK = "That got stuck on my end — not on you. Let's keep going.";
+
 const DOORS_MEANING_Q =
   `Last thing on this, and it's the one that matters most: what does recognizing these Doors change about how ` +
   `you see your own Fade?`;
@@ -718,7 +722,47 @@ const doorsStage: StageDef = {
   mode: 'drawout',
   opener: (c) => doorOpen(c),
   offersSubstance: (message) => message.trim().length >= 12,
+  // NOBODY GETS TRAPPED IN THE DOORS. Jennifer, 2026-09-04: "Stuck in this loop."
+  //
+  // The Companion offered her the Legacy Letter inside Excavation, the draft could not render because there is no
+  // letter in this Session, and every reply after that came back "take your time / there's no wrong way in." She
+  // asked twice, plainly — "Please show me the letter" — and could not get past it. Not a cosmetic miss: a trap.
+  //
+  // THE ESCAPE EXISTED AND HAD NOTHING TO CALL. The kernel's runaway backstop fires on a stall or the hard
+  // ceiling and then delegates to the stage's `forceProgress`. Every Reconnect stage defined none, so the
+  // backstop resolved to undefined and fell through to the same draw-out that was already looping. I found that
+  // absence on 2026-09-03, wrote it down as "not urgent", and a member hit it the next day at 113 turns.
+  //
+  // WHAT IT DOES: bank the Door she is on — she has plainly said enough about it — and move. If Doors remain, the
+  // next one opens. If not, the meaning question closes the beat. It never re-emits the turn that trapped her,
+  // and it never ends the Session on her behalf. [[completeness-never-touches-drawout]]
+  forceProgress(b) {
+    const sc = b.scratch as { meaningAsked?: boolean; openedDoor?: DoorSlug; forcedTurn?: boolean };
+    sc.forcedTurn = true; // gather must not overwrite the escape it is being rescued from
+    bankWalkedDoor(b);
+    const next = nextDoorToExcavate(b.collected);
+    b.awaitingConfirm = false;
+    if (next) {
+      sc.openedDoor = next;
+      b.reply = `${STUCK_ACK}${BEAT_SEP}${nextDoorOpener(next)}`;
+      return undefined; // mutated + fall through, per the backstop contract
+    }
+    if (!sc.meaningAsked) {
+      sc.meaningAsked = true;
+      b.reply = `${STUCK_ACK}${BEAT_SEP}${DOORS_MEANING_Q}`;
+      return undefined;
+    }
+    b.complete = true;
+    b.reply = `${STUCK_ACK}${BEAT_SEP}${DOORS_CLOSE}`;
+    return undefined;
+  },
   gather(b) {
+    // THE ESCAPE WINS THIS TURN. forceProgress runs immediately before this and then falls through by contract,
+    // so without this the draw-out rewrites the very reply that is breaking the member out of a loop — which is
+    // how the first version of this fix banked her Door correctly and still showed her another probe.
+    const forced = b.scratch as { forcedTurn?: boolean };
+    if (forced.forcedTurn) { forced.forcedTurn = false; return; }
+
     // THE DOOR WE HELD BACK WHEN SHE LEFT. She stepped away mid-excavation, so the next Door was deferred rather
     // than stacked onto the goodbye (see the bank site below). She is typing again — open it now.
     //
