@@ -2,6 +2,7 @@
 // facets, earned badges, and phase gates. The curriculum/badge definitions live in registry.ts (data).
 import type { Db } from '../db/schema.ts';
 import { logEvent } from '../telemetry/store.ts';
+import { PHASE_GATE_BADGE } from './registry.ts';
 
 export type SessionStatus = 'locked' | 'in_progress' | 'closed';
 export type SessionProgress = {
@@ -156,7 +157,24 @@ export async function markCheckpointClosed(
        updated_at = now()`,
     [memberId, assetId],
   );
-  await setGate(db, memberId, `${phase}_checkpoint_passed`);
+  const gate = `${phase}_checkpoint_passed`;
+  await setGate(db, memberId, gate);
+  // THE CROSSING EARNS THE BADGE, HERE — not at the next dashboard load.
+  //
+  // The award used to live only in the dashboard reconcile (view.ts), which backfills from this gate. That is a
+  // correct backstop and a wrong primary: the ceremony is often the LAST thing a member sees. Jennifer closed the
+  // Rewire Checkpoint at 18:46 on 2026-09-04, was told "You earned a new badge!", and stopped for the night with
+  // no badge in her record — because `earnedBadgeReveal(phase)` names the badge from the REGISTRY, not from her.
+  // Reconnect only ever looked right because it carries its own hand-written eager award.
+  //
+  // Best-effort on purpose: a badge write must never cost her the crossing event below. The reconcile still runs
+  // at dashboard load and earnBadge is idempotent, so a failure here self-heals rather than stranding the badge.
+  const badgeId = PHASE_GATE_BADGE[gate];
+  if (badgeId) {
+    await earnBadge(db, memberId, badgeId).catch((e) => {
+      console.error(`[badges] crossing ${gate} could not earn ${badgeId} for ${memberId}:`, e);
+    });
+  }
   // FIRST crossing only. Crossing a gateway between the Rs is a once-per-cycle event; re-reading the ceremony is not
   // a second crossing.
   if (!alreadyClosed) {

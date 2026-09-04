@@ -65,12 +65,20 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
     lede: 'Why naming how it happened changes what you can do about it',
     points: [
       { head: 'The circumstances that cause this are known, and common',
-        body: 'Loss, a shrinking social world, a role that absorbs everything, caregiving, autopilot — research documents these as reliable disrupters of routine and self-concept, often long after the event. Naming yours places it in a recognized pattern rather than leaving it as private drift.' },
+        // THE EXAMPLES ARE OTHER PEOPLE'S, AND HAD TO SAY SO (Jennifer, 2026-09-04). This panel renders directly
+        // under "Your Doors: The Grind · The Body · …", so a bare list of common patterns read as an assignment.
+        // Her subject line: "Don't think shrinking social world was part of my doors." Nothing was mis-tagged —
+        // the copy simply sat where only her own Doors had ever appeared, and inherited that meaning.
+        //
+        // The fix is attribution, not deletion: the research needs its examples, and the point of the panel is
+        // that these are COMMON. "The ones people name most often" makes them other people's by construction,
+        // which is also the normalizing move the beat exists for. [[member-words-outrank-model-guess]]
+        body: 'The ones people name most often are loss, a shrinking social world, a role that absorbs everything, caregiving, autopilot — research documents these as reliable disrupters of routine and self-concept, often long after the event. Whichever are yours, naming them places it in a recognized pattern rather than leaving it as private drift.' },
       { head: 'A story you can work with beats a fog you are inside',
         body: 'People tend to move through life change more steadily when they can put it in order — what came first, what shaped you most, what is still going on. That sequence turns a pile of circumstances into something with a shape.' },
       { head: 'Naming what happened to you does not hand away your agency',
         body: 'Blaming yourself for everything tends toward shame; blaming circumstances entirely tends toward helplessness. Holding both — a real cause, and what you are still choosing — tends to support more durable motivation than either on its own.' },
-      { head: 'Which doors matters more than that you drifted',
+      { head: 'Which doors matter more than that you drifted',
         body: 'Identity loss is rarely felt as one undifferentiated thing; it erodes in specific places. Knowing which ones gives you a different and more usable starting point than knowing only that something went.' },
       { head: 'Finding it is a shared pattern takes the weight out of it',
         body: 'When people learn others walked through the same doors, they tend to stop reading their own pattern as a personal defect. That does not remove responsibility for what comes next, but it lowers the shame that usually stops people engaging at all.' },

@@ -3,7 +3,7 @@
 // Session is a registry row that flows through here with zero renderer change.
 import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
-import { phaseColumns, dailyLayer, listBadges, getBadge, PHASE_ORDER } from './registry.ts';
+import { phaseColumns, dailyLayer, listBadges, getBadge, PHASE_ORDER, PHASE_GATE_BADGE } from './registry.ts';
 import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge, markSessionClosed } from './store.ts';
 import { RECONNECT_SESSION_ASSETS } from '../workspace/session-key.ts';
 
@@ -130,15 +130,9 @@ export async function ensureOnboardingBadge(db: Db, memberId: string): Promise<v
 // The redesign's 16-milestone badges (Decision WW). Six earn via the existing wiring (checkpoints / reclaim-keep /
 // RCN-EXC); the other ten earn HERE, reconciled idempotently from committed state so no arc-completion code is touched.
 // Called at redesign dashboard load (behind REDESIGN → prod never runs it). earnBadge is idempotent (fires once).
-/** Phase checkpoint gate → the milestone badge crossing it earns. See the reconcile below for why this is
- *  driven off the gate rather than from each phase's own action. Reconnect ALSO awards eagerly at the
- *  crossing so the ceremony can name it in the moment; earnBadge is idempotent, so both paths are safe. */
-export const PHASE_GATE_BADGE: Record<string, string> = {
-  reconnect_checkpoint_passed: 'reconnect-milestone',
-  rewire_checkpoint_passed: 'rewire-milestone',
-  rebuild_checkpoint_passed: 'rebuild-milestone',
-  reclaim_checkpoint_passed: 'reclaim-capstone',
-};
+/** The gate → badge map moved to the registry, because BOTH the eager award at the crossing (store.ts) and
+ *  the backfill below now read it. Re-exported here so existing importers keep working. */
+export { PHASE_GATE_BADGE };
 
 const SESSION_BADGE: Record<string, string> = {
   'RWR-W1': 'turned-voice',

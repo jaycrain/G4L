@@ -228,6 +228,18 @@ const REDESIGN_BADGES: Badge[] = [
 
 export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;
 
+/** Phase checkpoint gate → the milestone badge crossing it earns. Both the eager award (at the crossing, in
+ *  store.ts) and the reconcile backfill (at dashboard load, in view.ts) read this ONE map, which is why it
+ *  lives here rather than in either of them — a new phase cannot ship a gate without a badge, because adding
+ *  the gate to this map is the same edit as adding the phase. All four ids exist in BOTH badge sets, so this
+ *  is safe on the legacy build too. */
+export const PHASE_GATE_BADGE: Record<string, string> = {
+  reconnect_checkpoint_passed: 'reconnect-milestone',
+  rewire_checkpoint_passed: 'rewire-milestone',
+  rebuild_checkpoint_passed: 'rebuild-milestone',
+  reclaim_checkpoint_passed: 'reclaim-capstone',
+};
+
 // --- Badge visual identity (Decision WW styling pass) -------------------------------------------------------
 // The redesign shelf reads as a MAP OF THE JOURNEY: each badge is colored by its PHASE (the ring palette), not
 // its category. Phase derives from the earn_rule prefix; the two cross-cutting keeps ("kept a want", "closed the
