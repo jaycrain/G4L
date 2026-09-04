@@ -382,7 +382,12 @@ async function walkSession(
   label: string,
   opening: { reply: string; state: ConvState; expects?: Expectation },
   take: SessionTurn,
-  cap = 30,
+  // 60 IS THE HARNESS'S PATIENCE, NOT A JUDGEMENT ABOUT THE MEMBER. B2 administers 24 items one per turn, so a
+  // cap of 30 could not be reached and the gate reported a working Session as failed — twice, because I fixed
+  // this for R2 inside the Reconnect loop and the Rebuild/Reclaim legs added later call this with no argument
+  // and silently took the old default. A default is where a rule like this belongs; an override is where it
+  // gets forgotten. [[one-fact-many-sites]]
+  cap = 60,
   // A STAGE THAT IS ITSELF THE ENDING. Not every Session finishes by setting `complete`. The Rewire Checkpoint
   // LANDS on 'ceremony' — a terminal holding stage whose own comment says "the reveal is a full-screen overlay
   // the chat fires on stage === 'ceremony'". The engine holds there on purpose, re-emitting one line, because in
@@ -520,8 +525,9 @@ async function main() {
       // THE CAP IS PATIENCE, AND IT HAS TO CLEAR THE INSTRUMENT. B2 administers 24 items one per turn, so it
       // CANNOT close in 30 and the gate reported a working Session as failed — the same mistake the R2 cap made,
       // one phase over. A red that means nothing is how a gate stops being read.
-      const cap = label.startsWith('R2') ? 80 : 60;
-      const r = await walkSession(label, opening, arc, cap);
+      // R2 alone needs more than the default: it walks EVERY marked Door, and two testers marked nine and ten.
+      const cap = label.startsWith('R2') ? 80 : undefined;
+      const r = cap === undefined ? await walkSession(label, opening, arc) : await walkSession(label, opening, arc, cap);
       sessions.push({ label, ...r });
       if (!r.complete) break; // a Session that will not close ends the walk — the next one would start on a lie
     }
