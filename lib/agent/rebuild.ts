@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, didacticStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer, withQuestion, heldOnceIfLost} from './onboarding-staged.ts';
+import { runArcTurn, systemBlocks, administeredStage, engagementStage, engagementOpening, elicitationStage, didacticStage, checkpointEngagement, receiveThen, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer, withQuestion, heldOnceIfLost} from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -378,10 +378,10 @@ export async function liveTurnRebuildB1(
     max_tokens: 300,
     // Cached prefix / volatile suffix — same contract as W1 and B3: the governed core plus B1's own instructions
     // are byte-identical every turn and carry the breakpoint; member context and the stage note come after.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: B1_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: b1Context(state.collected) + b1StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -723,10 +723,10 @@ export async function liveTurnRebuildB2(
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: B2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: b1Context(state.collected) + b2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -1090,10 +1090,10 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
     // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
     // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 1024-token cache minimum, so it could
     // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: B3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: b3Context(state.collected) + b3StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     tools: [RECORD_PLAN_TOOL],
     messages,
   });

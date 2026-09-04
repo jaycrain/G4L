@@ -9,7 +9,7 @@
 
 import { MEMBER_AGENT_GOVERNED_CORE } from './system-prompt.ts';
 import { sentenceStart } from '../content/member-words.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, withQuestion, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, heldOnceIfLost} from './onboarding-staged.ts';
+import { runArcTurn, systemBlocks, administeredStage, engagementStage, engagementOpening, elicitationStage, checkpointEngagement, receiveThen, withQuestion, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, heldOnceIfLost} from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
@@ -710,10 +710,10 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
     // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
     // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 1024-token cache minimum, so it could
     // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: REFINE_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: refineStageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     tools: [RECORD_LIST_CHANGE_TOOL],
     messages,
   });
@@ -1374,10 +1374,10 @@ export async function liveTurnReclaimC2(
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: C2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: c2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -1728,10 +1728,10 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
     // varying byte inside a cached block invalidates the whole thing and pays the 1.25x write premium for
     // nothing. The prompt was ~650 tokens ungoverned — BELOW Sonnet's 1024-token cache minimum, so it could
     // never cache at any price. Governed it clears the bar, and a Session is cheaper than it was before.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: C3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: carryForward ? `\n\n${carryForward}` : '' },
-    ],
+    ]),
     tools: [RECORD_QUALITY_DAY_TOOL],
     messages,
   });

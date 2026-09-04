@@ -27,7 +27,7 @@ import { resolveConfirmCorroborated, memberWantsToAdvance, memberSteppingAway, h
 import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, receiptOnly, withQuestion, endsOnOpenQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
+import { runArcTurn, systemBlocks, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, drawoutShouldReflect, receiveThen, receiptOnly, withQuestion, endsOnOpenQuestion, isProcessMetaOrAssent, affirmsReflection, expectsForState, type ArcConfig, type StageDef, type EngagementConfig } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -2573,10 +2573,10 @@ export async function liveTurnReconnect(
     // The breakpoint sits on the LAST STATIC block. Caching is hierarchical (tools → system → messages), so this
     // one breakpoint covers the tools as well; the member's context and the stage note vary per turn and must
     // come after it, because a single changed byte inside a cached block invalidates the whole prefix.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: RECONNECT_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage, state) },
-    ],
+    ]),
     tools: RECONNECT_TOOLS,
     messages,
   }));

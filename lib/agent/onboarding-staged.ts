@@ -4260,10 +4260,10 @@ export async function liveTurnStaged(
     // The split is the same contract Rewire, Rebuild and Reclaim already use: STAGED_SYSTEM is byte-identical
     // every turn and carries the breakpoint; the stage instruction varies per turn and must come AFTER it, since
     // caching is a prefix match and a single varying byte inside the cached block invalidates the whole thing.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: STAGED_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: stageInstruction(state.stage, { gapHeld: state.stageScratch?.gap?.gapHeld === true }) },
-    ],
+    ]),
     tools: STAGED_TOOLS,
     messages,
   }));
@@ -4385,3 +4385,29 @@ async function forceIdentityWords(
 }
 
 export type { Ctx };
+
+/**
+ * SYSTEM BLOCKS, WITH THE EMPTY ONES DROPPED.
+ *
+ * The API rejects an empty text block outright — `400 invalid_request_error: "system: text content blocks must
+ * be non-empty"` — and it rejects the WHOLE REQUEST, so the member gets "Something went wrong" and cannot move.
+ *
+ * C3 · Quality Days did exactly that on 2026-09-04. Its second block is the carry-forward alone:
+ *
+ *     { type: 'text', text: carryForward ? `\n\n${carryForward}` : '' }
+ *
+ * A member with no carry-forward sends an empty block and the Session is unusable for them — a hard dead end on
+ * the same shape Jennifer had just spent two days inside. Donna got through C3 only because she happened to have
+ * carry-forward; nothing about the Session was working, she was simply the lucky case.
+ *
+ * The other arcs concatenate a context string and a stage note before the carry-forward, so they are non-empty by
+ * luck rather than by rule. This makes it a rule, in one place, for every arc and every future one.
+ */
+export function systemBlocks(
+  blocks: { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }[],
+): { type: 'text'; text: string; cache_control?: { type: 'ephemeral' } }[] {
+  const kept = blocks.filter((b) => (b.text ?? '').trim().length > 0);
+  // A prompt with NOTHING in it is a different bug, and silently sending one empty-handed would hide it.
+  if (!kept.length) throw new Error('systemBlocks: every system block was empty — the arc built no prompt at all');
+  return kept;
+}

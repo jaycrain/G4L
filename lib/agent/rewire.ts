@@ -8,7 +8,7 @@
 // Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the v2.3 flip.
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
-import { runArcTurn, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer,
+import { runArcTurn, systemBlocks, administeredStage, engagementStage, engagementOpening, checkpointEngagement, AGREEMENT_1_5, AGREEMENT_1_5_HINT, scaleExpects, type ArcConfig, type StageDef, didNotAnswer,
 } from './onboarding-staged.ts';
 import { isMemberContent, isDeclineReply } from './member-turn.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
@@ -416,10 +416,10 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
     // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: REWIRE_W1_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: w1Context(state.collected) + rewireStageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -767,10 +767,10 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
     // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: REWIRE_W2_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: w2Context(state.collected) + rewireW2StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -1372,10 +1372,10 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
     // prefix under 1024 tokens (the 2048 figure here was Opus 4.7's; corrected 2026-08-30); these prompts were ~650 and therefore uncacheable. Governed, they are ~4700 —
     // over the line. Adding the rules makes a Session CHEAPER than it was ungoverned: the first turn pays 1.25x
     // to write, every turn after reads at 0.1x.
-    system: [
+    system: systemBlocks([
       { type: 'text' as const, text: REWIRE_W3_SYSTEM, cache_control: { type: 'ephemeral' as const } },
       { type: 'text' as const, text: w3Context(state.collected) + rewireW3StageNote(state) + (carryForward ? `\n\n${carryForward}` : '') },
-    ],
+    ]),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
