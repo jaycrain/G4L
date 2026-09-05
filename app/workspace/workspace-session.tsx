@@ -136,10 +136,21 @@ export default function WorkspaceSession({
       window.addEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
       window.addEventListener(SESSION_COMPLETE_EVENT, onComplete);
     }
+    // 30s, NOT 5s — a backstop, which is what the comment above always claimed it was.
+    //
+    // At 5s one open Session tab wrote ~12 runtime log lines a minute, every one of them a 200 with nothing to
+    // say. Greg's Excavation turn threw on 2026-09-04 and the loud catch we had added that same morning DID
+    // fire — and by the time anyone looked, this poll had pushed it out of the readable log window. The
+    // instrument that was supposed to make a dead end diagnosable was drowned by a heartbeat.
+    //
+    // Nothing about the member's experience depends on this number: the chat fires ARTIFACT_REFRESH_EVENT the
+    // moment a turn (and any keeper commit) lands, so the canvas fills immediately on the normal path. The poll
+    // only covers a MISSED event, and a missed event is not worth twelve requests a minute to catch six times
+    // sooner. [[swallowed-read-renders-as-truth]]
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       void refresh();
-    }, 5000);
+    }, 30_000);
     return () => {
       cancelled = true;
       clearInterval(id);

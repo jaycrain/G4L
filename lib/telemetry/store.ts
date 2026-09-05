@@ -43,6 +43,18 @@ export type EventKind =
   // without having to ask anyone for a screenshot.
   | 'badge_earned'
   | 'badge_shown'
+  // A CONVERSATIONAL TURN THREW — the wall a member cannot route around, made DURABLE.
+  //
+  // The four arcs already log this loudly to the console (added 2026-09-03 after Donna's Reclaim dead end left
+  // no trace at all). It was not enough. Greg's Excavation turn threw on 2026-09-04, the log fired exactly as
+  // designed, and it could not be found the next morning: the workspace canvas polled every 5 seconds, so one
+  // open tab wrote ~12 lines a minute and flushed his error out of the retention window.
+  //
+  // A console line is only evidence if someone reads it before it scrolls away. This is the same fact written
+  // where it persists, member-scoped, and readable from the diagnostic we already open when someone reports a
+  // dead end. NEVER the member's words — stage, session and message LENGTH are what make it diagnosable; the
+  // text is hers and stays behind the wall.
+  | 'turn_failed'
   | 'page_view';
 
 export type LogOpts = { surface?: string | null; ref?: string | null; step?: number | null; meta?: Record<string, unknown> };

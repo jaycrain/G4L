@@ -8,6 +8,7 @@ import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
+import { recordTurnFailure } from '../../lib/telemetry/turn-failure.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
@@ -385,11 +386,13 @@ export async function reclaimTurnAction(
     //
     // NO MEMBER TEXT IN THE LOG. The length tells us whether size was the trigger; the words are hers and belong
     // behind the wall. Stage + session + error are what actually make the next occurrence diagnosable.
-    console.error(
-      `RECLAIM turn FAILED for member=${memberId} session=${session ?? 'RECLAIM'} ` +
-      `stage=${(state as { stage?: string } | undefined)?.stage ?? 'unknown'} msgLen=${(message ?? '').length}:`,
-      e,
-    );
+    await recordTurnFailure(memberId, {
+      arc: 'reclaim',
+      session: session ?? 'RECLAIM',
+      stage: (state as { stage?: string } | undefined)?.stage ?? 'unknown',
+      msgLen: (message ?? '').length,
+      error: e,
+    });
     return { ok: false, error: 'Something went wrong — please try again.' };
   }
 }

@@ -309,6 +309,18 @@ const REPORT_SQL = `select jsonb_build_object(
   'context_degraded', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]')
      from (select created_at, meta->>'message' as message from member_event
             where member_id = $1 and kind = 'context_degraded' order by created_at desc limit 10) e),
+  -- THE WALL SHE COULD NOT ROUTE AROUND — a conversational turn that threw, kept where it can still be read.
+  -- Greg's Excavation turn threw on 2026-09-04; the console line fired and was gone by morning, flushed out of
+  -- the log window by a 5-second canvas poll. START HERE when a member reports the generic failure line: the
+  -- stage is the field that says WHERE the arc was standing when it fell over.
+  -- (The member-facing wording is deliberately NOT quoted here. Quoting it made the transcript coverage guard
+  -- read this file as carrying member copy, which is exactly the call it is supposed to make.)
+  -- (No backticks in this comment: the SQL lives inside a TS template literal and one would end the string.)
+  'turn_failures', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]')
+     from (select created_at, surface as arc, ref as session, meta->>'stage' as stage,
+                  meta->>'error' as error, meta->>'errorName' as error_name, meta->>'msgLen' as msg_len
+             from member_event
+            where member_id = $1 and kind = 'turn_failed' order by created_at desc limit 15) e),
   'FLAGS', (select jsonb_strip_nulls(jsonb_build_object(
      'identity_noun_missing',      case when (select identity_noun from member_profile where member_id = $1) is null then true end,
      'identity_paragraph_missing', case when (select identity_paragraph from member_profile where member_id = $1) is null then true end,
