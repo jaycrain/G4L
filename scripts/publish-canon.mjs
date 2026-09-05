@@ -255,7 +255,33 @@ if (problems.length) {
 // One line at the canon root naming the current version. She compares it against the newest folder she can see:
 // equal means the drop is complete, different means her mount is mid-sync. Without it, "missing" and "not synced
 // yet" look identical from her side — which is why every late bundle turned into Jay relaying messages.
-writeFileSync(join('docs', 'canon', 'LATEST'), `v${version} · app @ ${commit}\n`);
+//
+// AND THE ANSWER TO "IS THIS MEMBER ON THE CURRENT BUILD?" — which used to be unanswerable, and worse,
+// answerable WRONGLY. The commit stamped here is the code this bundle was built FROM. Publishing the bundle is
+// itself a commit, and that commit is what deploys — so the build serving members is always one ahead, and a
+// member's footer can NEVER show the sha in this file. On 2026-09-04 Cowork lost time to exactly that mismatch,
+// and then CC repeated the mistake in writing, telling Greg to check his footer against a sha he would never
+// see. The stable identifier is the VERSION; say so here, next to the number that misleads.
+//
+// Deliberately NOT recording the deployed sha: it cannot be known when this runs (the canon commit does not
+// exist yet), and any later commit invalidates it. A number that is usually wrong is worse than no number —
+// that is the whole lesson of the mismatch above.
+//
+// The first line's shape is load-bearing: canon-drift regexes it from the start, sync-canon-mount and the
+// integrity test take its first token. Everything below is prose for a human and must stay below.
+writeFileSync(
+  join('docs', 'canon', 'LATEST'),
+  `v${version} · app @ ${commit}\n` +
+  `\n` +
+  `WHICH BUILD IS A MEMBER ON? Compare the VERSION (v${version}) — never the code.\n` +
+  `\n` +
+  `The commit above is the code this bundle describes. The build actually serving members is one commit\n` +
+  `later, because publishing this bundle is itself a commit and that commit deploys. A member's footer will\n` +
+  `therefore never show ${commit.slice(0, 7)}, and that is correct, not a fault.\n` +
+  `\n` +
+  `So: a screenshot reading v${version} is current, whatever short code sits beside it. A screenshot reading an\n` +
+  `older version is genuinely behind — that one is worth raising.\n`,
+);
 
 // ── Publishing is NOT finished here ───────────────────────────────────────────────────────────────────────────
 // This script used to try to sync Cowork's mount itself, and it could not work: it ran `git pull` BEFORE the

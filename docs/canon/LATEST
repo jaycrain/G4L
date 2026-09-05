@@ -1,1 +1,10 @@
 v3.8.7 · app @ 4c3f9577
+
+WHICH BUILD IS A MEMBER ON? Compare the VERSION (v3.8.7) — never the code.
+
+The commit above is the code this bundle describes. The build actually serving members is one commit
+later, because publishing this bundle is itself a commit and that commit deploys. A member's footer will
+therefore never show 4c3f957, and that is correct, not a fault.
+
+So: a screenshot reading v3.8.7 is current, whatever short code sits beside it. A screenshot reading an
+older version is genuinely behind — that one is worth raising.
